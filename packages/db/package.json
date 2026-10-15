@@ -11,7 +11,7 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:status": "prisma migrate status",
-    "seed": "tsx prisma/seed.ts",
+    "seed": "tsx --env-file-if-exists=../../.env prisma/seed.ts",
     "studio": "prisma studio",
     "typecheck": "tsc -p tsconfig.json",
     "test": "echo \"db: no unit tests (covered by integration tests in apps)\""

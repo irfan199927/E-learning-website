@@ -1,4 +1,9 @@
+import { existsSync } from "node:fs";
 import type { NextConfig } from "next";
+
+// Local dev keeps one .env at the repo root; real environments set variables directly.
+const rootEnv = new URL("../../.env", import.meta.url);
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 // Static security headers. The Content-Security-Policy is per-request (nonce) and set in src/middleware.ts.
 const securityHeaders = [

@@ -5,7 +5,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 ## 1. Finish the quality gate (small)
 
 - [x] `pnpm lint` and `pnpm format:check` pass (enforced by pre-commit hooks).
-- [ ] Re-check the calendar toolbar styling after the CSP `font-src data:` fix (prev/next icons should now render).
+- [x] Re-check the calendar toolbar styling after the CSP `font-src data:` fix (prev/next icons render; verified 2026-10-15).
 
 ## 2. Delivery (needed before first deploy)
 
