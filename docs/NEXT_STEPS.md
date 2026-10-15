@@ -20,7 +20,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] `README.md` (overview, quickstart, repo map, scripts)
 - [ ] `CONTRIBUTING.md` (branching, conventional commits, PR checklist, definition of done)
 - [ ] `SECURITY.md` + `docs/security.md` (threat model, controls, DPDP handling)
-- [ ] `docs/architecture.md` (container view + sequence diagrams: scheduling, recording sync, upload, playback)
+- [x] `docs/architecture.md` — system design (requirements, flows, load estimates, failure modes, trade-offs)
+- [ ] Fix remaining design gaps G2–G7 listed in `docs/architecture.md` §7 (G4 reminder reconciliation and G6 raw-file lifecycle first)
 - [ ] `docs/adr/0001…0007` — monorepo; route handlers + worker vs NestJS; Better Auth + DB sessions; Prisma 7;
       R2 + gated HLS playlists; separate Google API grant (Internal OAuth app); recurring classes as Google instances
 - [ ] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)
