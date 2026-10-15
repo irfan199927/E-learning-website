@@ -66,7 +66,7 @@ pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs produ
 ## Status (end of first build session)
 
 Done & verified: monorepo, schema + migration, all packages, web API + UI (sign-in, reset, dashboard, calendar w/
-scheduling + drag reschedule, upload, player), worker jobs. 82 tests green (unit + integration on real Postgres +
-real ffmpeg + Playwright e2e desktop/mobile), web production build + worker build pass.
+scheduling + drag reschedule, upload, player), worker jobs. 89 tests green (52 unit + 23 integration on real Postgres incl.
+real ffmpeg + 14 Playwright e2e desktop/mobile); lint + prettier clean), web production build + worker build pass.
 
 See `docs/NEXT_STEPS.md` for what's left.

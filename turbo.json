@@ -25,5 +25,6 @@
       "cache": false,
       "persistent": true
     }
-  }
+  },
+  "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL", "PRISMA_*", "PLAYWRIGHT_*", "CI"]
 }

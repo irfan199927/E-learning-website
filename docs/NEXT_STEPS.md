@@ -4,7 +4,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 
 ## 1. Finish the quality gate (small)
 
-- [ ] Run `pnpm lint` and `pnpm format` across the repo; fix findings (not yet run).
+- [x] `pnpm lint` and `pnpm format:check` pass (enforced by pre-commit hooks).
 - [ ] Re-check the calendar toolbar styling after the CSP `font-src data:` fix (prev/next icons should now render).
 
 ## 2. Delivery (needed before first deploy)
