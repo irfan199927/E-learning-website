@@ -1,0 +1,77 @@
+{
+  "name": "e-learner",
+  "private": true,
+  "description": "E-learner — live classes on Google Meet, recorded lessons, schedules and coursework for schools.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12 <23",
+    "pnpm": ">=10"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @elearner/web test:e2e",
+    "db:generate": "pnpm --filter @elearner/db generate",
+    "db:migrate": "pnpm --filter @elearner/db migrate:dev",
+    "db:deploy": "pnpm --filter @elearner/db migrate:deploy",
+    "db:seed": "pnpm --filter @elearner/db seed",
+    "db:studio": "pnpm --filter @elearner/db studio",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "prepare": "simple-git-hooks || true"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged",
+    "commit-msg": "pnpm exec commitlint --edit \"$1\""
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-conventional": "19.8.1",
+    "@eslint/js": "9.39.1",
+    "@next/eslint-plugin-next": "15.5.4",
+    "@types/node": "22.18.6",
+    "eslint": "9.39.1",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "globals": "16.4.0",
+    "lint-staged": "16.2.3",
+    "prettier": "3.6.2",
+    "simple-git-hooks": "2.13.1",
+    "turbo": "2.5.8",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.45.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "sharp",
+      "simple-git-hooks"
+    ],
+    "overrides": {
+      "google-auth-library": "10.5.0"
+    }
+  }
+}

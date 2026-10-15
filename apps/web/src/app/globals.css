@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — mirror of the E-learner design system canvas (Design system v1).
+ * Change colors HERE only; components use the semantic names (bg-surface, text-muted …).
+ */
+@theme {
+  --font-sans: var(--font-figtree), "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-figtree), sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --color-primary: #2340d9;
+  --color-primary-strong: #1a2fa3;
+  --color-primary-soft: #e8ecfd;
+  --color-ink: #14161f;
+  --color-muted: #4b5162;
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-line: #e3e5ea;
+  --color-line-strong: #cdd1da;
+  --color-marigold: #f2a93b;
+  --color-live: #c4231a;
+  --color-live-soft: #fde7e5;
+  --color-success: #12805c;
+  --color-success-soft: #dff3ea;
+  --color-warning: #a15c00;
+  --color-warning-soft: #fcefd9;
+
+  --radius-control: 10px;
+  --radius-card: 16px;
+}
+
+/* Dark mode: same semantic names, different values. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ink: #e8eaf0;
+    --color-muted: #a3a8b8;
+    --color-canvas: #0e1117;
+    --color-surface: #171b24;
+    --color-line: #2a2f3b;
+    --color-line-strong: #3a4050;
+    --color-primary-soft: #1c2550;
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* FullCalendar → design tokens */
+.fc {
+  --fc-border-color: var(--color-line);
+  --fc-today-bg-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  --fc-page-bg-color: var(--color-surface);
+  --fc-button-bg-color: var(--color-surface);
+  --fc-button-border-color: var(--color-line-strong);
+  --fc-button-text-color: var(--color-ink);
+  --fc-button-hover-bg-color: var(--color-canvas);
+  --fc-button-hover-border-color: var(--color-line-strong);
+  --fc-button-active-bg-color: var(--color-primary-soft);
+  --fc-button-active-border-color: var(--color-primary);
+  --fc-neutral-bg-color: var(--color-canvas);
+  font-size: 14px;
+}
+.fc .fc-button {
+  min-height: 40px;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  color: var(--color-primary-strong);
+}
+.fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+}
+.fc .fc-event {
+  border-radius: 8px;
+  padding: 2px 4px;
+  font-weight: 600;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@elearner/notify",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Outbound email: SMTP transport (Mailpit locally, any SMTP provider in prod) and message templates.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elearner/core": "workspace:*",
+    "nodemailer": "7.0.6"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "7.0.2",
+    "vitest": "3.2.4"
+  }
+}

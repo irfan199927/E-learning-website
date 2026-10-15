@@ -1,0 +1,23 @@
+{
+  "name": "@elearner/queue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "BullMQ queue names, typed job payloads and producers. Consumers live in apps/worker.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elearner/core": "workspace:*",
+    "bullmq": "5.61.0",
+    "ioredis": "5.8.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "vitest": "3.2.4"
+  }
+}

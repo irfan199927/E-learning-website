@@ -1,0 +1,658 @@
+// E-learner — Prisma schema (PostgreSQL)
+// Conventions (see docs/development.md#database):
+// - cuid ids; all timestamps stored in UTC, rendered in the user's timezone (default Asia/Kolkata)
+// - soft-delete via deletedAt where DPDP erasure needs a grace window
+// - never edit an applied migration; add a new one (pnpm db:migrate --name <change>)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────── Enums ───────────────────────────
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum ConsentType {
+  PARENTAL_VERIFIABLE // DPDP s.9 — required before processing a minor's data
+  TERMS
+  MARKETING
+  RECORDING // consent to be recorded in live classes
+}
+
+enum ClassStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum AttendanceSource {
+  MEET_API
+  MANUAL
+}
+
+enum VideoSource {
+  MEET_RECORDING
+  UPLOAD
+}
+
+enum VideoStatus {
+  PENDING_UPLOAD
+  UPLOADED
+  TRANSCODING
+  READY
+  FAILED
+}
+
+enum LessonType {
+  VIDEO
+  DOCUMENT
+  LINK
+  NOTE
+  QUIZ
+  ASSIGNMENT
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  LATE
+  GRADED
+  RETURNED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+// ─────────────────────────── Identity & auth ───────────────────────────
+
+// User, Session, Account, Verification follow Better Auth's core schema
+// (field names must match — see ADR-0003). Passwords live in Account (providerId = "credential").
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String
+  image         String?
+  role          Role      @default(STUDENT)
+  timezone      String    @default("Asia/Kolkata")
+  locale        String    @default("en") // en | hi | mr
+  dateOfBirth   DateTime? // drives minor checks; never shown to other users
+  isMinor       Boolean   @default(false)
+  isActive      Boolean   @default(false) // false until verified (+ parental consent for minors)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  accounts          Account[]
+  sessions          Session[]
+  googleCredential  GoogleCredential?
+  consents          Consent[]
+  parentLinks       ParentLink[]        @relation("ParentOf")
+  childLinks        ParentLink[]        @relation("ChildOf")
+  coursesTaught     Course[]            @relation("CourseTeacher")
+  enrollments       Enrollment[]
+  classesHosted     ClassSession[]      @relation("ClassHost")
+  attendances       Attendance[]
+  videosUploaded    Video[]             @relation("VideoUploader")
+  videoProgress     VideoProgress[]
+  videoNotes        VideoNote[]
+  submissions       Submission[]
+  quizAttempts      QuizAttempt[]
+  notifications     Notification[]
+  posts             Post[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+  certificates      Certificate[]
+  auditLogs         AuditLog[]
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Login identities. For Google, accountId = Google `sub` (used to map Meet participants → users).
+// Login tokens are NOT used for API calls; teacher API grants live in GoogleCredential (ADR-0006).
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String? // scrypt hash, credential provider only
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+// Email verification + password reset tokens (Better Auth).
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// Teacher's Google API grant (incremental auth). Tokens AES-256-GCM encrypted.
+model GoogleCredential {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  googleSub          String   @unique
+  email              String
+  scopes             String[]
+  refreshTokenEnc    String   @db.Text
+  accessTokenEnc     String?  @db.Text
+  accessTokenExpires DateTime?
+  revokedAt          DateTime?
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Consent {
+  id          String      @id @default(cuid())
+  userId      String // the data principal (student)
+  grantedById String? // parent who granted, for minors
+  type        ConsentType
+  version     String // policy version hash
+  method      String // e.g. "parent-email-otp", "digilocker"
+  grantedAt   DateTime    @default(now())
+  withdrawnAt DateTime?
+  ipAddress   String?
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model ParentLink {
+  id         String    @id @default(cuid())
+  parentId   String
+  studentId  String
+  relation   String    @default("guardian")
+  verifiedAt DateTime?
+  parent     User      @relation("ParentOf", fields: [parentId], references: [id], onDelete: Cascade)
+  student    User      @relation("ChildOf", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+}
+
+// ─────────────────────────── Courses & content ───────────────────────────
+
+model Course {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String?   @db.Text
+  color       String    @default("#2340D9") // calendar color
+  grade       String? // e.g. "9-A"
+  teacherId   String
+  isPaid      Boolean   @default(false)
+  priceInPaise Int?
+  planId      String? // if access comes via a subscription plan
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  teacher      User           @relation("CourseTeacher", fields: [teacherId], references: [id])
+  plan         Plan?          @relation(fields: [planId], references: [id])
+  modules      Module[]
+  enrollments  Enrollment[]
+  classes      ClassSession[]
+  assignments  Assignment[]
+  quizzes      Quiz[]
+  threads      Thread[]
+  certificates Certificate[]
+  videos       Video[]
+
+  @@index([teacherId])
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  revokedAt   DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+}
+
+model Module {
+  id       String   @id @default(cuid())
+  courseId String
+  title    String
+  position Int
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+
+  @@index([courseId, position])
+}
+
+model Lesson {
+  id          String     @id @default(cuid())
+  moduleId    String
+  title       String
+  type        LessonType
+  position    Int
+  body        String?    @db.Text // markdown notes
+  url         String? // external link / slides
+  videoId     String?    @unique
+  publishedAt DateTime?
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  video       Video?     @relation(fields: [videoId], references: [id])
+  attachments Attachment[]
+  threads     Thread[]
+
+  @@index([moduleId, position])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  lessonId  String
+  fileName  String
+  mimeType  String
+  sizeBytes Int
+  storageKey String // R2 object key
+  createdAt DateTime @default(now())
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────── Live classes ───────────────────────────
+
+model ClassSession {
+  id                  String      @id @default(cuid())
+  courseId            String
+  hostId              String
+  title               String
+  agenda              String?     @db.Text
+  startsAt            DateTime
+  endsAt              DateTime
+  timezone            String      @default("Asia/Kolkata")
+  recurrenceRule      String? // RRULE the series was created with (informational)
+  seriesId            String? // Google recurringEventId; groups instances of one series (ADR-0007)
+  status              ClassStatus @default(SCHEDULED)
+  googleCalendarId    String      @default("primary")
+  googleEventId       String?
+  googleEventEtag     String?
+  meetLink            String?
+  meetConferenceId    String? // meeting code, e.g. abc-defg-hij
+  autoAttachRecording Boolean     @default(true)
+  notifyParents       Boolean     @default(true)
+  recordingSyncedAt   DateTime?
+  recordingSyncTries  Int         @default(0)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  host        User         @relation("ClassHost", fields: [hostId], references: [id])
+  attendances Attendance[]
+  videos      Video[]
+
+  @@unique([googleCalendarId, googleEventId])
+  @@index([seriesId])
+  @@index([courseId, startsAt])
+  @@index([hostId, startsAt])
+  @@index([status, endsAt])
+}
+
+model Attendance {
+  id              String           @id @default(cuid())
+  classSessionId  String
+  userId          String
+  joinedAt        DateTime?
+  leftAt          DateTime?
+  durationSeconds Int              @default(0)
+  present         Boolean          @default(false)
+  source          AttendanceSource
+  markedById      String?
+  classSession    ClassSession     @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classSessionId, userId])
+}
+
+// Google push-notification channels (Calendar events.watch / Drive changes.watch)
+model WatchChannel {
+  id         String   @id // channel id we generate (uuid)
+  resourceId String
+  kind       String // "calendar" | "drive"
+  userId     String
+  tokenHash  String // X-Goog-Channel-Token verifier
+  syncToken  String?  @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// ─────────────────────────── Video ───────────────────────────
+
+model Video {
+  id              String      @id @default(cuid())
+  title           String
+  source          VideoSource
+  status          VideoStatus @default(PENDING_UPLOAD)
+  uploaderId      String
+  courseId        String // access control: enrolled students + course teacher
+  classSessionId  String?
+  driveFileId     String?     @unique // for Meet recordings
+  uploadId        String? // S3 multipart upload id while PENDING_UPLOAD
+  mimeType        String?
+  rawKey          String? // R2 key of original
+  hlsPrefix       String? // R2 prefix holding master.m3u8
+  thumbnailKey    String?
+  durationSeconds Int?
+  sizeBytes       BigInt?
+  transcriptKey   String? // WebVTT
+  summary         String?     @db.Text // AI summary
+  error           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  uploader     User            @relation("VideoUploader", fields: [uploaderId], references: [id])
+  course       Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classSession ClassSession?   @relation(fields: [classSessionId], references: [id], onDelete: SetNull)
+  lesson       Lesson?
+  progress     VideoProgress[]
+  notes        VideoNote[]
+
+  @@index([status])
+  @@index([courseId])
+}
+
+model VideoProgress {
+  userId          String
+  videoId         String
+  positionSeconds Int      @default(0)
+  watchedSeconds  Int      @default(0)
+  completed       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video           Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@id([userId, videoId])
+}
+
+model VideoNote {
+  id         String   @id @default(cuid())
+  userId     String
+  videoId    String
+  atSeconds  Int
+  text       String?  @db.Text // null = bookmark only
+  isBookmark Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([userId, videoId])
+}
+
+// ─────────────────────────── Assignments & quizzes ───────────────────────────
+
+model Assignment {
+  id           String       @id @default(cuid())
+  courseId     String
+  title        String
+  instructions String       @db.Text
+  dueAt        DateTime
+  maxPoints    Int          @default(100)
+  allowFile    Boolean      @default(true)
+  allowText    Boolean      @default(true)
+  allowLate    Boolean      @default(false)
+  publishedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions  Submission[]
+
+  @@index([courseId, dueAt])
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  assignmentId String
+  userId       String
+  text         String?          @db.Text
+  fileKeys     String[]
+  status       SubmissionStatus @default(DRAFT)
+  submittedAt  DateTime?
+  score        Int?
+  feedback     String?          @db.Text
+  gradedById   String?
+  gradedAt     DateTime?
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+}
+
+model Quiz {
+  id           String         @id @default(cuid())
+  courseId     String
+  title        String
+  timeLimitSec Int?
+  dueAt        DateTime?
+  maxAttempts  Int            @default(1)
+  shuffle      Boolean        @default(true)
+  publishedAt  DateTime?
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+}
+
+model QuizQuestion {
+  id        String   @id @default(cuid())
+  quizId    String
+  prompt    String   @db.Text
+  options   String[]
+  correct   Int[] // indexes into options; >1 = multi-select
+  points    Int      @default(1)
+  position  Int
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id          String    @id @default(cuid())
+  quizId      String
+  userId      String
+  answers     Json // { [questionId]: number[] }
+  score       Int?
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  quiz        Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, userId])
+}
+
+// ─────────────────────────── Discussion ───────────────────────────
+
+model Thread {
+  id        String   @id @default(cuid())
+  courseId  String
+  lessonId  String?
+  title     String
+  isDoubt   Boolean  @default(false)
+  resolved  Boolean  @default(false)
+  atSeconds Int? // doubt tied to a video moment
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson    Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  posts     Post[]
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  threadId  String
+  authorId  String
+  body      String    @db.Text
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+  hiddenAt  DateTime? // moderation
+  thread    Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────── Notifications ───────────────────────────
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  channel   NotificationChannel
+  type      String // class.reminder.24h, assignment.graded, ...
+  title     String
+  body      String
+  link      String?
+  dedupeKey String?             @unique // e.g. "reminder:15m:<classId>:<userId>"
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+// ─────────────────────────── Payments (Razorpay) ───────────────────────────
+
+model Plan {
+  id               String         @id @default(cuid())
+  name             String
+  razorpayPlanId   String?        @unique
+  amountInPaise    Int
+  interval         String // monthly | yearly
+  trialDays        Int            @default(0)
+  active           Boolean        @default(true)
+  courses          Course[]
+  subscriptions    Subscription[]
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String // payer (parent or adult student)
+  beneficiaryId          String? // student who gets access
+  planId                 String
+  razorpaySubscriptionId String?            @unique
+  status                 SubscriptionStatus
+  currentPeriodEnd       DateTime?
+  cancelAt               DateTime?
+  createdAt              DateTime           @default(now())
+  user                   User               @relation(fields: [userId], references: [id])
+  plan                   Plan               @relation(fields: [planId], references: [id])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  courseId          String?
+  subscriptionId    String?
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  amountInPaise     Int
+  currency          String        @default("INR")
+  couponCode        String?
+  status            PaymentStatus @default(CREATED)
+  createdAt         DateTime      @default(now())
+  user              User          @relation(fields: [userId], references: [id])
+}
+
+model Coupon {
+  code        String    @id
+  percentOff  Int?
+  amountOff   Int? // paise
+  maxRedeems  Int?
+  redeemed    Int       @default(0)
+  expiresAt   DateTime?
+}
+
+model WebhookEvent {
+  id         String   @id // provider event id → idempotency
+  provider   String
+  type       String
+  receivedAt DateTime @default(now())
+}
+
+// ─────────────────────────── Certificates & audit ───────────────────────────
+
+model Certificate {
+  id         String   @id @default(cuid())
+  userId     String
+  courseId   String
+  serial     String   @unique
+  pdfKey     String
+  issuedAt   DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String // e.g. "class.create", "grade.update", "user.delete"
+  targetType String
+  targetId   String
+  meta       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
