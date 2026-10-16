@@ -1,8 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { addVideoLesson, makeDeps, world } from "@/test/fakes";
-import { createUsers } from "./admin-users";
-import { getChildProgress, linkByConsentEmail, linkChild, listChildren, unlinkChild } from "./parents";
+import { getChildProgress, linkChild, listChildren, unlinkChild } from "./parents";
 import { saveProgress } from "./videos";
 
 describe("parents (integration)", () => {
@@ -96,29 +94,5 @@ describe("parents (integration)", () => {
 
     await unlinkChild(deps, w.admin, link.id);
     expect((await listChildren(deps, w.parent)).map((c) => c.id)).toEqual([w.student.id]);
-  });
-
-  it("links a parent account to the students whose consent that email gave", async () => {
-    const w = await world();
-    const deps = makeDeps();
-    const parentEmail = `mum-${randomUUID().slice(0, 8)}@test.local`;
-    await deps.db.consent.create({
-      data: {
-        userId: w.outsider.id,
-        type: "PARENTAL_VERIFIABLE",
-        version: "test",
-        method: "parent-email-link",
-        parentEmail,
-      },
-    });
-    expect(await linkByConsentEmail(deps.db, parentEmail, deps.now())).toBe(0); // no parent account yet
-
-    // The admin adds the parent later: the link appears at once.
-    await createUsers(deps, w.admin, { users: [{ email: parentEmail, name: "Mum", role: "PARENT" }] });
-    const parent = await deps.db.user.findUniqueOrThrow({ where: { email: parentEmail } });
-    const links = await deps.db.parentLink.findMany({ where: { parentId: parent.id } });
-    expect(links).toHaveLength(1);
-    expect(links[0]).toMatchObject({ studentId: w.outsider.id });
-    expect(links[0]!.verifiedAt).not.toBeNull();
   });
 });

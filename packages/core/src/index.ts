@@ -1,5 +1,4 @@
 export * from "./attendance";
-export * from "./consent";
 export * from "./crypto";
 export * from "./errors";
 export * from "./grading";

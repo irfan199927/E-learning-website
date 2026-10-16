@@ -54,10 +54,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Open Google sign-up; students ask to join courses, teachers approve (`JoinRequest`); teachers create courses
 - [x] Admin Users page (`/admin/users`): add one or CSV import with email invites, roles, switch off/on; course
       roster with Remove
-- [x] Parental consent (DPDP): DOB at first sign-in, minors browse but can't join until a parent consents by
-      emailed single-use link; `Consent` + `ConsentRequest`
-- [ ] Recording consent (`ConsentType.RECORDING`) and self-service consent withdrawal for parents; a search box for
-      long course catalogs
+- [x] ~~Parental consent~~: removed (2026-10-16). Students are all 18+, so no date of birth or parent approval
+- [ ] Recording consent (`ConsentType.RECORDING`); a search box for long course catalogs
 - [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
       lesson page with Mark as done; course pages follow Module/Lesson order
 - [ ] Rich text for readings (Markdown with a sanitiser); drag-and-drop reordering; video lesson re-upload
@@ -71,8 +69,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
 - [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
-      parents on the Users page, and consent links a parent who has an account
-- [ ] Parents: withdraw consent and request deletion (SPEC P2)
+      parents on the Users page
+- [ ] Self-service account deletion requests (the purge job exists; there's no request UI)
 - [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)

@@ -5,6 +5,16 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Removed — parental consent (2026-10-16)
+
+- Students are all adults (18+), so the parental-consent flow is gone: no date-of-birth step at `/welcome`, no
+  parent approval email or `/consent/:token` page, and no "Needs your parent's approval" block on joining courses.
+  Students ask to join and teachers approve, nothing else.
+- The admin Users page no longer shows "Under 18" badges. Parents are still linked to students by an admin.
+- Migration `remove_parental_consent` drops `ConsentRequest`, `User.dateOfBirth`/`isMinor` and the parent
+  name/email on `Consent` (data minimisation: nothing uses them now).
+- API removed: `POST /api/v1/me/date-of-birth`, `POST /api/v1/me/parent-consent`, `POST /api/v1/consent/:token`.
+
 ### Added — in-app notifications (2026-10-16)
 
 - A bell in the top bar with an unread badge, and `/notifications`: newest first (50 per page), opening one marks

@@ -6,15 +6,14 @@
 import {
   assertCan,
   Errors,
-  isMinorOn,
   type CreateUsersInput,
   type ListUsersQuery,
   type UpdateUserInput,
 } from "@elearner/core";
-import { ConsentType, Role } from "@elearner/db";
+import { Role } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
-import { linkByConsentEmail, type ParentLinkRow } from "./parents";
+import type { ParentLinkRow } from "./parents";
 
 export const USERS_PAGE_SIZE = 50;
 
@@ -28,8 +27,6 @@ export interface AdminUserRow {
   hasGoogle: boolean;
   createdAt: Date;
   courseCount: number;
-  /** Students only: under 18 (from their date of birth), and whether a parent's consent is on file. */
-  minor: null | { consent: boolean };
   /** Parents only: the students they're linked to. */
   children: ParentLinkRow[] | null;
 }
@@ -63,13 +60,7 @@ export async function listUsers(
         role: true,
         isActive: true,
         createdAt: true,
-        dateOfBirth: true,
         accounts: { select: { providerId: true } },
-        consents: {
-          where: { type: ConsentType.PARENTAL_VERIFIABLE, withdrawnAt: null },
-          select: { id: true },
-          take: 1,
-        },
         _count: { select: { enrollments: { where: { revokedAt: null } }, coursesTaught: true } },
         parentLinks: {
           where: { verifiedAt: { not: null } },
@@ -96,10 +87,6 @@ export async function listUsers(
       hasPassword: u.accounts.some((a) => a.providerId === "credential"),
       hasGoogle: u.accounts.some((a) => a.providerId === "google"),
       courseCount: u.role === Role.TEACHER ? u._count.coursesTaught : u._count.enrollments,
-      minor:
-        u.role === Role.STUDENT && u.dateOfBirth && isMinorOn(u.dateOfBirth, deps.now())
-          ? { consent: u.consents.length > 0 }
-          : null,
       children:
         u.role === Role.PARENT
           ? u.parentLinks.map((l) => ({
@@ -189,8 +176,6 @@ export async function createUsers(
       select: { id: true },
     });
     await audit(deps.db, actor, "user.create", { type: "User", id: user.id }, { role: u.role });
-    // A parent whose email already gave consent for a student is linked to that student.
-    if (u.role === Role.PARENT) await linkByConsentEmail(deps.db, u.email, deps.now());
     try {
       await deps.sendPasswordSetup(u.email);
       results.push({ email: u.email, status: "created" });
