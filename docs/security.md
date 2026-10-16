@@ -185,6 +185,7 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `enrollment.remove` (a teacher removes a student from a course)
 - `user.dob`, `consent.request`, `consent.grant` (parental consent; the grant has no actor because the parent has
   no account)
+- `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)
 - `course.update`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
   `attachment.create`, `attachment.delete` (course editing)
 

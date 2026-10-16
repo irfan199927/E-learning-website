@@ -14,6 +14,7 @@ import {
 import { ConsentType, Role } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
+import { linkByConsentEmail, type ParentLinkRow } from "./parents";
 
 export const USERS_PAGE_SIZE = 50;
 
@@ -29,6 +30,8 @@ export interface AdminUserRow {
   courseCount: number;
   /** Students only: under 18 (from their date of birth), and whether a parent's consent is on file. */
   minor: null | { consent: boolean };
+  /** Parents only: the students they're linked to. */
+  children: ParentLinkRow[] | null;
 }
 
 export async function listUsers(
@@ -68,6 +71,11 @@ export async function listUsers(
           take: 1,
         },
         _count: { select: { enrollments: { where: { revokedAt: null } }, coursesTaught: true } },
+        parentLinks: {
+          where: { verifiedAt: { not: null } },
+          select: { id: true, student: { select: { id: true, name: true, email: true } } },
+          orderBy: { student: { name: "asc" } },
+        },
       },
       orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       skip: (query.page - 1) * USERS_PAGE_SIZE,
@@ -91,6 +99,15 @@ export async function listUsers(
       minor:
         u.role === Role.STUDENT && u.dateOfBirth && isMinorOn(u.dateOfBirth, deps.now())
           ? { consent: u.consents.length > 0 }
+          : null,
+      children:
+        u.role === Role.PARENT
+          ? u.parentLinks.map((l) => ({
+              id: l.id,
+              studentId: l.student.id,
+              name: l.student.name,
+              email: l.student.email,
+            }))
           : null,
     })),
   };
@@ -172,6 +189,8 @@ export async function createUsers(
       select: { id: true },
     });
     await audit(deps.db, actor, "user.create", { type: "User", id: user.id }, { role: u.role });
+    // A parent whose email already gave consent for a student is linked to that student.
+    if (u.role === Role.PARENT) await linkByConsentEmail(deps.db, u.email, deps.now());
     try {
       await deps.sendPasswordSetup(u.email);
       results.push({ email: u.email, status: "created" });

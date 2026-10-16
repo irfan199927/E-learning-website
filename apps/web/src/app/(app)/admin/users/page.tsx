@@ -124,6 +124,7 @@ export default async function AdminUsersPage({
                   needsInvite: !u.hasPassword && !u.hasGoogle,
                   isSelf: u.id === actor.id,
                   minor: u.minor,
+                  children: u.children,
                   meta: [
                     u.role === "TEACHER" && `${plural(u.courseCount, "course")} taught`,
                     u.role === "STUDENT" && plural(u.courseCount, "course"),

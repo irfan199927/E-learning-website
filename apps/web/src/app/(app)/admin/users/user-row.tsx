@@ -6,6 +6,7 @@ import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
+import { ParentChildren, type ChildLink } from "./parent-children";
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: "STUDENT", label: "Student" },
@@ -23,6 +24,8 @@ export interface UserRowData {
   needsInvite: boolean;
   isSelf: boolean;
   minor: null | { consent: boolean };
+  /** Parents only. */
+  children: ChildLink[] | null;
   meta: string;
 }
 
@@ -96,6 +99,9 @@ export function UserRow({ user }: { user: UserRowData }) {
         </p>
         <p className="truncate text-sm text-muted">{user.email}</p>
         <p className="text-sm text-muted">{user.meta}</p>
+        {user.children && role === "PARENT" && (
+          <ParentChildren parentId={user.id} parentName={user.name} links={user.children} />
+        )}
         {note && (
           <div className="mt-2">
             <FormAlert tone={note.tone}>{note.text}</FormAlert>

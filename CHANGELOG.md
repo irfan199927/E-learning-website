@@ -5,6 +5,24 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — parent progress view (2026-10-16)
+
+- **My children** for parents (`/children`, and a "Your children" section on the Overview): one card per linked
+  child with streak, today's minutes, lessons done and courses.
+- **A child's page** (`/children/:id`, read-only): Today's progress, Monthly progress, progress per course, and
+  live-class attendance for the last 30 days. It reuses the learner read models, computed in the child's
+  timezone, so parents see the same numbers as the child.
+- **Linking parents and children:**
+  - automatic when a parent with an account consents from the emailed link, or when an admin adds a parent
+    account whose email already gave consent;
+  - by hand on the Users page: **Link a student** (by email) and **Unlink** on parent rows.
+- Only verified `ParentLink`s count; any other child id is a 404.
+- API: `GET /api/v1/children`, `GET /api/v1/children/:id`, `POST /api/v1/admin/users/:id/children`,
+  `DELETE /api/v1/admin/parent-links/:id`. Audited as `parent.link` and `parent.unlink`.
+- "Today's progress" and "Monthly progress" moved to `components/learner-progress.tsx` so both views share them.
+- Tests: 3 integration tests (progress and attendance, access rules, admin linking, linking from consent); 2 e2e
+  tests (a parent's read-only view and 404 for other ids; an admin links a new student and unlinks them).
+
 ### Added — course editing: modules, lessons and files (2026-10-16)
 
 - **Edit course** (`/courses/:id/edit`, the course teacher and admins):

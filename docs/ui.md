@@ -41,6 +41,7 @@ list.
 | ------------ | ----------------- | ------------------------------------------------- |
 | Overview     | `/dashboard`      | all                                               |
 | My courses   | `/courses`        | student ("Courses" for teacher/admin), not parent |
+| My children  | `/children`       | parent                                            |
 | Calendar     | `/calendar`       | all                                               |
 | Upload video | `/library/upload` | teacher, admin                                    |
 
@@ -56,7 +57,19 @@ list.
   - Upcoming classes in the right column (below the other cards on narrow screens).
 - **Teacher and admin:** the Connect Google prompt (when there is no grant), upcoming classes with Join
   buttons, and "Your courses" (student and lesson counts).
-- **Parent:** upcoming classes for their verified children, read-only, with no Join button.
+- **Parent:** **Your children** (one card per linked child: streak, today's minutes, lessons done, courses, and
+  **See progress**), then upcoming classes for their children, read-only, with no Join button.
+
+### My children (`/children`, `/children/:childId`, parents)
+
+- `/children` lists the same child cards as the Overview, or explains how children get linked.
+- A child's page is read-only and shows the numbers the child sees: streak, **Today's progress**, **Monthly
+  progress** (browsable by month), each course's progress (lessons done, state, last active), and **Live
+  classes, last 30 days** with Attended / Missed / Not recorded (attendance comes from Google Meet).
+- Any child id that isn't the parent's own verified child is a plain 404.
+- Parents get linked to a child when they consent from the emailed link while having an account with that
+  email, when an admin adds a parent account whose email already consented, or by an admin on the Users page
+  (**Link a student** by email; **Unlink**).
 
 ### My courses (`/courses`)
 

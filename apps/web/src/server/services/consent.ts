@@ -8,7 +8,8 @@
  *    the school stores. They confirm they're the parent or guardian, and a `Consent` row records who (name and
  *    email), when, from where (IP), how ("parent-email-link") and which notice version they saw.
  *
- * Only the SHA-256 of the link token is stored. A parent needs no account.
+ * Only the SHA-256 of the link token is stored. A parent needs no account; if they have one (same email), the
+ * consent also links them to the child (parents.ts).
  */
 import { randomBytes } from "node:crypto";
 import {
@@ -25,6 +26,7 @@ import { ConsentType, Role, type Db } from "@elearner/db";
 import { templates } from "@elearner/notify";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
+import { linkByConsentEmail } from "./parents";
 
 export type ConsentState =
   /** Not a student, or an adult student: nothing to do. */
@@ -218,6 +220,8 @@ export async function grantConsent(
       },
     });
   });
+  // A parent who already has an account now sees this child (the emailed link proved the address).
+  await linkByConsentEmail(deps.db, request.parentEmail, now);
   await audit(
     deps.db,
     null,

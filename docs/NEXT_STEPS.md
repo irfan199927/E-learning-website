@@ -70,8 +70,10 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       exists; add real (consented) student work or testimonials if the school has them
 - [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
 - [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
-- [ ] Parent view of a child's progress (lessons completed, streak) — read-only, per verified ParentLink
-- [ ] Per-school daily watch goal (now a 30-min constant in `dashboard/page.tsx`)
+- [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
+      parents on the Users page, and consent links a parent who has an account
+- [ ] Parents: withdraw consent and request deletion (SPEC P2); grades once assignments exist
+- [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)
 - [ ] Assignments & MCQ quizzes; teacher attendance page with manual override
