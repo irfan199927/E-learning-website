@@ -18,6 +18,7 @@
 | F7  | Playback only for enrolled users; resume position; watch time                  | `getHlsFile()`, `saveProgress()`                           |
 | F8  | Attendance from Meet participant sessions; manual override wins                | `syncAttendance()`                                         |
 | F9  | Calendar views, drag-reschedule, .ics export, two-way Google sync              | `calendar/class-calendar.tsx`, `jobs/calendar-sync.ts`     |
+| F10 | Learner progress: course cards, resume card, daily watch time, streak, month   | `server/services/learning.ts`, `docs/ui.md`                |
 
 ### Non-functional
 
@@ -155,8 +156,14 @@ User ─< Enrollment >─ Course ─< Module ─< Lesson ──o Video
  ├─< ParentLink >─ User ├─< ClassSession ─< Attendance
  ├─o GoogleCredential   │       └──< Video (Meet recordings)
  ├─< Account/Session    └─< Assignment/Quiz …
+ ├─< VideoProgress >─ Video        (per video: position, watched seconds, completed)
+ ├─< LearningDay                   (per learner per local day: watched seconds)
  └─< Notification (dedupeKey unique) · AuditLog · WatchChannel
 ```
+
+`LearningDay.day` is the learner's own calendar date (`User.timezone`), written by `saveProgress()` from the
+same capped `watchedDeltaSeconds` as `VideoProgress`. Streaks and the monthly activity calendar read only this
+table (one indexed range scan per page view), never the raw progress beacons.
 
 Invariants enforced by the database, not just code: one enrollment per (user, course); one attendance per
 (class, user); one ClassSession per Google event instance (`@@unique([googleCalendarId, googleEventId])`);

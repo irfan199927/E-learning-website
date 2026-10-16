@@ -7,7 +7,7 @@ Context for Claude Code (and humans) working in this repo. Read this first.
 School e-learning platform: teachers schedule live classes on Google Meet, recordings sync from Drive into a gated
 HLS video library, students join/watch/track progress, parents get read-only views. India-first (Asia/Kolkata,
 DPDP Act, K-12 minors). Full product spec: `docs/SPEC.md`. UI design: the "E-learner" Design canvas (design system,
-student dashboard, teacher calendar, lesson player, mobile, architecture).
+student dashboard, teacher calendar, lesson player, mobile, architecture) and `docs/ui.md` (shell, screens, UI rules).
 
 ## Layout (pnpm + Turborepo monorepo)
 
@@ -62,11 +62,20 @@ pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs produ
   listed in `apps/worker/package.json` on purpose.
 - Prisma 7: `prisma.config.ts` holds the datasource URL; generated client lives in `packages/db/src/generated` (gitignored).
 - Initial migration `20261015000000_init` has not been deployed anywhere yet; after first deploy, never edit it — add new migrations.
+- Streak / activity days are the learner's LOCAL date (`localDayKey(now, actor.timezone)`), stored in `LearningDay.day`
+  (`@db.Date`). Never bucket learner activity by UTC day.
+- Playwright starts the server with `APP_URL=http://localhost:3100` (playwright.config.ts). If APP_URL doesn't match
+  the browser's origin, Better Auth returns 403 and the sign-in form shows "Confirm your email first".
+- Integration tests share the dev database: fixture ids/slugs/Google event ids must be unique per run (`randomUUID`).
+- Mobile nav drawer must stay `invisible` when closed, or its off-screen links remain in the tab order.
 
 ## Status (end of first build session)
 
 Done & verified: monorepo, schema + migration, all packages, web API + UI (sign-in, reset, dashboard, calendar w/
 scheduling + drag reschedule, upload, player), worker jobs. 89 tests green (52 unit + 23 integration on real Postgres incl.
 real ffmpeg + 14 Playwright e2e desktop/mobile); lint + prettier clean), web production build + worker build pass.
+
+Learner redesign (2026-10-16): sidebar/drawer shell, streak, student Overview (resume card, today's progress, monthly
+activity), My courses with filters, course pages. UI rules and per-role screens: `docs/ui.md`. History: `CHANGELOG.md`.
 
 See `docs/NEXT_STEPS.md` for what's left.
