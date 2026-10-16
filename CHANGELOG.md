@@ -5,6 +5,21 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — light/dark theme switch and a light landing page (2026-10-16)
+
+- **Theme switch** on every page: the landing header, the app top bar and the sign-in pages.
+  - The choice is kept in a cookie and rendered on the server, so there's no flash of the wrong theme.
+  - With no choice, the site follows the OS.
+  - Switching animates as a circle growing from the button.
+- **Light landing page**, now the default for light-mode visitors:
+  - product-launch style with huge heavy headlines;
+  - a blue → violet → pink → orange gradient through the CODE letters;
+  - frosted header, soft-shadow cards and pill buttons.
+  - The terminal look stays as the dark theme.
+- **Fixed:** in dark mode, brand-blue text (active sidebar item, links) was hard to read. New `primary-fg` tokens keep
+  it readable in both themes.
+- e2e: the switch flips the theme, updates `aria-pressed`, and the server renders the saved choice after reload.
+
 ### Added — public landing page (2026-10-16)
 
 - `/` is now an animated landing page advertising a sample coding course ("Code Foundations"). It used to be a

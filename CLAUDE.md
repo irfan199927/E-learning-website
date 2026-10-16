@@ -80,6 +80,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
 - `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
+- Theme: `<html data-theme>` comes from the `theme` cookie (root layout); none = follow the OS. Dark tokens exist twice
+  (explicit + media query); change both. Brand blue as text = `text-primary-fg`, never `text-primary`.
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 

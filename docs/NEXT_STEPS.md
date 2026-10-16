@@ -51,6 +51,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       `apps/web/src/app/(marketing)/course.ts`
 - [ ] Replace the sample landing copy with a real course, or render it from a published `Course` once course CRUD
       exists; add real (consented) student work or testimonials if the school has them
+- [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
 - [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [ ] Parent view of a child's progress (lessons completed, streak) — read-only, per verified ParentLink
 - [ ] Per-school daily watch goal (now a 30-min constant in `dashboard/page.tsx`)

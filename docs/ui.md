@@ -102,7 +102,7 @@ dashboard** instead. The signed-in app keeps its own design system; the landing 
 | Hero: scroll-driven camera through the word CODE                                      | `src/components/landing/hero-portal.tsx` wraps `src/components/ui/glyph-portal.tsx` |
 | Scroll reveal, typing editor, sticky header                                           | `src/components/landing/{reveal,typing-terminal,site-header}.tsx`                   |
 
-**Design direction.** It comes from the ui-ux-pro-max skill's design-system search for "coding bootcamp developer
+**Design direction.** The dark theme comes from the ui-ux-pro-max skill's design-system search for "coding bootcamp developer
 course teens":
 
 - a dark "terminal" style;
@@ -132,6 +132,33 @@ The projects students build serve as the proof instead.
   and the marquee wraps instead of scrolling. This is tested in `e2e/landing.spec.ts`.
 - **No JavaScript.** `Reveal` hides content only under `@media (scripting: enabled)`, so it never disappears for
   visitors without JavaScript.
+
+## Themes (light / dark)
+
+Every page has a theme switch: the landing page header, the app's top bar, and the sign-in pages.
+
+- **Storage.** No choice means the site follows the OS (`prefers-color-scheme`). Clicking the switch stores
+  `theme=light|dark` in a cookie for one year. The root layout reads it and renders `<html data-theme>`, so the
+  server sends the right theme and there's no flash. This avoids an inline pre-hydration script, which the nonce CSP
+  would also need to approve.
+- **Hydration.** `ThemeToggle` (`src/components/theme-toggle.tsx`) renders both icons and lets CSS pick one, so the
+  server HTML always matches the client. `aria-pressed` reports whether dark mode is on.
+- **Switch animation.** Where the View Transitions API exists, the new theme grows as a circle from the button. With
+  reduced motion it switches instantly.
+- **CSS.** Dark values live in two identical blocks, `:root[data-theme="dark"]` and `@media (prefers-color-scheme:
+dark) { :root:not([data-theme="light"]) }`. Change both together. This applies to the app (`globals.css`) and to the
+  landing page (`landing.css`).
+- **Brand blue as text.** Use `text-primary-fg` / `text-primary-fg-strong`, never `text-primary`: the brand blue is
+  unreadable on dark surfaces. `bg-primary` (white text on blue) is fine in both themes.
+
+**Landing page in each theme:**
+
+- **Light** (product-launch style): white space, near-black heavy sans headlines (Figtree 900, tight tracking), one
+  vivid blue → violet → pink → orange gradient (CODE letters, numbers, logo), soft-shadow 28 px cards, a frosted
+  header, black pill buttons, and alternating `#f5f5f7` bands.
+- **Dark:** the terminal look: JetBrains Mono headlines and a green action color.
+- **Both:** the code editor stays dark. The hero re-mounts the portal with the matching font when the theme changes,
+  because it measures the letters once at mount.
 
 ## Streak rules
 
