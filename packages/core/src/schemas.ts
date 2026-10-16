@@ -244,6 +244,11 @@ export type InitAttachmentInput = z.infer<typeof initAttachmentSchema>;
 export const completeAttachmentSchema = z.object({ attachmentId: z.string().uuid(), ...attachmentFile });
 export type CompleteAttachmentInput = z.infer<typeof completeAttachmentSchema>;
 
+export const linkChildSchema = z.object({
+  studentEmail: z.string().trim().toLowerCase().email("Enter the student's email address.").max(254),
+});
+export type LinkChildInput = z.infer<typeof linkChildSchema>;
+
 export const joinRequestSchema = z.object({
   message: z.string().trim().max(500, "Keep the note under 500 characters.").optional(),
 });

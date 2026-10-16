@@ -101,6 +101,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   (uploads, recordings), else it's a staff-only "loose video". Completion = VideoProgress for videos,
   LessonProgress ticks otherwise. Attachments: presigned PUT, then `completeAttachment` rebuilds the key and
   checks the real size; downloads redirect with `Content-Disposition: attachment`.
+- Parents see children only through a VERIFIED `ParentLink` (`services/parents.ts`); the child view reuses the
+  learner read models with the child as the Actor (child's timezone). Links come from consent (parent with an
+  account), admin-created parent accounts (`linkByConsentEmail`) or the Users page.
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is

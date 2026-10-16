@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
     roles: ["ADMIN", "TEACHER", "STUDENT"],
     match: /^\/library\/(?!upload)/,
   },
+  { href: "/children", label: "My children", icon: "users", roles: ["PARENT"] },
   {
     href: "/calendar",
     label: "Calendar",
