@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = "Password123!";
@@ -79,11 +80,34 @@ test("a teacher sets an assignment and a quiz; the student does both; grades rea
   await page.goto(quizUrl);
   await expect(page.getByRole("row").filter({ hasText: "Aanya Sharma" })).toContainText("1/1");
 
+  // ── Teacher: the gradebook, and its CSV ──
+  await openMaths(page);
+  await page.getByRole("link", { name: "Gradebook" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Gradebook" })).toBeVisible();
+  const headers = await page.getByRole("columnheader").allTextContents();
+  const col = (title: string) => headers.findIndex((h) => h.includes(title)) - 1; // minus "Student"
+  const aanya = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "Aanya Sharma" }) });
+  await expect(aanya.getByRole("cell").nth(col(essay))).toHaveText("18");
+  await expect(aanya.getByRole("cell").nth(col(quiz))).toHaveText("1");
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Download CSV" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^grades-Mathematics-Grade-9-A-.*\.csv$/);
+  const csv = await readFile((await download.path())!, "utf8");
+  expect(csv).toContain(`${essay} (assignment, out of 20)`);
+  expect(csv).toMatch(/Aanya Sharma,aanya@school\.edu,/);
+
   // ── Student sees the grade; the parent sees both ──
   await signIn(page, "aanya@school.edu");
   await page.goto(essayUrl);
   await expect(page.getByText("18/20")).toBeVisible();
   await expect(page.getByText("Clear and correct.")).toBeVisible();
+  await openMaths(page);
+  await page.getByRole("link", { name: "My grades" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "My grades" })).toBeVisible();
+  await expect(page.getByRole("link", { name: new RegExp(essay) })).toContainText("18/20");
+  await expect(page.getByRole("link", { name: new RegExp(quiz) })).toContainText("1/1");
 
   await signIn(page, "parent@example.com");
   await page.getByRole("link", { name: "See Aanya Sharma's progress" }).click();

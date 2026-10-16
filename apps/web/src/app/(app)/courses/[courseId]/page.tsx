@@ -87,6 +87,15 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
               >
                 <div className="h-full rounded-full bg-success" style={{ width: `${course.percent}%` }} />
               </div>
+              {(assignments.length > 0 || quizzes.length > 0) && (
+                <Link
+                  href={`/courses/${course.id}/grades`}
+                  className="mt-3 flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
+                >
+                  My grades
+                  <Icon name="chevronRight" size={16} />
+                </Link>
+              )}
             </div>
           )}
           {course.canManage && (
@@ -98,6 +107,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
               <Link href={`/library/upload?course=${course.id}`} className={buttonClasses("secondary")}>
                 <Icon name="upload" size={18} />
                 Upload video
+              </Link>
+              <Link href={`/courses/${course.id}/grades`} className={buttonClasses("secondary")}>
+                <Icon name="users" size={18} />
+                Gradebook
               </Link>
             </div>
           )}
