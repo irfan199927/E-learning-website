@@ -90,6 +90,80 @@ export interface ChildProgress {
   overview: LearnerOverview;
   courses: CourseCard[];
   attendance: { rows: AttendanceRow[]; attended: number; recorded: number };
+  /** Graded assignments and best quiz scores in the child's current courses, newest first. */
+  grades: GradeRow[];
+}
+
+export interface GradeRow {
+  kind: "assignment" | "quiz";
+  id: string;
+  title: string;
+  courseTitle: string;
+  score: number;
+  max: number;
+  at: Date;
+}
+
+/** Graded work and best quiz attempts for a student's current courses. */
+async function gradesFor(deps: Deps, studentId: string): Promise<GradeRow[]> {
+  const inMyCourses = { course: { enrollments: { some: { userId: studentId, revokedAt: null } } } };
+  const [subs, attempts] = await Promise.all([
+    deps.db.submission.findMany({
+      where: { userId: studentId, status: "GRADED", score: { not: null }, assignment: inMyCourses },
+      select: {
+        score: true,
+        gradedAt: true,
+        assignment: {
+          select: { id: true, title: true, maxPoints: true, course: { select: { title: true } } },
+        },
+      },
+      take: 200,
+    }),
+    deps.db.quizAttempt.findMany({
+      where: { userId: studentId, submittedAt: { not: null }, quiz: inMyCourses },
+      select: {
+        score: true,
+        submittedAt: true,
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            course: { select: { title: true } },
+            questions: { select: { points: true } },
+          },
+        },
+      },
+      take: 500,
+    }),
+  ]);
+  const best = new Map<string, GradeRow>();
+  for (const a of attempts) {
+    const row: GradeRow = {
+      kind: "quiz",
+      id: a.quiz.id,
+      title: a.quiz.title,
+      courseTitle: a.quiz.course.title,
+      score: a.score ?? 0,
+      max: a.quiz.questions.reduce((n, q) => n + q.points, 0),
+      at: a.submittedAt!,
+    };
+    const prev = best.get(a.quiz.id);
+    if (!prev || row.score > prev.score) best.set(a.quiz.id, row);
+  }
+  return [
+    ...subs.map(
+      (s): GradeRow => ({
+        kind: "assignment",
+        id: s.assignment.id,
+        title: s.assignment.title,
+        courseTitle: s.assignment.course.title,
+        score: s.score!,
+        max: s.assignment.maxPoints,
+        at: s.gradedAt ?? new Date(0),
+      }),
+    ),
+    ...best.values(),
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
 }
 
 /** One child's progress. Only for a parent with a verified link to that child. */
@@ -105,7 +179,7 @@ export async function getChildProgress(
   const learner = asLearner(child);
   const now = deps.now();
 
-  const [overview, courses, classes] = await Promise.all([
+  const [overview, courses, classes, grades] = await Promise.all([
     getLearnerOverview(deps, learner, opts),
     listMyCourses(deps, learner),
     // The child's current courses' classes.
@@ -126,6 +200,7 @@ export async function getChildProgress(
       orderBy: { startsAt: "desc" },
       take: 100,
     }),
+    gradesFor(deps, child.id),
   ]);
 
   const rows: AttendanceRow[] = classes.map((c) => {
@@ -148,6 +223,7 @@ export async function getChildProgress(
       attended: rows.filter((r) => r.present === true).length,
       recorded: rows.filter((r) => r.present !== null).length,
     },
+    grades,
   };
 }
 

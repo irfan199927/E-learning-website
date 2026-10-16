@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { ROLES } from "./rbac";
+import { MAX_SUBMISSION_FILES, SUBMISSION_FILE_MAX_BYTES } from "./grading";
 import { WEEKDAYS } from "./rrule";
 import { isValidTimeZone } from "./time";
 
@@ -277,6 +278,102 @@ export const linkChildSchema = z.object({
   studentEmail: z.string().trim().toLowerCase().email("Enter the student's email address.").max(254),
 });
 export type LinkChildInput = z.infer<typeof linkChildSchema>;
+
+// ── Assignments ──
+
+const assignmentFields = {
+  title: z.string().trim().min(3, "Title is too short.").max(160),
+  instructions: z.string().trim().min(1, "Tell students what to do.").max(20_000),
+  dueAt: isoDate,
+  maxPoints: z.coerce.number().int().min(1, "At least 1 point.").max(1000),
+  allowText: z.boolean(),
+  allowFile: z.boolean(),
+  allowLate: z.boolean(),
+  published: z.boolean(),
+};
+
+export const createAssignmentSchema = z.object(assignmentFields).refine((v) => v.allowText || v.allowFile, {
+  path: ["allowText"],
+  message: "Allow a text answer, files, or both.",
+});
+export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
+
+export const updateAssignmentSchema = z
+  .object(assignmentFields)
+  .partial()
+  .refine((v) => Object.values(v).some((x) => x !== undefined), "Nothing to change.")
+  .refine((v) => !(v.allowText === false && v.allowFile === false), {
+    path: ["allowText"],
+    message: "Allow a text answer, files, or both.",
+  });
+export type UpdateAssignmentInput = z.infer<typeof updateAssignmentSchema>;
+
+export const initSubmissionFileSchema = z.object({
+  fileName: z.string().trim().min(1).max(200),
+  mimeType: z.enum(ATTACHMENT_MIME_TYPES, {
+    errorMap: () => ({
+      message: "That file type can't be uploaded. Use PDF, Office, text, image or zip files.",
+    }),
+  }),
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(SUBMISSION_FILE_MAX_BYTES, `Files can be at most ${SUBMISSION_FILE_MAX_BYTES / 1024 ** 2} MB.`),
+});
+export type InitSubmissionFileInput = z.infer<typeof initSubmissionFileSchema>;
+
+export const submitAssignmentSchema = z.object({
+  text: z.string().trim().max(50_000, "Keep the answer under 50,000 characters.").optional(),
+  fileKeys: z.array(z.string().min(1).max(400)).max(MAX_SUBMISSION_FILES).default([]),
+});
+/** `z.input`: fileKeys may be omitted (defaults to none). */
+export type SubmitAssignmentInput = z.input<typeof submitAssignmentSchema>;
+
+export const gradeSubmissionSchema = z.object({
+  score: z.coerce.number().int().min(0, "The score can't be negative."),
+  feedback: z.string().trim().max(10_000).optional(),
+});
+export type GradeSubmissionInput = z.infer<typeof gradeSubmissionSchema>;
+
+// ── MCQ quizzes ──
+
+export const MAX_QUIZ_QUESTIONS = 100;
+
+export const quizQuestionSchema = z
+  .object({
+    prompt: z.string().trim().min(1, "Write the question.").max(2000),
+    options: z
+      .array(z.string().trim().min(1, "Options can't be empty.").max(500))
+      .min(2, "Give at least 2 options.")
+      .max(6, "At most 6 options."),
+    correct: z.array(z.number().int().min(0)).min(1, "Mark at least one correct option."),
+    points: z.coerce.number().int().min(1).max(100).default(1),
+  })
+  .refine((q) => q.correct.every((i) => i < q.options.length), {
+    path: ["correct"],
+    message: "A correct answer points at an option that doesn't exist.",
+  });
+
+export const saveQuizSchema = z.object({
+  title: z.string().trim().min(3, "Title is too short.").max(160),
+  /** Minutes; empty = untimed. */
+  timeLimitMinutes: z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce.number().int().min(1).max(300).optional(),
+  ),
+  dueAt: z.preprocess((v) => (v === "" || v === null ? undefined : v), isoDate.optional()),
+  maxAttempts: z.coerce.number().int().min(1).max(10).default(1),
+  shuffle: z.boolean().default(true),
+  published: z.boolean().default(false),
+  questions: z.array(quizQuestionSchema).min(1, "Add at least one question.").max(MAX_QUIZ_QUESTIONS),
+});
+export type SaveQuizInput = z.infer<typeof saveQuizSchema>;
+
+export const submitQuizSchema = z.object({
+  answers: z.record(z.string().max(64), z.array(z.number().int().min(0).max(9)).max(6)),
+});
+export type SubmitQuizInput = z.infer<typeof submitQuizSchema>;
 
 export const joinRequestSchema = z.object({
   message: z.string().trim().max(500, "Keep the note under 500 characters.").optional(),

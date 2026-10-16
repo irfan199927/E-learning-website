@@ -107,6 +107,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Classes without Google (`meeting: "none"`): no googleEventId/meetConferenceId, room in `location`, optional
   pasted link in `meetLink`; series expanded locally (`expandWeekly`). Reschedule/cancel only call Google when
   `googleEventId` is set. Attendance (`services/attendance.ts`): source MANUAL beats MEET_API (worker skips it).
+- Assignments (`services/assignments.ts`) and quizzes (`services/quizzes.ts`): students see published ones of
+  enrolled courses only (NOT_FOUND otherwise). Quiz correct options never leave the server before submit; scoring
+  is `scoreQuiz` in core. Submission files must live under `keys.submissionPrefix(assignment, student)`.
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is

@@ -72,11 +72,12 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
       parents on the Users page, and consent links a parent who has an account
-- [ ] Parents: withdraw consent and request deletion (SPEC P2); grades once assignments exist
+- [ ] Parents: withdraw consent and request deletion (SPEC P2)
 - [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
-- [ ] Assignments & MCQ quizzes
+- [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
+- [ ] Grade reports (CSV) and a gradebook per course; rich text in instructions
 - [ ] In-app notifications UI; Razorpay checkout + webhooks
 - [ ] i18n (next-intl: en/hi/mr), PWA

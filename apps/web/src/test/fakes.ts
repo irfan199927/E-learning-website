@@ -80,6 +80,7 @@ export function fakeStorage(
     presignPut: async (key, contentType) =>
       `https://storage.test/${key}?put=${encodeURIComponent(contentType)}`,
     deleteObject: async (key) => void deleted.push(key),
+    deletePrefix: async (prefix) => (deleted.push(`${prefix}*`), 0),
     createMultipart: async () => "upload-123",
     presignPart: async (key, uploadId, n) =>
       `https://storage.test/${key}?uploadId=${uploadId}&partNumber=${n}`,
@@ -87,7 +88,7 @@ export function fakeStorage(
     abortMultipart: async () => undefined,
     presignGet: async (key, ttl) => `https://storage.test/${key}?ttl=${ttl}`,
     head: async (key) =>
-      key.startsWith("attachments/")
+      key.startsWith("attachments/") || key.startsWith("submissions/")
         ? sizes.has(key)
           ? { size: sizes.get(key)!, contentType: undefined }
           : null

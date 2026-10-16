@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./time": "./src/time.ts",
     "./schemas": "./src/schemas.ts",
+    "./grading": "./src/grading.ts",
     "./rrule": "./src/rrule.ts",
     "./learning": "./src/learning.ts"
   },
