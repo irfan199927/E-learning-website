@@ -5,6 +5,18 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — in-app notifications (2026-10-16)
+
+- A bell in the top bar with an unread badge, and `/notifications`: newest first (50 per page), opening one marks
+  it read and follows its link, **Mark all as read**.
+- New notifications: teachers hear about join requests; students hear about newly published assignments and
+  quizzes (once per item, even if it's unpublished and published again). Existing ones (approvals, grades,
+  consent, reminders, recording issues) now have somewhere to be read.
+- Links are only followed when they're same-site paths (`safeLink`).
+- API: `GET /api/v1/notifications?before=`, `PATCH /api/v1/notifications/:id`, `POST /api/v1/notifications/read-all`.
+- Tests: 2 integration tests (own rows only, read / read all, link safety; join-request and publish
+  notifications, once); an e2e test from a join request to the teacher opening it from the bell.
+
 ### Added — assignments and MCQ quizzes (2026-10-16)
 
 - **Assignments:** teachers set work (instructions, due date, points, written answer and/or files, late work

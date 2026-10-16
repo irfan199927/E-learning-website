@@ -16,6 +16,7 @@ import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess } from "../policies";
 import { assertMayJoinCourses } from "./consent";
+import { notifyUsers } from "./notifications";
 
 export type CatalogState = "enrolled" | "pending" | "declined" | "none";
 
@@ -79,7 +80,7 @@ export async function requestToJoin(
   assertCan(actor.role, "course:join");
   const course = await deps.db.course.findFirst({
     where: { id: courseId, publishedAt: { not: null } },
-    select: { id: true },
+    select: { id: true, title: true, teacherId: true },
   });
   if (!course) throw Errors.notFound("Course");
   const enrolled = await deps.db.enrollment.count({ where: { courseId, userId: actor.id, revokedAt: null } });
@@ -99,6 +100,12 @@ export async function requestToJoin(
     },
   });
   await audit(deps.db, actor, "course.join_request", { type: "Course", id: courseId });
+  await notifyUsers(deps, [course.teacherId], {
+    type: "course.join.requested",
+    title: `${actor.name} asked to join ${course.title}`,
+    body: message ? message.slice(0, 200) : "Approve or decline on the course page.",
+    link: `/courses/${courseId}#join-requests`,
+  });
   return { status: "pending" };
 }
 

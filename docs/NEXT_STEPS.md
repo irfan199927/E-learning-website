@@ -79,5 +79,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
 - [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
 - [ ] Grade reports (CSV) and a gradebook per course; rich text in instructions
-- [ ] In-app notifications UI; Razorpay checkout + webhooks
+- [x] In-app notifications UI (2026-10-16): bell + `/notifications`
+- [ ] Live notification count (SSE or polling), email digests, and deleting old read notifications
+- [ ] Razorpay checkout + webhooks
 - [ ] i18n (next-intl: en/hi/mr), PWA
