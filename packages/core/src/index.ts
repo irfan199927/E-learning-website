@@ -3,6 +3,7 @@ export * from "./crypto";
 export * from "./errors";
 export * from "./hls";
 export * from "./ics";
+export * from "./learning";
 export * from "./rbac";
 export * from "./rrule";
 export * from "./schemas";

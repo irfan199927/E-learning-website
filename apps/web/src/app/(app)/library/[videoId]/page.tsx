@@ -1,6 +1,8 @@
 import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Icon } from "@/components/icons";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getPlayerData } from "@/server/services/videos";
@@ -18,6 +20,13 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
 
   return (
     <div className="flex max-w-5xl flex-col gap-5">
+      <Link
+        href={`/courses/${video.courseId}`}
+        className="flex w-fit items-center gap-1 text-sm font-semibold text-primary"
+      >
+        <Icon name="chevronLeft" size={16} />
+        {video.courseTitle}
+      </Link>
       {video.status === "READY" ? (
         <VideoPlayer
           videoId={video.id}
@@ -36,7 +45,6 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
       )}
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">{video.title}</h1>
-        <p className="mt-1 text-sm text-muted">{video.courseTitle}</p>
       </header>
     </div>
   );
