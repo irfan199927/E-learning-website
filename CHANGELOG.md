@@ -5,6 +5,20 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — gradebook and grade reports (2026-10-16)
+
+- `/courses/:id/grades`: teachers and admins see a gradebook (every enrolled student × every published
+  assignment and quiz, with totals and a class average row); students see **My grades** for the course.
+- Totals count graded work and overdue work never handed in (as 0); work waiting to be graded or not due yet is
+  left out. Quizzes count the best submitted attempt.
+- **Download CSV**: one row per student with email, each score (or "missing" / "to grade"), points, out of and
+  percent. UTF-8 with a byte order mark for Excel; cells that start like a formula are escaped. Each export is
+  audited (`grade.export`).
+- API: `GET /api/v1/courses/:id/gradebook`, `GET /api/v1/courses/:id/gradebook/csv`,
+  `GET /api/v1/courses/:id/my-grades`.
+- Tests: core unit tests (cell rules, totals, CSV escaping), an integration test (statuses, totals, averages,
+  access, CSV, audit) and the e2e work test now checks the gradebook, the CSV download and My grades.
+
 ### Removed — parental consent (2026-10-16)
 
 - Students are all adults (18+), so the parental-consent flow is gone: no date-of-birth step at `/welcome`, no

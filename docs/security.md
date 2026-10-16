@@ -195,13 +195,13 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `attendance.mark` (a teacher saves attendance for a class)
 - `assignment.create`, `assignment.update`, `assignment.delete`, `assignment.submit`, `grade.edit` (with the
   previous and new score), `quiz.create`, `quiz.update`, `quiz.delete`
+- `grade.export` (a teacher or admin downloads a course gradebook as CSV: names, emails and marks)
 - `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)
 - `course.update`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
   `attachment.create`, `attachment.delete` (course editing)
 
 **Must be added with the features that need them:**
 
-- grade edits
 - user deletion requests
 - denied video access
 

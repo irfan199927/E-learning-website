@@ -96,6 +96,19 @@ list.
 - **Teacher:** a results table (best score, attempts, last attempt per student).
 - Parents see graded assignments and best quiz scores under **Grades** on their child's page.
 
+### Grades (`/courses/:id/grades`)
+
+- **Teacher / admin (Gradebook):** one row per enrolled student, one column per published assignment or quiz
+  (soonest due first; quizzes without a closing date last), then the total. Cells: the score (quizzes: best
+  attempt; "late" when handed in late), **To grade** (links to the assignment), **Missing** (overdue, nothing
+  handed in), or "—" (not due yet). A class average row at the bottom. The table scrolls sideways inside its card
+  with the student column pinned. **Download CSV** exports the same data with emails (audited).
+- **Student (My grades):** their total so far and each piece of work with its status, linked from the course page.
+- Totals: graded work counts its score; overdue work never handed in counts as 0; work waiting to be graded and
+  work not due yet are left out (`gradeTotal` in `packages/core/src/gradebook.ts`).
+- Entry points: **Gradebook** button on the course page header (staff); **My grades** link under the progress bar
+  (students, once the course has work).
+
 ### Calendar: scheduling without Google
 
 - **Schedule class** is always there for teachers. With Google connected, the form asks **Where**: Google Meet

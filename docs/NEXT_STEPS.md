@@ -76,7 +76,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
 - [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
-- [ ] Grade reports (CSV) and a gradebook per course; rich text in instructions
+- [x] Gradebook per course and CSV grade reports (2026-10-16): `/courses/:id/grades`
+- [ ] Rich text in assignment instructions; weighted grade categories; excusing a student from one piece of work
 - [x] In-app notifications UI (2026-10-16): bell + `/notifications`
 - [ ] Live notification count (SSE or polling), email digests, and deleting old read notifications
 - [ ] Razorpay checkout + webhooks

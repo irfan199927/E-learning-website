@@ -108,6 +108,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Assignments (`services/assignments.ts`) and quizzes (`services/quizzes.ts`): students see published ones of
   enrolled courses only (NOT_FOUND otherwise). Quiz correct options never leave the server before submit; scoring
   is `scoreQuiz` in core. Submission files must live under `keys.submissionPrefix(assignment, student)`.
+- Gradebook (`services/gradebook.ts`, `/courses/:id/grades`): cell and total rules are `gradeCell`/`gradeTotal`
+  in core (overdue + nothing handed in = 0; ungraded or not-due work left out). CSV goes through core `toCsv`
+  (formula-injection escaping); exports are audited `grade.export`.
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

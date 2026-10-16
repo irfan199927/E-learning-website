@@ -1,6 +1,7 @@
 export * from "./attendance";
 export * from "./crypto";
 export * from "./errors";
+export * from "./gradebook";
 export * from "./grading";
 export * from "./hls";
 export * from "./ics";
