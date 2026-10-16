@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { AppError } from "@elearner/core";
 import { describe, expect, it } from "vitest";
 import { fakeGoogle, fakeJobs, makeDeps, world } from "@/test/fakes";
@@ -34,14 +35,16 @@ describe("classes service (integration)", () => {
 
   it("creates one row per occurrence for a weekly series", async () => {
     const w = await world();
+    // Unique per run: (calendarId, eventId) is unique and the test DB is shared across runs.
+    const series = `series-${randomUUID().slice(0, 8)}`;
     const google = fakeGoogle({
       createClassEvent: async (input) => ({
-        eventId: "series-1",
+        eventId: series,
         etag: null,
         meetLink: "https://meet.google.com/xyz",
         conferenceId: "xyz",
         instances: [0, 7, 14].map((d) => ({
-          eventId: `series-1_${d}`,
+          eventId: `${series}_${d}`,
           startsAt: new Date(input.startsAt.getTime() + d * 86_400_000),
           endsAt: new Date(input.endsAt.getTime() + d * 86_400_000),
         })),
@@ -57,7 +60,7 @@ describe("classes service (integration)", () => {
       recurrence: { freq: "WEEKLY", byDay: ["WE"], until: inHours(24 * 20) },
     });
     expect(out).toHaveLength(3);
-    expect(new Set(out.map((c) => c.seriesId))).toEqual(new Set(["series-1"]));
+    expect(new Set(out.map((c) => c.seriesId))).toEqual(new Set([series]));
   });
 
   it("only the course teacher can schedule", async () => {

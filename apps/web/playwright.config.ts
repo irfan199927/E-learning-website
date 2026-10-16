@@ -25,6 +25,8 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next start -p ${PORT}`,
     url: `http://localhost:${PORT}/api/health`,
+    // Better Auth rejects sign-ins whose Origin isn't APP_URL, so point it at the e2e port.
+    env: { APP_URL: `http://localhost:${PORT}`, AUTH_SIGNIN_LIMIT_PER_MIN: "100" },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
