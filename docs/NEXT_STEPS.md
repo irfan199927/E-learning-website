@@ -33,7 +33,9 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] `CONTRIBUTING.md` (branching, conventional commits, PR checklist, definition of done)
 - [x] `SECURITY.md` + `docs/security.md` (threat model, controls, DPDP handling)
 - [x] `docs/architecture.md` — system design (requirements, flows, load estimates, failure modes, trade-offs)
-- [ ] Fix remaining design gaps G2–G7 listed in `docs/architecture.md` §7 (G4 reminder reconciliation and G6 raw-file lifecycle first)
+- [x] G4 reminder reconciliation and G6 raw-file cleanup (`docs/architecture.md` §7)
+- [ ] Remaining design gaps G2, G3, G5, G7 in `docs/architecture.md` §7 (G5 needs real accounts in the pilot; G7 is a
+      hosting decision)
 - [ ] `docs/adr/0001…0007` — monorepo; route handlers + worker vs NestJS; Better Auth + DB sessions; Prisma 7;
       R2 + gated HLS playlists; separate Google API grant (Internal OAuth app); recurring classes as Google instances
 - [x] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)

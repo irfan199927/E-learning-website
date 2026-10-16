@@ -11,6 +11,10 @@ import { RECORDING_GIVE_UP_MS } from "./recording-sync";
 const SYNC_GRACE_MS = 10 * 60_000; // Meet needs a few minutes to produce the file
 const STALE_UPLOAD_MS = 24 * 3600_000;
 const ERASURE_GRACE_MS = 30 * 24 * 3600_000; // DPDP: soft-delete, then purge after 30 days
+/** Reminders are delayed jobs in Redis; re-add any for classes this far ahead (covers the 24 h reminder). */
+const REMINDER_HORIZON_MS = 48 * 3600_000;
+/** Originals are kept this long after transcoding, in case a rendition must be redone. */
+const RAW_RETENTION_MS = 30 * 24 * 3600_000;
 
 export async function runMaintenance(ctx: JobContext, job: MaintenanceJob): Promise<Record<string, number>> {
   switch (job.task) {
@@ -22,6 +26,10 @@ export async function runMaintenance(ctx: JobContext, job: MaintenanceJob): Prom
       return abortStaleUploads(ctx);
     case "purge-deleted-users":
       return purgeDeletedUsers(ctx);
+    case "reconcile-reminders":
+      return reconcileReminders(ctx);
+    case "delete-transcoded-raw":
+      return deleteTranscodedRaw(ctx);
   }
 }
 
@@ -112,6 +120,45 @@ export async function abortStaleUploads(ctx: JobContext) {
     });
   }
   return { aborted: stale.length };
+}
+
+/**
+ * Re-add reminder jobs for upcoming classes, so a Redis flush or failover loses at most one run's worth of
+ * reminders (architecture.md G4). Safe to repeat: job ids are deterministic (an existing job is left alone)
+ * and the reminder job dedupes per user in the database, so nobody is reminded twice.
+ */
+export async function reconcileReminders(ctx: JobContext) {
+  const now = ctx.now();
+  const upcoming = await ctx.db.classSession.findMany({
+    where: { status: "SCHEDULED", startsAt: { gt: now, lte: new Date(now.getTime() + REMINDER_HORIZON_MS) } },
+    select: { id: true, startsAt: true },
+  });
+  let scheduled = 0;
+  for (const c of upcoming) scheduled += await ctx.jobs.scheduleReminders(c.id, c.startsAt, now);
+  return { classes: upcoming.length, scheduled };
+}
+
+/**
+ * Delete original uploads and recordings 30 days after they were transcoded (architecture.md G6).
+ * Students only ever stream the HLS renditions; the original costs storage forever otherwise.
+ * `updatedAt` is when the video last changed, which is at or after it became READY, so this never
+ * deletes early. After this a video can't be re-transcoded; Meet recordings are still in the teacher's Drive.
+ */
+export async function deleteTranscodedRaw(ctx: JobContext) {
+  const old = await ctx.db.video.findMany({
+    where: {
+      status: "READY",
+      rawKey: { not: null },
+      updatedAt: { lt: new Date(ctx.now().getTime() - RAW_RETENTION_MS) },
+    },
+    select: { id: true, rawKey: true },
+    take: 500,
+  });
+  for (const v of old) {
+    await ctx.storage.deleteObject(v.rawKey!);
+    await ctx.db.video.update({ where: { id: v.id }, data: { rawKey: null } });
+  }
+  return { deleted: old.length };
 }
 
 /**

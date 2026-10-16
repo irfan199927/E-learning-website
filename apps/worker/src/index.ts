@@ -131,6 +131,16 @@ async function registerSchedules() {
     { name: "uploads", data: { task: "abort-stale-uploads" } },
   );
   await jobs.maintenance.upsertJobScheduler(
+    "reconcile-reminders",
+    { every: 15 * 60_000 },
+    { name: "reminders", data: { task: "reconcile-reminders" } },
+  );
+  await jobs.maintenance.upsertJobScheduler(
+    "delete-transcoded-raw",
+    { pattern: "30 3 * * *", tz },
+    { name: "raw", data: { task: "delete-transcoded-raw" } },
+  );
+  await jobs.maintenance.upsertJobScheduler(
     "renew-watch-channels",
     { pattern: "15 3 * * *", tz },
     { name: "watch", data: { task: "renew-watch-channels" } },

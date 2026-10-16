@@ -5,6 +5,16 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Fixed — lost reminders and ever-growing storage (2026-10-16)
+
+- **Reminders survive a Redis flush or failover.** Every 15 minutes the worker re-adds the 24 h and 15 min
+  reminders for classes in the next 48 hours (`reconcile-reminders`). Existing jobs are left alone and the
+  reminder job dedupes per user, so nobody is reminded twice. Closes design gap G4.
+- **Original video files are deleted 30 days after transcoding** (`delete-transcoded-raw`, daily at 03:30 IST).
+  Students only stream the HLS renditions, so this saves about 2 TB a year at pilot scale. After that a video can't
+  be re-transcoded; Meet recordings stay in the teacher's Drive. Closes design gap G6.
+- `Storage.deleteObject(key)` in `@elearner/storage`.
+
 ### Added — contributor, environment, security and Google setup docs (2026-10-16)
 
 - `CONTRIBUTING.md`: branches, Conventional Commits (enforced by the commit hook), the checks to run before a PR,

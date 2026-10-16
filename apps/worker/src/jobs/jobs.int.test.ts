@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { classWorld, fakeJobs, fakeStorage, makeCtx, stubGoogle, testDb } from "../test/ctx";
 import { syncCalendar } from "./calendar-sync";
-import { abortStaleUploads, sweepClasses } from "./maintenance";
+import { abortStaleUploads, deleteTranscodedRaw, reconcileReminders, sweepClasses } from "./maintenance";
 import { RECORDINGS_MODULE_TITLE, syncRecording } from "./recording-sync";
 import { sendReminder } from "./reminder";
 import { transcodeVideo } from "./transcode";
@@ -211,6 +211,45 @@ describe("maintenance", () => {
     });
     await abortStaleUploads(makeCtx());
     expect((await testDb().video.findUniqueOrThrow({ where: { id: v.id } })).status).toBe("FAILED");
+  });
+
+  it("re-adds reminders for classes in the next 48 h only", async () => {
+    const soon = await classWorld({ startsAt: new Date(Date.now() + 3 * 3600_000) });
+    const later = await classWorld({ startsAt: new Date(Date.now() + 3 * 86_400_000) });
+    const cancelled = await classWorld({ startsAt: new Date(Date.now() + 5 * 3600_000) });
+    await testDb().classSession.update({ where: { id: cancelled.cls.id }, data: { status: "CANCELLED" } });
+    const jobs = fakeJobs();
+    await reconcileReminders(makeCtx({ jobs }));
+    expect(jobs.log).toContain(`remind:${soon.cls.id}`);
+    expect(jobs.log).not.toContain(`remind:${later.cls.id}`);
+    expect(jobs.log).not.toContain(`remind:${cancelled.cls.id}`);
+  });
+
+  it("deletes the original 30 days after transcoding and keeps newer ones", async () => {
+    const w = await classWorld();
+    const mk = (tag: string, updatedAt: Date) =>
+      testDb().video.create({
+        data: {
+          title: tag,
+          source: "UPLOAD",
+          status: "READY",
+          uploaderId: w.teacher.id,
+          courseId: w.course.id,
+          rawKey: `videos/${w.tag}-${tag}/raw.mp4`,
+          hlsPrefix: `videos/${w.tag}-${tag}/hls/`,
+          updatedAt,
+        },
+      });
+    const old = await mk("old", new Date(Date.now() - 31 * 86_400_000));
+    const recent = await mk("recent", new Date(Date.now() - 5 * 86_400_000));
+    const storage = fakeStorage();
+    await deleteTranscodedRaw(makeCtx({ storage }));
+    expect(storage.deleted).toContain(old.rawKey);
+    expect(storage.deleted).not.toContain(recent.rawKey);
+    const after = await testDb().video.findUniqueOrThrow({ where: { id: old.id } });
+    expect(after.rawKey).toBeNull();
+    expect(after.hlsPrefix).toBe(old.hlsPrefix);
+    expect((await testDb().video.findUniqueOrThrow({ where: { id: recent.id } })).rawKey).toBe(recent.rawKey);
   });
 });
 
