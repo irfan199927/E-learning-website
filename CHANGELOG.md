@@ -5,6 +5,17 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — contributor, environment, security and Google setup docs (2026-10-16)
+
+- `CONTRIBUTING.md`: branches, Conventional Commits (enforced by the commit hook), the checks to run before a PR,
+  the required CI checks and a definition of done.
+- `docs/environment.md`: every variable the web app, worker and static site read, with defaults, plus how to
+  rotate the token encryption key and fix common configuration errors.
+- `SECURITY.md` (private vulnerability reporting) and `docs/security.md`: threat model, the controls in the code,
+  audit logging, DPDP handling and known security gaps. Each item is marked built or planned.
+- `docs/google-setup.md`: the one-time Google Cloud and Workspace setup (APIs, Internal consent screen, scopes,
+  redirect URIs, Meet recording policy) with a troubleshooting table.
+
 ### Changed — CI hardening and a smaller worker image (2026-10-16)
 
 - Every third-party GitHub Action is pinned to a full commit SHA, with the release in a trailing comment

@@ -115,7 +115,7 @@ erDiagram
 
 **Fallback when recording is off or fails:** manual upload is always available. The `ClassSession.autoAttachRecording` flag and a per-tenant `videoProvider` setting leave room for LiveKit in v2.
 
-**Tokens:** refresh tokens are encrypted with AES-256-GCM (key from `TOKEN_ENC_KEY`, rotated by key ID). On `invalid_grant`, mark the credential revoked and ask the teacher to reconnect.
+**Tokens:** refresh tokens are encrypted with AES-256-GCM (keyring in `TOKEN_ENC_KEYS`, rotated by key ID; see environment.md). On `invalid_grant`, mark the credential revoked and ask the teacher to reconnect.
 
 **Quotas:** retry on `403 rateLimitExceeded`, `429` and `5xx` with exponential backoff and jitter (max 5 tries). The BullMQ limiter caps Google calls at 5 per second per teacher.
 
