@@ -5,3 +5,5 @@ coverage
 pnpm-lock.yaml
 **/generated/**
 playwright-report
+# Vendored third-party component: kept close to upstream so it can be diffed and updated.
+apps/web/src/components/ui/glyph-portal.tsx
