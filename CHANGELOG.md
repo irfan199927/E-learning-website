@@ -5,6 +5,12 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — CI hardening (2026-10-16)
+
+- Every third-party GitHub Action is pinned to a full commit SHA, with the release in a trailing comment
+  (`actions/checkout@fbc6f39… # v5.1.0`). A moved or hijacked tag can no longer change what CI runs. Dependabot's
+  weekly `actions` group bumps the SHA and the comment together.
+
 ### Added — static landing site for Vercel (2026-10-16)
 
 - `pnpm build:site` exports just the public landing page as static files (`apps/web/out`, about 1.2 MB). It shares

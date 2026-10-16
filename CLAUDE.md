@@ -78,6 +78,7 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - `pnpm install` under `NODE_ENV=production` skips devDependencies: never set it job-wide in CI before installing.
 - e2e locators: use `exact: true` for nav links. Empty-state copy ("See my courses") also matches substrings.
 - MinIO no longer publishes `minio/minio` images; compose uses pinned `pgsty/minio` (also ships `mc`).
+- Workflow actions are pinned to commit SHAs with a `# vX.Y.Z` comment; add new ones the same way (`git ls-remote --tags`).
 - CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
 - `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
