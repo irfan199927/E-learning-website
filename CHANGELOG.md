@@ -5,6 +5,32 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — delivery: Docker images, CI and deploy (2026-10-16)
+
+- `apps/web/Dockerfile` (Next standalone, ~470 MB, non-root, healthcheck) and `apps/worker/Dockerfile`
+  (ffmpeg, production-only dependencies via `pnpm deploy`, non-root, healthcheck), plus `.dockerignore`.
+- CI (`.github/workflows/ci.yml`):
+  - format, lint, typecheck and unit tests;
+  - integration tests on Postgres with real ffmpeg, after migrating from an empty database;
+  - a production build, then Playwright on desktop and mobile;
+  - Docker image builds with smoke tests.
+- Deploy (`.github/workflows/deploy.yml`): CI → approval on the `production` environment → migrations →
+  Vercel (web) and GHCR → Render (worker). It stays off until `DEPLOY_ENABLED=true`.
+- Dependabot, CODEOWNERS and a PR template.
+- `docs/deployment.md`: one-time setup, secrets, releasing, rollback.
+- e2e regression test: the calendar shows a 10:30 IST class at 10:30 in a UTC browser.
+
+### Changed
+
+- `docker-compose.yml`: MinIO no longer publishes `minio/minio` / `minio/mc` images. Local S3 now uses the pinned
+  community build `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`.
+- Playwright loads the root `.env` (for test fixtures) and starts its server with `NODE_ENV=production`.
+- CI runs on pull requests. On `main` it runs once, as the first job of Deploy.
+
+### Fixed
+
+- The e2e "My courses" locator also matched the Overview's "See my courses" link on a fresh database.
+
 ### Added — learner experience redesign (2026-10-16)
 
 - **New app shell.**

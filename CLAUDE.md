@@ -35,6 +35,8 @@ pnpm typecheck | pnpm lint | pnpm test          # unit tests (all packages)
 pnpm --filter @elearner/web test:int            # integration: real Postgres (DATABASE_URL)
 pnpm --filter @elearner/worker test:int         # integration incl. real ffmpeg transcode
 pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs production build
+docker build -f apps/web/Dockerfile -t elearner-web .       # images build from the repo root (docs/deployment.md)
+docker build -f apps/worker/Dockerfile -t elearner-worker .
 ```
 
 ## Architecture rules (enforced by ESLint where possible)
@@ -68,6 +70,12 @@ pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs produ
   the browser's origin, Better Auth returns 403 and the sign-in form shows "Confirm your email first".
 - Integration tests share the dev database: fixture ids/slugs/Google event ids must be unique per run (`randomUUID`).
 - Mobile nav drawer must stay `invisible` when closed, or its off-screen links remain in the tab order.
+- Worker image: `pnpm deploy --legacy` (pnpm 10) with `auto-install-peers=false`, or the optional peers of
+  `@prisma/client` (Prisma CLI, Studio, TypeScript, ~215 MB) land in production `node_modules`.
+- `pnpm install` under `NODE_ENV=production` skips devDependencies: never set it job-wide in CI before installing.
+- e2e locators: use `exact: true` for nav links. Empty-state copy ("See my courses") also matches substrings.
+- MinIO no longer publishes `minio/minio` images; compose uses pinned `pgsty/minio` (also ships `mc`).
+- CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
 
 ## Status (end of first build session)
 

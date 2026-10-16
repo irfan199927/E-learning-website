@@ -9,14 +9,20 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 
 ## 2. Delivery (needed before first deploy)
 
-- [ ] `apps/web/Dockerfile` (Next `output: "standalone"`) and `apps/worker/Dockerfile` (node:22-slim + ffmpeg, non-root user, `pnpm deploy`).
-- [ ] `.github/workflows/ci.yml`: format → lint → typecheck → unit → integration (postgres+redis service containers,
-      `prisma migrate deploy`) → build → Playwright e2e (playwright.config.ts already sets `APP_URL` and
-      `AUTH_SIGNIN_LIMIT_PER_MIN` for its server).
-- [ ] e2e: assert a class's start time on the calendar (would have caught the UTC rendering bug fixed in 8a4c37a).
-- [ ] `docker-compose.yml`: the pinned `minio/minio` / `minio/mc` images no longer pull; pick a maintained image.
-- [ ] `.github/workflows/deploy.yml`: on main → `pnpm db:deploy` (prod) → deploy web (Vercel) + worker (Render/Fly), gated by environment approval.
-- [ ] Dependabot/Renovate, CODEOWNERS, PR template, commitlint already configured in package.json.
+- [x] `apps/web/Dockerfile` (Next standalone, non-root, healthcheck) and `apps/worker/Dockerfile` (node:22 slim + ffmpeg,
+      non-root, `pnpm deploy --prod`), `.dockerignore`. Web image verified locally; worker verified up to the ffmpeg
+      layer (Debian mirrors were unreachable from the build sandbox; the CI `docker` job covers it).
+- [x] `.github/workflows/ci.yml`: checks → integration (Postgres service, real ffmpeg, migrate from zero) → build +
+      Playwright e2e → docker build + smoke. Replayed locally in a clean clone with the workflow's env: green.
+- [x] `.github/workflows/deploy.yml`: CI → `production` approval → `prisma migrate deploy` → Vercel (web) +
+      GHCR/Render (worker). Off until `DEPLOY_ENABLED=true`; setup in `docs/deployment.md`.
+- [x] Dependabot (npm, actions, docker, compose; grouped), CODEOWNERS, PR template.
+- [x] e2e: calendar shows a class at its school-timezone time in a UTC browser (fails if the 8a4c37a fix regresses).
+- [x] `docker-compose.yml`: MinIO stopped publishing images; switched to pinned `pgsty/minio` (server + `mc`).
+- [ ] Do the one-time setup in `docs/deployment.md` (accounts, secrets, branch protection), then first deploy.
+- [ ] Pin GitHub Actions to commit SHAs (Dependabot keeps them current) once the workflows have run green on GitHub.
+- [ ] Worker image size: ~190 MB of `node_modules` is `googleapis`; switch to the per-API packages
+      (`@googleapis/calendar`, `/drive`, `/meet`) in `packages/google`.
 
 ## 3. Documentation set (user asked for proper docs)
 
@@ -30,7 +36,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       R2 + gated HLS playlists; separate Google API grant (Internal OAuth app); recurring classes as Google instances
 - [ ] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)
 - [ ] `docs/google-setup.md` (GCP project, Internal consent screen, scopes, Workspace recording policy)
-- [ ] `docs/deployment.md` (Vercel, Render, Neon, Redis w/ `noeviction`, R2 bucket + CORS exposing `ETag`)
+- [x] `docs/deployment.md` (Vercel, Render, Neon, Redis w/ `noeviction`, R2 bucket + CORS exposing `ETag`, rollback)
 - [ ] `docs/testing.md`, `docs/api.md` (+ OpenAPI), runbooks: recording-sync, transcode-failures, google-reconnect,
       restore-database, rotate-secrets, incident-response
 

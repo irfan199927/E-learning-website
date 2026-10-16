@@ -68,6 +68,7 @@ docs/             Spec, system design, UI guide, next steps
 - [`docs/SPEC.md`](docs/SPEC.md): product spec, user stories, API list.
 - [`docs/architecture.md`](docs/architecture.md): system design, flows, data model, failure modes, trade-offs.
 - [`docs/ui.md`](docs/ui.md): app shell, screens per role, UI rules.
+- [`docs/deployment.md`](docs/deployment.md): CI, Docker images, deploy pipeline, one-time setup, rollback.
 - [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md): what's left, in priority order.
 - [`CHANGELOG.md`](CHANGELOG.md): what changed, and when.
 
