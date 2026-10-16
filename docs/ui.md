@@ -96,6 +96,39 @@ published at once. A badge on each course, such as "2 students waiting to join",
 
 Until lessons CRUD exists, a course's lessons are its READY videos in upload order.
 
+- Staff also see **Students (n)**: everyone enrolled, with **Remove** (asks to confirm). Removing ends access at
+  once; the student can ask to join again.
+
+### Welcome (`/welcome`) and parental consent
+
+- A student's first visit to any app page sends them to **Welcome**, which asks for their date of birth once.
+  Changing it later needs the school.
+- **Under 18 without a parent's consent:**
+  - **My courses** shows "A parent needs to approve your account" with a parent-email box;
+  - **Find a course** can be browsed, but each card says "Needs your parent's approval first" instead of
+    **Ask to join**.
+- **The parent's page** (`/consent/:token`, public, from the email) shows what the school keeps and why, the
+  notice version, the parent's full name and a declaration checkbox. It's a single-use link, valid for 7 days.
+  Expired and used links get a clear message.
+- **Users page:** under-18 students carry a badge, "waiting for parent" or "parent consented".
+
+### Users (`/admin/users`, admins only)
+
+- **Add people:** one person (name, email, role), or **From a spreadsheet**, a CSV with an `email,name[,role]`
+  header and up to 500 rows.
+  - The file is checked in the browser first: bad and duplicate lines are listed with line numbers before
+    anything is sent.
+  - Existing emails are skipped, never changed.
+  - Each new person gets a "Welcome, choose a password" email. Nobody types or shares passwords.
+- **Search** by name or email, and filter by role. Pages hold 50 people; the search is a plain GET form, so
+  results can be bookmarked.
+- **Per person:**
+  - a role picker that saves on change;
+  - **Switch off / Switch on**: switching off signs them out everywhere at once;
+  - **Resend invite** for accounts that never set a password (invite links expire after an hour).
+- **Guard rails:** you can't change your own role or switch yourself off, and the last active admin can't be
+  demoted.
+
 ### Lesson (`/library/:videoId`)
 
 A back link to the course, then the HLS player with resume and speed controls.

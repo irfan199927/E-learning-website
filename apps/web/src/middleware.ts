@@ -25,7 +25,8 @@ function csp(nonce: string): string {
     "form-action 'self' https://accounts.google.com",
     "base-uri 'self'",
     "object-src 'none'",
-    ...(isDev ? [] : ["upgrade-insecure-requests"]),
+    // Only on HTTPS deployments: on a plain-HTTP LAN host it would send every asset request to https:// and fail.
+    ...(!isDev && process.env.APP_URL?.startsWith("https://") ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 }
 
@@ -44,6 +45,10 @@ export function middleware(req: NextRequest) {
   headers.set("content-security-policy", policy);
   const res = NextResponse.next({ request: { headers } });
   res.headers.set("content-security-policy", policy);
+  if (process.env.APP_URL?.startsWith("https://")) {
+    res.headers.set("strict-transport-security", "max-age=63072000; includeSubDomains; preload");
+    res.headers.set("cross-origin-opener-policy", "same-origin");
+  }
   return res;
 }
 

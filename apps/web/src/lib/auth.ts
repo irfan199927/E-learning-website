@@ -13,7 +13,7 @@ import { templates } from "@elearner/notify";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { env } from "@/env";
+import { env, googleEnabled } from "@/env";
 import { container } from "@/server/container";
 import { consume } from "./rate-limit";
 
@@ -37,7 +37,14 @@ function createAuth() {
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
-        await deps.mailer.send(user.email, templates.resetPassword(user.name, url));
+        // No password yet = an admin just created the account: send the welcome wording instead.
+        const hasPassword = await getDb().account.count({
+          where: { userId: user.id, providerId: "credential" },
+        });
+        const message = hasPassword
+          ? templates.resetPassword(user.name, url)
+          : templates.invite(user.name, url);
+        await deps.mailer.send(user.email, message);
       },
     },
     emailVerification: {
@@ -49,14 +56,16 @@ function createAuth() {
       },
     },
 
-    socialProviders: {
-      google: {
-        clientId: e.GOOGLE_CLIENT_ID,
-        clientSecret: e.GOOGLE_CLIENT_SECRET,
-        // Anyone with a Google account may create an account; course access still needs a teacher's approval.
-        prompt: "select_account",
-      },
-    },
+    socialProviders: googleEnabled(e)
+      ? {
+          google: {
+            clientId: e.GOOGLE_CLIENT_ID,
+            clientSecret: e.GOOGLE_CLIENT_SECRET,
+            // Anyone with a Google account may create an account; course access still needs a teacher's approval.
+            prompt: "select_account",
+          },
+        }
+      : {},
     account: {
       // An admin-provisioned user may sign in with Google the first time; Google verifies the email.
       accountLinking: { enabled: true, trustedProviders: ["google"] },

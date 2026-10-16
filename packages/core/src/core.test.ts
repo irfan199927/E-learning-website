@@ -286,3 +286,40 @@ describe("timezone conversion", () => {
     );
   });
 });
+
+describe("parseUserCsv", () => {
+  it("reads columns in any order, defaults the role, and reports bad lines", async () => {
+    const { parseUserCsv } = await import("./schemas");
+    const csv = [
+      "Name,Email,Role",
+      '"Sharma, Aanya",AANYA@x.in,student',
+      "Meera Kulkarni,meera@x.in,teacher",
+      "No Email,,",
+      "Rohan,rohan@x.in,",
+      "Dup,aanya@x.in,",
+      "Bad Role,b@x.in,principal",
+      "",
+    ].join("\r\n");
+    const { users, problems } = parseUserCsv(csv);
+    expect(users).toEqual([
+      { email: "aanya@x.in", name: "Sharma, Aanya", role: "STUDENT" },
+      { email: "meera@x.in", name: "Meera Kulkarni", role: "TEACHER" },
+      { email: "rohan@x.in", name: "Rohan", role: "STUDENT" },
+    ]);
+    expect(problems.map((p) => p.line)).toEqual([4, 6, 7]);
+    expect(problems[1]!.message).toMatch(/twice/);
+    expect(parseUserCsv("foo,bar\n1,2").problems[0]!.line).toBe(1);
+  });
+});
+
+describe("ageOn / isMinorOn", () => {
+  it("counts whole years and flips on the birthday", async () => {
+    const { ageOn, isMinorOn } = await import("./consent");
+    const dob = new Date("2008-10-17T00:00:00Z");
+    expect(ageOn(dob, new Date("2026-10-16T12:00:00Z"))).toBe(17);
+    expect(isMinorOn(dob, new Date("2026-10-16T12:00:00Z"))).toBe(true);
+    expect(ageOn(dob, new Date("2026-10-17T00:00:00Z"))).toBe(18);
+    expect(isMinorOn(dob, new Date("2026-10-17T00:00:00Z"))).toBe(false);
+    expect(ageOn(new Date("2008-02-29T00:00:00Z"), new Date("2026-02-28T00:00:00Z"))).toBe(17);
+  });
+});

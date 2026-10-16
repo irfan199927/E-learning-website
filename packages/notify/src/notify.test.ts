@@ -22,6 +22,7 @@ describe("templates", () => {
     expect(m.subject).toBe("Quadratics starts in 15 minutes");
     expect(m.text).toMatch(/3:00/);
     expect(templates.resetPassword("A", "https://x").subject).toMatch(/Reset/);
+    expect(templates.invite("A <b>", "https://x").html).toContain("A &lt;b&gt;");
   });
   it("memory mailer records messages", async () => {
     const mailer = createMemoryMailer();

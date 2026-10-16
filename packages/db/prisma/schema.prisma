@@ -124,6 +124,7 @@ model User {
   sessions         Session[]
   googleCredential GoogleCredential?
   consents         Consent[]
+  consentRequests  ConsentRequest[]
   parentLinks      ParentLink[]      @relation("ParentOf")
   childLinks       ParentLink[]      @relation("ChildOf")
   coursesTaught    Course[]          @relation("CourseTeacher")
@@ -217,13 +218,29 @@ model Consent {
   grantedById String? // parent who granted, for minors
   type        ConsentType
   version     String // policy version hash
-  method      String // e.g. "parent-email-otp", "digilocker"
+  method      String // e.g. "parent-email-link", "digilocker"
+  parentName  String? // as typed by the parent when granting (they need no account)
+  parentEmail String? // the address the consent link was sent to
   grantedAt   DateTime    @default(now())
   withdrawnAt DateTime?
   ipAddress   String?
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+}
+
+// A link emailed to a parent so they can give consent for a minor (DPDP s.9). Only the hash is stored.
+model ConsentRequest {
+  id          String    @id @default(cuid())
+  studentId   String
+  parentEmail String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  student     User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
 }
 
 model ParentLink {

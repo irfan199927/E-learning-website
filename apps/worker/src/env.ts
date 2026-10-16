@@ -7,9 +7,13 @@ const schema = z.object({
   APP_URL: z.string().url(),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
-  GOOGLE_CLIENT_ID: z.string().min(1),
-  GOOGLE_CLIENT_SECRET: z.string().min(1),
-  GOOGLE_WORKSPACE_DOMAIN: z.string().optional(),
+  /** Leave both empty to run without Google (e.g. a LAN-only UAT): no Google sign-in, no Meet scheduling. */
+  GOOGLE_CLIENT_ID: z.string().default(""),
+  GOOGLE_CLIENT_SECRET: z.string().default(""),
+  GOOGLE_WORKSPACE_DOMAIN: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined), // empty = unset
   TOKEN_ENC_KEYS: z.string().min(1),
   TOKEN_ENC_ACTIVE_KEY_ID: z.string().min(1),
   S3_ENDPOINT: z.string().url(),

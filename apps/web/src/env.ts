@@ -14,9 +14,11 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
-  GOOGLE_CLIENT_ID: z.string().min(1),
-  GOOGLE_CLIENT_SECRET: z.string().min(1),
-  GOOGLE_WORKSPACE_DOMAIN: z.string().min(3).optional(),
+  /** Leave both empty to run without Google (e.g. a LAN-only UAT): no Google sign-in, no Meet scheduling. */
+  GOOGLE_CLIENT_ID: z.string().default(""),
+  GOOGLE_CLIENT_SECRET: z.string().default(""),
+  // Empty means unset (Compose passes empty strings for unset variables).
+  GOOGLE_WORKSPACE_DOMAIN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(3).optional()),
   TOKEN_ENC_KEYS: z.string().min(1),
   TOKEN_ENC_ACTIVE_KEY_ID: z.string().min(1),
   S3_ENDPOINT: z.string().url(),
@@ -41,6 +43,9 @@ const schema = z.object({
 });
 
 export type Env = z.infer<typeof schema>;
+
+/** Google sign-in and the teacher Calendar/Meet grant are on only when both credentials are set. */
+export const googleEnabled = (e: Env) => e.GOOGLE_CLIENT_ID !== "" && e.GOOGLE_CLIENT_SECRET !== "";
 
 let cached: Env | undefined;
 

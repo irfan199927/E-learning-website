@@ -1,23 +1,22 @@
 # Deployment
 
-How code gets from a PR to production, what to set up once, and how to roll back.
+How code gets from a PR to each environment, and how to roll back.
+
+| Environment  | Where                                             | Status  | Guide                                                  |
+| ------------ | ------------------------------------------------- | ------- | ------------------------------------------------------ |
+| Landing page | Vercel, static files (`pnpm build:site`)          | Live    | [Static landing site](#static-landing-site-vercel-now) |
+| **UAT**      | Home-lab Linux VM, Docker Compose (`deploy/uat/`) | Ready   | [uat.md](uat.md)                                       |
+| Production   | AWS (Mumbai, `ap-south-1`)                        | Planned | [Production on AWS](#production-on-aws-plan)           |
 
 ```
-PR ──► CI (ci.yml): checks · integration · e2e · docker      ← required to merge
-main ─► Deploy (deploy.yml): CI again ─► [approval] migrate ─► web → Vercel
-                                                         └─► worker image → GHCR → Render
+PR ──► CI (ci.yml): checks · integration · e2e · docker · static site   ← required to merge
+main ─► UAT VM pulls the commit once its checks are green → build → migrate → restart   (deploy/uat/auto-update.sh)
+main ─► Vercel rebuilds the static landing page
 ```
 
-| Piece    | Runs on                                                                 | Built from                                               |
-| -------- | ----------------------------------------------------------------------- | -------------------------------------------------------- |
-| Web      | Vercel (Next.js)                                                        | `apps/web`, by `vercel build` in deploy.yml              |
-| Worker   | Render, Background Worker, image-backed                                 | `apps/worker/Dockerfile` → `ghcr.io/<repo>/worker:<sha>` |
-| Postgres | Neon (pooled URL for apps, direct for migrations)                       | `packages/db/prisma/migrations`                          |
-| Redis    | A managed Redis with `maxmemory-policy noeviction` (BullMQ requirement) | none                                                     |
-| Storage  | Cloudflare R2                                                           | none                                                     |
-
-`apps/web/Dockerfile` also builds a self-contained web image (Next standalone) for hosts other than Vercel,
-or for staging. CI builds both images on every PR to make sure they still work.
+The web and worker images (`apps/web/Dockerfile`, `apps/worker/Dockerfile`) are the deployable units everywhere:
+UAT builds them on the VM, and production will run the same Dockerfiles on AWS. CI builds and smoke-tests both
+on every PR.
 
 ## CI (`.github/workflows/ci.yml`)
 
@@ -78,137 +77,48 @@ pnpm build:site            # → apps/web/out (≈1.2 MB): index.html, enroll/in
 - server-rendered theme: a saved theme is re-applied after load, so a short flash is possible;
 - sign-in itself.
 
-When the full app goes live it's a **separate** Vercel project with Root Directory `apps/web` (see one-time setup
-below). That project doesn't read the repository-root `vercel.json`.
+The full app doesn't run on Vercel: it runs on the UAT VM now and on AWS later. Once an environment has a
+public HTTPS address, set `SITE_APP_URL` on the static project so Enroll and Sign in go there.
 
-## Free-tier setup (web only, no worker)
+## Production on AWS (plan)
 
-The cheapest way to put the full app online. It runs everything except the background worker.
+Production will run the same images as UAT on AWS in **Mumbai (`ap-south-1`)**. That keeps students' data in
+India (DPDP) and latency low. The mapping from the UAT stack:
 
-**What works:**
+| UAT (VM, Compose)          | Production (AWS)                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `web` container            | ECS on Fargate service, 2+ tasks, behind an Application Load Balancer with an ACM certificate |
+| `worker` container         | ECS service on EC2 or Fargate with enough CPU for ffmpeg (start with 2 vCPU / 4 GB, 1 task)   |
+| `postgres`                 | RDS for PostgreSQL 17, Multi-AZ, automated backups and point-in-time recovery                 |
+| `redis`                    | ElastiCache (Redis OSS / Valkey) with parameter group `maxmemory-policy noeviction`           |
+| `minio`                    | S3 bucket (private, block public access) + CloudFront for segments (fixes gap G2)             |
+| `mailpit`                  | Amazon SES (SMTP credentials), with SPF/DKIM on the sending domain                            |
+| `uat.env`                  | Secrets Manager / SSM Parameter Store, injected as task environment variables                 |
+| `tools` image (migrations) | A one-off ECS task (`pnpm db:deploy`) that the deploy pipeline runs before rolling out        |
+| Images built on the VM     | Built once in GitHub Actions, pushed to ECR, promoted unchanged from UAT to production        |
 
-- Google sign-up for anyone;
-- teachers create courses and approve join requests;
-- students browse courses, ask to join, and open the courses they're approved for;
-- the calendar and class schedule;
-- scheduling classes on Google Meet, for teachers who connect Google.
+Still to decide when the AWS work starts, recorded as an ADR then:
 
-**What waits for the worker:**
+- infrastructure as code (Terraform or CDK);
+- how GitHub Actions authenticates to AWS (OIDC role, no long-lived keys);
+- whether UAT also moves to AWS or stays on the VM.
 
-- class reminders;
-- importing Meet recordings and attendance;
-- video transcoding (uploads stay "Queued for processing");
-- scheduled cleanup.
+`.github/workflows/deploy.yml` still contains the earlier Vercel and Render jobs. They stay **off**, because the
+repo variable `DEPLOY_ENABLED` isn't set, and will be replaced by the AWS pipeline. Keep these from the old plan:
 
-Add the worker later with _One-time setup_ steps 5 and 6 and the repo variable `WORKER_ENABLED=true`.
+- the protected `production` environment with an approval before migrations;
+- migrations before rollout;
+- one deploy at a time.
 
-| Piece    | Service (free plan)                                  | Region                                         |
-| -------- | ---------------------------------------------------- | ---------------------------------------------- |
-| Web      | Vercel Hobby, a **second** project (Root `apps/web`) | Mumbai (`bom1`, set in `apps/web/vercel.json`) |
-| Postgres | Neon Free                                            | Mumbai if offered, else Singapore              |
-| Redis    | Upstash Redis Free (rate limits and queued jobs)     | Mumbai or Singapore                            |
-| Storage  | Cloudflare R2 (10 GB free; needs a card on file)     | Location hint: Asia-Pacific                    |
-| Email    | Brevo Free SMTP (300 emails a day)                   | none                                           |
-
-Collect each value below as you go. Don't paste secrets into chats, issues or PRs. They only go into Vercel
-and GitHub settings.
-
-1. **Neon:** create a project.
-   - From **Connection details**, copy the **pooled** URL (host contains `-pooler`); this is `DATABASE_URL`.
-   - Turn pooling off and copy the URL again; this is the direct URL for migrations, `DATABASE_DIRECT_URL`.
-2. **Upstash:** create a Redis database with **eviction off**. Copy the `rediss://…` URL; this is `REDIS_URL`.
-3. **Cloudflare R2:** create a private bucket, e.g. `elearner-media`.
-   - From **Manage API tokens**, create an Object Read & Write token for that bucket. It gives you
-     `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
-   - The endpoint is `https://<account id>.r2.cloudflarestorage.com` (`S3_ENDPOINT`). Set `S3_REGION=auto` and
-     `S3_FORCE_PATH_STYLE=false`.
-   - Add a CORS rule: allow `PUT` and `GET` from your app URL, allow the `content-type` header, and **expose
-     `ETag`**.
-4. **Brevo:** add and verify the sender address.
-   - Under **SMTP & API → SMTP**, create an SMTP key.
-   - `SMTP_URL=smtp://<login>:<smtp key>@smtp-relay.brevo.com:587`
-   - `MAIL_FROM="E-learner <the verified address>"`
-5. **Vercel, the app project:**
-   - **Add New → Project**, import the same repository again, and set **Root Directory `apps/web`**.
-     `apps/web/vercel.json` sets the build, the region, and turns off Git auto-deploys, because deploy.yml deploys
-     after CI.
-   - Note the project's `*.vercel.app` address. That's `APP_URL`, e.g. `https://e-learner-app.vercel.app`.
-   - Under **Settings → Environment Variables (Production)**, add:
-     - `APP_URL`, `DATABASE_URL` (pooled) and `REDIS_URL`;
-     - `BETTER_AUTH_SECRET` (`openssl rand -base64 32`);
-     - `TOKEN_ENC_KEYS=v1:<openssl rand -base64 32>` and `TOKEN_ENC_ACTIVE_KEY_ID=v1`;
-     - the five `S3_*` values, `SMTP_URL` and `MAIL_FROM`;
-     - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (step 6).
-
-     Leave `GOOGLE_WORKSPACE_DOMAIN` unset, so any Google account can sign up. See
-     [environment.md](environment.md).
-
-   - **Account Settings → Tokens:** create a token (`VERCEL_TOKEN`). The project's **Settings → General** shows
-     the Project ID, and your team settings show the Team ID (`VERCEL_ORG_ID`).
-
-6. **Google:** follow [google-setup.md](google-setup.md) **"Open sign-up"**. The redirect URIs use your
-   `APP_URL`.
-7. **GitHub → Settings → Environments → New environment `production`:**
-   - Add the secrets `DATABASE_DIRECT_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`.
-   - Add the environment variable `APP_URL`.
-   - Required reviewers are optional when you're the only maintainer.
-8. **GitHub → Settings → Secrets and variables → Actions → Variables:** add `DEPLOY_ENABLED=true`. Leave
-   `WORKER_ENABLED` unset.
-9. **Deploy:** open **Actions → Deploy → Run workflow** on `main`. It runs CI, applies the migrations to Neon, and
-   deploys the web app.
-10. **Make yourself admin:**
-    1. Open `APP_URL` and sign in with Google. You're a student at first.
-    2. Run **Actions → "Admin: set user role"** with your email and `ADMIN`.
-    3. Do the same with `TEACHER` for each teacher after they've signed in once.
-11. **Point the landing page at the app:** in the _static_ Vercel project, set `SITE_APP_URL` to `APP_URL` and
-    redeploy. Its Enroll and Sign in buttons then open the real sign-in.
-
-**Check it:**
-
-- `APP_URL/api/health/ready` returns `{"status":"ok","checks":{"database":"ok","redis":"ok"}}`.
-- In a private window, sign up with a second Google account and ask to join a course. Then, as the teacher,
-  approve it under the course's **Join requests**.
-
-## One-time setup
-
-1. **GitHub → Settings → Branches:** protect `main`. Require a PR and require the checks
-   `Format, lint, typecheck, unit tests`, `Integration tests (Postgres, ffmpeg)`, `Build + Playwright e2e`,
-   `Docker images (web)` and `Docker images (worker)`.
-2. **GitHub → Settings → Environments → `production`:**
-   - Add required reviewers. This is the approval gate before migrations run.
-   - Restrict deployment branches to `main`.
-   - Add these **environment secrets**:
-
-   | Secret                               | Value                                                          |
-   | ------------------------------------ | -------------------------------------------------------------- |
-   | `DATABASE_DIRECT_URL`                | Neon **direct** (non-pooled) connection string, for migrations |
-   | `VERCEL_TOKEN`                       | Vercel access token scoped to the team                         |
-   | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | From `.vercel/project.json` after `vercel link` in `apps/web`  |
-   | `RENDER_WORKER_DEPLOY_HOOK_URL`      | Render → worker service → Settings → Deploy Hook               |
-   - Add the **environment variable** `APP_URL` (the public URL shown on the deployment).
-
-3. **GitHub → Settings → Variables (repository):** set `DEPLOY_ENABLED=true` once steps 4–6 are done. Until
-   then the deploy jobs are skipped and only CI runs.
-4. **Vercel project:**
-   - Root Directory `apps/web`, framework Next.js. Install command `pnpm install --frozen-lockfile`.
-   - Set every variable from `apps/web/src/env.ts` for Production: the pooled Neon `DATABASE_URL`,
-     `REDIS_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_*`, `TOKEN_ENC_*`, `S3_*`, `SMTP_URL`, `MAIL_FROM`,
-     `APP_URL`.
-   - Leave `AUTH_SIGNIN_LIMIT_PER_MIN` unset (default 5).
-   - Turn off Vercel's own Git auto-deploys. deploy.yml deploys only after CI and approval.
-5. **Render:**
-   - Create a Background Worker from an existing image: `ghcr.io/<owner>/<repo>/worker:<any sha>`.
-   - If the GHCR package is private, add registry credentials (a GitHub PAT with `read:packages`).
-   - Set every variable from `apps/worker/src/env.ts`, with the same values as the web app where they
-     overlap (`TOKEN_ENC_KEYS` must match).
-6. **R2 bucket:**
-   - CORS allows `PUT` from `APP_URL` and **exposes the `ETag` header**. Multipart upload completion needs it.
-   - The bucket is private (segments are served through presigned URLs only).
+**Branch protection** applies now, whatever the hosting. In GitHub → Settings → Branches, protect `main`: require a
+PR and require the CI checks `Format, lint, typecheck, unit tests`, `Integration tests (Postgres, ffmpeg)`,
+`Build + Playwright e2e`, `Docker images (web)`, `Docker images (worker)` and `Static landing site`. UAT only deploys
+green commits, but protection stops a red one from landing on `main` at all.
 
 ## Releasing
 
-Merge to `main` → Deploy runs CI → a reviewer approves `production` → migrations → web and worker deploy in
-parallel. A deploy never cancels another one half-way (concurrency group `deploy-production`).
+Merge to `main`. CI runs on the merge commit, and as soon as every check is green the UAT VM deploys it, with
+migrations first (see [uat.md](uat.md)). Production releases on AWS will add an approval step.
 
 **Migrations must be backward compatible.** The old version keeps serving while the new one rolls out, and
 on rollback. Use expand → deploy → contract:
@@ -221,11 +131,10 @@ Never edit a migration that has been deployed. Add a new one.
 
 ## Rollback
 
-- **Web:** Vercel → Deployments → previous production deployment → _Promote_ (instant).
-- **Worker:** Render → Manual Deploy → pick the previous image tag (`worker:<previous sha>`). Images are kept in
-  GHCR.
-- **Database:** roll forward with a new migration that reverses the change. Restore from Neon point-in-time
-  recovery only for data loss (runbook: `restore-database`, see NEXT_STEPS).
+- **UAT:** check out the previous commit on the VM and run `deploy/uat/deploy.sh` (uat.md → Roll back).
+- **Static landing page:** Vercel → Deployments → previous deployment → _Promote_.
+- **Database:** roll forward with a new migration that reverses the change. Restore a backup only for data loss
+  (`deploy/uat/manage.sh backup` on UAT; RDS point-in-time recovery in production).
 
 ## Building images locally
 

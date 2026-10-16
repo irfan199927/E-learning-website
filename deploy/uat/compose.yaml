@@ -1,0 +1,123 @@
+# UAT stack for a single Linux VM (home lab). Everything the app needs, in one Compose project.
+# Run it through deploy.sh (it passes --env-file); see docs/uat.md.
+#
+#   LAN ports:  80 web app · 9000 object storage (browsers upload/stream directly) · 8025 UAT mail inbox
+#   Internal:   postgres, redis, worker. Postgres and Redis are never published.
+name: elearner-uat
+
+x-app-env: &app-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  APP_URL: ${APP_URL:?set APP_URL in uat.env}
+  DATABASE_URL: postgresql://elearner:${POSTGRES_PASSWORD:?}@postgres:5432/elearner
+  REDIS_URL: redis://redis:6379
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  GOOGLE_WORKSPACE_DOMAIN: ${GOOGLE_WORKSPACE_DOMAIN:-}
+  TOKEN_ENC_KEYS: ${TOKEN_ENC_KEYS:?}
+  TOKEN_ENC_ACTIVE_KEY_ID: ${TOKEN_ENC_ACTIVE_KEY_ID:-v1}
+  # Presigned URLs go to browsers, so the endpoint must be the VM's LAN address (containers reach it too).
+  S3_ENDPOINT: http://${UAT_HOST:?set UAT_HOST in uat.env}:9000
+  S3_REGION: us-east-1
+  S3_BUCKET: elearner-media
+  S3_ACCESS_KEY_ID: elearner
+  S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?}
+  S3_FORCE_PATH_STYLE: "true"
+  # UAT mail goes to Mailpit (inbox at :8025). Point SMTP_URL at a real provider to send for real.
+  SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
+  MAIL_FROM: ${MAIL_FROM:-E-learner UAT <no-reply@uat.local>}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: elearner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: elearner
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elearner"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    # BullMQ needs noeviction; AOF keeps queued jobs across restarts.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: elearner
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+    ports: ["9000:9000", "127.0.0.1:9001:9001"] # console only from the VM itself
+    volumes: [miniodata:/data]
+
+  minio-init:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    depends_on: [minio]
+    restart: "no"
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 elearner \"$$MINIO_ROOT_PASSWORD\"; do sleep 1; done;
+      mc mb --ignore-existing local/elearner-media;
+      mc anonymous set none local/elearner-media;
+      "
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports: ["8025:8025"]
+
+  web:
+    image: elearner-web:uat
+    build: { context: ../.., dockerfile: apps/web/Dockerfile }
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      APP_VERSION: ${GIT_SHA:-unknown}
+    ports: ["${WEB_PORT:-80}:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    image: elearner-worker:uat
+    build: { context: ../.., dockerfile: apps/worker/Dockerfile }
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      ATTENDANCE_PRESENT_RATIO: "0.5"
+      TRANSCODE_CONCURRENCY: ${TRANSCODE_CONCURRENCY:-1}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # One-off tasks (migrations, roles, users): the web image's build stage has the repo, pnpm and Prisma.
+  #   docker compose ... run --rm tools pnpm db:deploy
+  tools:
+    image: elearner-tools:uat
+    build: { context: ../.., dockerfile: apps/web/Dockerfile, target: build }
+    profiles: [tools]
+    environment:
+      <<: *app-env
+      NODE_ENV: development # the tools image keeps dev dependencies (Prisma CLI, tsx)
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:

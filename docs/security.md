@@ -51,7 +51,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 | T14 | Path traversal in HLS file requests                         | Paths resolved and checked against the video's prefix before signing                                                                                                                                                                    | Built                                          |
 | T15 | Malicious dependency or tampered CI action                  | Lockfile installs; actions pinned to commit SHAs; Dependabot; `contents: read` CI token                                                                                                                                                 | Built                                          |
 | T16 | Unreviewed code or migrations reaching production           | Required checks, CODEOWNERS on sensitive paths, `production` environment approval before deploy                                                                                                                                         | Built (needs repo settings, see deployment.md) |
-| T17 | Minor's data processed without parental consent             | Admin-created accounts start inactive; consent flow. Open Google sign-up skips the inactive gate, so the teacher's approval is the only check                                                                                           | Partly: consent UI planned (see Known gaps)    |
+| T17 | Minor's data processed without parental consent             | Students give a date of birth on first sign-in; under-18s can browse but can't ask to join, and teachers can't approve them, until a parent consents through a single-use emailed link                                                  | Built                                          |
 | T18 | Insider abuse (staff changing roles, grades, deleting data) | Append-only audit log                                                                                                                                                                                                                   | Partly: see [Audit logging](#audit-logging)    |
 | T19 | Redis outage locks everyone out                             | Rate limiter fails open and logs `rate limiter unavailable`                                                                                                                                                                             | Built (alert on the log line)                  |
 
@@ -65,7 +65,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 - Google sign-in requests login scopes only. API access is a separate teacher grant (see below).
 - **Self sign-up only with Google**, which verifies the email. New accounts are active students with no courses;
   a teacher approves each course join request (`server/services/join-requests.ts`). Password accounts are
-  created by admins only. Roles are changed only by an admin (Actions → "Admin: set user role").
+  created by admins only. Roles are changed only by an admin (the Users page, or `db:set-role` for the very first admin).
 - Sessions are stored in Postgres, last 7 days and are refreshed daily. Every request checks the database, so
   revoking a session or deactivating a user takes effect immediately.
 - A session can't be created for a user who is inactive or soft-deleted.
@@ -87,13 +87,14 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 - **CSP** (`apps/web/src/middleware.ts`): a per-request nonce with `strict-dynamic`; no `unsafe-inline` scripts;
   `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`. Forms may post only to the app and Google
   sign-in.
-- **Headers** (`apps/web/next.config.ts`):
-  - HSTS with preload;
+- **Headers** (`apps/web/next.config.ts`, on every response):
   - `nosniff`;
   - `X-Frame-Options: DENY`;
   - a strict referrer policy;
-  - a Permissions-Policy that turns off camera, microphone and geolocation;
-  - `Cross-Origin-Opener-Policy: same-origin`.
+  - a Permissions-Policy that turns off camera, microphone and geolocation.
+- **HTTPS-only protections**, on when `APP_URL` is `https://` (middleware): HSTS with preload,
+  `Cross-Origin-Opener-Policy: same-origin`, the CSP's `upgrade-insecure-requests`, and `Secure` cookies. A
+  plain-HTTP LAN UAT has none of them, which is one reason it must hold test data only.
 
   The static landing site sets the same headers through `vercel.json`.
 
@@ -166,13 +167,16 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `video.upload`
 - `user.purge` (written by the worker)
 - `course.create`, `course.join_request`, `enrollment.approve`, `enrollment.decline`
-- `user.role` (written by the "Admin: set user role" workflow)
+- `user.create`, `user.invite`, `user.role`, `user.activate`, `user.deactivate` (the admin Users page, and
+  `user.role` also from the "Admin: set user role" workflow)
+- `enrollment.remove` (a teacher removes a student from a course)
+- `user.dob`, `consent.request`, `consent.grant` (parental consent; the grant has no actor because the parent has
+  no account)
 
 **Must be added with the features that need them:**
 
 - grade edits
-- enrolments removed by staff
-- consent granted or withdrawn
+- consent withdrawn
 - user deletion requests
 - denied video access
 
@@ -181,17 +185,17 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 India's Digital Personal Data Protection Act applies. Most students are under 18, which brings in section 9
 (children's data).
 
-| Requirement                                   | How we meet it                                                                                                                                                                                             | Status                                                       |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Verifiable parental consent before processing | New accounts are inactive and can't sign in. A parent activates the account by giving consent (email OTP plus a declaration), which is recorded in `Consent` with the policy version, method, time and IP. | Gate built; consent UI and API planned (NEXT_STEPS §4 Admin) |
-| No tracking or targeted ads for children      | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                                                                             | Built                                                        |
-| Data minimisation                             | Date of birth is stored only to set `isMinor` and is never shown to other users. No phone numbers or addresses.                                                                                            | Built                                                        |
-| Consent to be recorded in classes             | `ConsentType.RECORDING`, accepted at onboarding                                                                                                                                                            | Planned                                                      |
-| Withdrawal of consent                         | `Consent.withdrawnAt`; withdrawing will deactivate the student                                                                                                                                             | Model built; flow planned                                    |
-| Erasure on request                            | Soft-delete (`deletedAt`) blocks sign-in immediately. After 30 days the worker purges the user and their data (cascade), and writes an audit row.                                                          | Built (purge job); request UI planned                        |
-| Grievance officer                             | Contact details in the site footer                                                                                                                                                                         | Planned                                                      |
-| Data location                                 | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                                                                                       | To decide (architecture.md G7)                               |
-| Breach notification                           | Tell the Data Protection Board and affected users without delay                                                                                                                                            | Process: see below                                           |
+| Requirement                                   | How we meet it                                                                                                                                                                                                                                                                                                                                                                                                          | Status                                       |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Verifiable parental consent before processing | Every student gives a date of birth at first sign-in (`/welcome`). Under-18s may browse the catalog but can't join courses (enforced in the join and approve services) until a parent opens a single-use link (7 days, only its SHA-256 stored), reads the notice and confirms they are the parent or guardian. `Consent` records the parent's name and email, time, IP, method `parent-email-link` and notice version. | Built                                        |
+| No tracking or targeted ads for children      | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                                                                                                                                                                                                                                                                                          | Built                                        |
+| Data minimisation                             | Date of birth is stored only to set `isMinor` and is never shown to other users. No phone numbers or addresses.                                                                                                                                                                                                                                                                                                         | Built                                        |
+| Consent to be recorded in classes             | `ConsentType.RECORDING`, accepted at onboarding                                                                                                                                                                                                                                                                                                                                                                         | Planned                                      |
+| Withdrawal of consent                         | `Consent.withdrawnAt`; the student is then treated as needing consent again. Parents withdraw by contacting the school                                                                                                                                                                                                                                                                                                  | Model built; self-service withdrawal planned |
+| Erasure on request                            | Soft-delete (`deletedAt`) blocks sign-in immediately. After 30 days the worker purges the user and their data (cascade), and writes an audit row.                                                                                                                                                                                                                                                                       | Built (purge job); request UI planned        |
+| Grievance officer                             | Contact details in the site footer                                                                                                                                                                                                                                                                                                                                                                                      | Planned                                      |
+| Data location                                 | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                                                                                                                                                                                                                                                                                                    | To decide (architecture.md G7)               |
+| Breach notification                           | Tell the Data Protection Board and affected users without delay                                                                                                                                                                                                                                                                                                                                                         | Process: see below                           |
 
 Known erasure limits:
 
@@ -219,11 +223,10 @@ The full incident-response runbook is still to be written (NEXT_STEPS §3).
 
 The security-relevant gaps, most important first:
 
-- **Parental consent and recording consent flows aren't built.** Until they are, admins activate minors' accounts
-  only after collecting consent outside the app. Record that consent.
-- **Open Google sign-up lets a minor create an account without parental consent.** The account holds only their
-  name and email until a teacher approves a join request. Teachers should approve only students whose consent the
-  school already has, until the consent flow exists.
+- **Recording consent isn't built yet**, and parents can't withdraw consent themselves: the school does it on
+  request (set `Consent.withdrawnAt`). The date of birth is self-declared; a parent's emailed consent is the check.
+- **Minors who were enrolled before this release** (admin-created, no date of birth) are asked for their date of
+  birth at their next sign-in, but stay enrolled. Admins should review existing minors' consent.
 - **Audit coverage is partial.** See [Audit logging](#audit-logging).
 - **The general API rate limit (120/min/user in the spec) isn't applied to every route.** Only the routes in the
   table above are limited.

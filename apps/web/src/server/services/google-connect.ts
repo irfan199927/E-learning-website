@@ -18,6 +18,8 @@ export function safeReturnTo(value: string | null | undefined): string {
 
 export function startConnect(deps: Deps, actor: Actor, returnTo: string | null): string {
   assertCan(actor.role, "google:connect");
+  if (!deps.config.google.clientId)
+    throw Errors.conflict("Google isn't set up on this server yet, so classes can't be scheduled on Meet.");
   const state = signToken(
     { uid: actor.id, rt: safeReturnTo(returnTo), n: randomUUID() },
     deps.config.authSecret,

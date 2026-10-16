@@ -17,6 +17,11 @@ describe("google connect", () => {
     const deps = makeDeps();
     expect(new URL(startConnect(deps, w.teacher, "/dashboard")).hostname).toBe("accounts.google.com");
     expect(() => startConnect(deps, w.student, null)).toThrow();
+    // A server without Google credentials (LAN-only UAT) says so instead of sending teachers to a broken page.
+    const noGoogle = makeDeps({
+      config: { ...deps.config, google: { ...deps.config.google, clientId: "" } },
+    });
+    expect(() => startConnect(noGoogle, w.teacher, null)).toThrow(/isn't set up/);
   });
 
   it("rejects a state token minted for someone else", async () => {

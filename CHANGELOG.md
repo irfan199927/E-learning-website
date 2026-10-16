@@ -5,6 +5,80 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — parental consent for under-18s (DPDP) (2026-10-16)
+
+- **Date of birth at first sign-in.** Every student is sent to `/welcome` once.
+- **Under-18s can browse courses but can't join** until a parent consents. Teachers can't approve them either.
+  The rule is enforced in the services, not only in the UI.
+- **Parent consent by email.**
+  - The student enters a parent's email, and the parent gets a single-use link, valid for 7 days. Only its hash
+    is stored; asking again replaces the old link.
+  - The link opens a public page explaining what the school keeps and why.
+  - The parent confirms they're the parent or guardian and types their name. No account needed.
+  - `Consent` records the parent's name and email, the time, the IP, the method and the notice version.
+- The Users page shows each under-18 student's consent status.
+- New `ConsentRequest` table and `Consent.parentName` / `parentEmail` (migration `parental_consent`, additive).
+- API: `POST /api/v1/me/date-of-birth`, `POST /api/v1/me/parent-consent`, and the public
+  `POST /api/v1/consent/:token`. Audited as `user.dob`, `consent.request` and `consent.grant`.
+- The seed gives demo students birth dates, and consent records for the two minors.
+- Tests: age unit test; 3 integration tests (date-of-birth gate, the full consent flow including the teacher
+  approval gate, expiry, replacement and unknown links); an e2e test from admin invite → date of birth → parent's
+  email → parent consents → student can ask to join.
+
+### Added — admin Users page and course rosters (2026-10-16)
+
+- **Users** (`/admin/users`, admins): add people one at a time or from a CSV (`email,name[,role]`, up to 500).
+  - Bad lines are reported with line numbers before anything is sent.
+  - Each new person gets a **welcome email to choose a password**. It reuses Better Auth's reset flow, with its
+    own "You've been added" wording.
+  - Also: search, filter by role, change roles, **switch accounts off** (signs them out everywhere at once),
+    and resend invites.
+  - Guard rails: no changing your own role or switching yourself off, and the last admin can't be demoted.
+- **Students** section on each course page for its teacher: the roster, with **Remove**, which ends access at
+  once and keeps the history.
+- API:
+  - `GET`/`POST /api/v1/admin/users`
+  - `PATCH /api/v1/admin/users/:id`
+  - `POST /api/v1/admin/users/:id/invite`
+  - `DELETE /api/v1/courses/:id/students/:userId`
+
+  All of them are audited.
+
+- CI's e2e job now runs Mailpit, so the e2e test follows a real invite email to set a password.
+- Tests: CSV parser unit test; 5 integration tests (create/skip/invite, search and permissions, deactivation
+  revokes sessions, self-lockout guards, roster removal); e2e for the invite → password → switch-off flow and
+  for non-admins being refused.
+
+### Added — UAT on a home-lab VM (2026-10-16)
+
+- **`deploy/uat/`:** the whole app on one Linux VM with Docker Compose.
+  - Services: web, worker, Postgres, Redis (`noeviction`, AOF), MinIO, and Mailpit as the UAT inbox.
+  - A `tools` image runs migrations and admin commands.
+- **Automatic updates without exposing the home network.** A systemd timer runs `auto-update.sh` every 2 minutes.
+  It deploys a new `main` commit only after all of its GitHub checks have passed: build, migrate, restart, then a
+  readiness check. The repo is public, so there's deliberately no self-hosted runner.
+- **Setup and day-to-day tasks:**
+  - `bootstrap-vm.sh` installs Docker, the service user, the checkout, secrets and the timer.
+  - `init-env.sh` writes `/opt/elearner/uat.env` with random secrets.
+  - `manage.sh` handles `create-user`, `set-role`, `demo-data`, `logs`, `status` and `backup`.
+- **`pnpm db:create-user -- <email> "<name>" [ROLE]`** creates a password account and prints a one-time password,
+  for servers without Google.
+- Guide: `docs/uat.md`. `docs/deployment.md` now lists the environments (Vercel landing page, UAT VM, AWS
+  production plan) and maps each UAT service to its AWS counterpart.
+
+### Changed
+
+- **Google is optional.** With `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` empty:
+  - the sign-in page hides "Continue with Google";
+  - Better Auth registers no Google provider;
+  - teachers connecting Meet get a clear message.
+- **Plain-HTTP hosts work.** The CSP adds `upgrade-insecure-requests` only when `APP_URL` is HTTPS. On a LAN UAT it
+  used to redirect every asset to `https://` and break the page.
+- An empty `GOOGLE_WORKSPACE_DOMAIN` now means "not set" instead of failing validation. Compose passes unset
+  variables as empty strings.
+- Removed the free-tier plan (Neon, Upstash and a second Vercel project) and `apps/web/vercel.json`. Only the
+  static landing page stays on Vercel.
+
 ### Added — open Google sign-up with teacher-approved course access (2026-10-16)
 
 - **Anyone can sign up with Google.** A new account is an active student with **no courses**. Password accounts
@@ -18,11 +92,7 @@ Dates are in IST.
     `GET` for teachers, and `PATCH /api/v1/join-requests/:id`.
 - **New course** (`/courses/new`, `POST /api/v1/courses`): teachers create a course, published at once.
 - **Roles:** `pnpm db:set-role -- <email> <ROLE>`, and the GitHub workflow "Admin: set user role" for production.
-- **Free-tier deployment (web only):** docs/deployment.md "Free-tier setup".
-  - The app gets its own Vercel project (`apps/web/vercel.json`: Mumbai region, build from the monorepo root, Git
-    auto-deploys off).
-  - The worker deploy is skipped unless `WORKER_ENABLED=true`.
-  - Builds on Vercel skip `output: "standalone"`.
+
 - Tests: 5 new integration tests (join flow, declines, access rules, unpublished courses, course creation) and an
   e2e test of the whole flow on desktop and mobile. The seed adds `kabir@school.edu`, a student with no courses.
 

@@ -30,7 +30,10 @@ test("a teacher creates a course, a new student asks to join, and the course ope
   await signIn(page, "kabir@school.edu");
   await page.goto("/courses");
   await page.getByRole("button", { name: `Ask to join ${title}` }).click();
-  await expect(page.getByText("Request sent. Waiting for your teacher.")).toBeVisible();
+  // Scoped to this course: Kabir may have other pending requests (other runs, the other device project).
+  await expect(
+    page.getByRole("article").filter({ hasText: title }).getByText("Request sent. Waiting for your teacher."),
+  ).toBeVisible();
   // The course itself stays closed until approval.
   const closed = await page.goto(courseUrl);
   expect(closed?.status()).toBe(404);

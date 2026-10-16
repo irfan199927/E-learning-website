@@ -36,6 +36,7 @@ pnpm --filter @elearner/web test:int            # integration: real Postgres (DA
 pnpm --filter @elearner/worker test:int         # integration incl. real ffmpeg transcode
 pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs production build
 pnpm build:site                                 # static landing page only → apps/web/out (Vercel)
+deploy/uat/deploy.sh                            # on the UAT VM: build, migrate, restart (docs/uat.md)
 docker build -f apps/web/Dockerfile -t elearner-web .       # images build from the repo root (docs/deployment.md)
 docker build -f apps/worker/Dockerfile -t elearner-worker .
 ```
@@ -90,10 +91,16 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
   headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
 - Access model: anyone may sign up with Google (auth.ts `databaseHooks.user.create` makes them an active STUDENT);
-  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Roles change
-  only via `pnpm db:set-role` / the "Admin: set user role" workflow.
-- The full app on Vercel is a separate project rooted at `apps/web` (`apps/web/vercel.json`); the repo-root
-  `vercel.json` is the static landing project. Vercel builds skip `output: "standalone"` (`VERCEL=1`).
+  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Students give a
+  date of birth at `/welcome` (app layout redirects); under-18s can't join or be approved until a parent consents via
+  the emailed link (`services/consent.ts`, `assertMayJoinCourses`). Admins manage
+  accounts at `/admin/users` (services/admin-users.ts: invites via `deps.sendPasswordSetup`, which reuses Better
+  Auth's reset flow); `pnpm db:set-role` / `db:create-user` are for bootstrapping the first admin.
+- Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
+  (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is
+  public), production later on AWS. Google is optional: empty `GOOGLE_CLIENT_ID` = password sign-in only.
+- Plain-HTTP hosts (LAN UAT): CSP `upgrade-insecure-requests` and secure cookies switch on only when `APP_URL` is
+  https. Empty env strings mean unset (Compose passes `""`), so optional zod fields must accept `""`.
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 
