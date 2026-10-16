@@ -1,7 +1,7 @@
 /**
  * In-app notifications: the bell in the top bar and /notifications.
  *
- * Rows are written where things happen (join requests and approvals, grades, consent, class reminders and
+ * Rows are written where things happen (join requests and approvals, grades, class reminders and
  * recording issues in the worker, new assignments and quizzes). Here people read them and mark them read. A user
  * only ever sees their own rows; anyone else's id is NOT_FOUND.
  *

@@ -6,7 +6,7 @@ Context for Claude Code (and humans) working in this repo. Read this first.
 
 School e-learning platform: teachers schedule live classes on Google Meet, recordings sync from Drive into a gated
 HLS video library, students join/watch/track progress, parents get read-only views. India-first (Asia/Kolkata,
-DPDP Act, K-12 minors). Full product spec: `docs/SPEC.md`. UI design: the "E-learner" Design canvas (design system,
+DPDP Act). Students are all adults (18+): there is no parental-consent flow. Full product spec: `docs/SPEC.md`. UI design: the "E-learner" Design canvas (design system,
 student dashboard, teacher calendar, lesson player, mobile, architecture) and `docs/ui.md` (shell, screens, UI rules).
 
 ## Layout (pnpm + Turborepo monorepo)
@@ -91,9 +91,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
   headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
 - Access model: anyone may sign up with Google (auth.ts `databaseHooks.user.create` makes them an active STUDENT);
-  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Students give a
-  date of birth at `/welcome` (app layout redirects); under-18s can't join or be approved until a parent consents via
-  the emailed link (`services/consent.ts`, `assertMayJoinCourses`). Admins manage
+  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Students are
+  adults: no date of birth, no parental consent (removed in migration `remove_parental_consent`). Admins manage
   accounts at `/admin/users` (services/admin-users.ts: invites via `deps.sendPasswordSetup`, which reuses Better
   Auth's reset flow); `pnpm db:set-role` / `db:create-user` are for bootstrapping the first admin.
 - Course content: a course is ordered Modules → Lessons (`services/course-content.ts` edits, `learning.ts` reads).
@@ -102,8 +101,7 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   LessonProgress ticks otherwise. Attachments: presigned PUT, then `completeAttachment` rebuilds the key and
   checks the real size; downloads redirect with `Content-Disposition: attachment`.
 - Parents see children only through a VERIFIED `ParentLink` (`services/parents.ts`); the child view reuses the
-  learner read models with the child as the Actor (child's timezone). Links come from consent (parent with an
-  account), admin-created parent accounts (`linkByConsentEmail`) or the Users page.
+  learner read models with the child as the Actor (child's timezone). Links are made by an admin on the Users page.
 - Classes without Google (`meeting: "none"`): no googleEventId/meetConferenceId, room in `location`, optional
   pasted link in `meetLink`; series expanded locally (`expandWeekly`). Reschedule/cancel only call Google when
   `googleEventId` is set. Attendance (`services/attendance.ts`): source MANUAL beats MEET_API (worker skips it).

@@ -121,7 +121,7 @@ function createAuth() {
       },
       session: {
         create: {
-          // Block sign-in for deactivated users and for minors without parental consent (isActive=false).
+          // Block sign-in for deactivated (or deleted) users.
           before: async (session) => {
             const user = await getDb().user.findUnique({
               where: { id: session.userId },

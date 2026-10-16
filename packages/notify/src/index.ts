@@ -68,17 +68,6 @@ export const templates = {
       ),
     };
   },
-  /** To a parent: approve a child's account (DPDP verifiable consent). */
-  parentConsent(childName: string, url: string): Message {
-    return {
-      subject: `Approve ${childName}'s E-learner account`,
-      text: `Hello,\n\n${childName} gave your email address as their parent or guardian. Before they can join classes on E-learner, the school needs your consent to use their information for their learning.\n\nRead what we store and give consent here:\n${url}\n\nThis link expires in 7 days. If you don't know ${childName}, ignore this email; nothing changes.`,
-      html: layout(
-        `Approve ${childName}'s account`,
-        `<p>Hello,</p><p><b>${esc(childName)}</b> gave your email address as their parent or guardian. Before they can join classes on E-learner, the school needs your consent to use their information for their learning.</p>${button(url, "Read and give consent")}<p style="color:#4B5162;font-size:13px">This link expires in 7 days. If you don't know ${esc(childName)}, ignore this email; nothing changes.</p>`,
-      ),
-    };
-  },
   classReminder(p: {
     name: string;
     classTitle: string;

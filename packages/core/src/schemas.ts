@@ -479,29 +479,3 @@ export function parseUserCsv(text: string): {
     problems.push({ line: 1, message: `At most ${MAX_USERS_PER_IMPORT} users at a time; split the file.` });
   return { users, problems };
 }
-
-// ── Parental consent (DPDP) ──
-
-export const dateOfBirthSchema = z.object({
-  dateOfBirth: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter your date of birth.")
-    .transform((s) => new Date(`${s}T00:00:00.000Z`))
-    .refine((d) => !Number.isNaN(d.getTime()), "Enter a real date.")
-    .refine((d) => {
-      const years = (Date.now() - d.getTime()) / (365.25 * 86_400_000);
-      return years >= 3 && years <= 100;
-    }, "Check the year: that date doesn't look right."),
-});
-export type DateOfBirthInput = z.infer<typeof dateOfBirthSchema>;
-
-export const parentConsentRequestSchema = z.object({
-  parentEmail: z.string().trim().toLowerCase().email("Enter your parent's email address.").max(254),
-});
-export type ParentConsentRequestInput = z.infer<typeof parentConsentRequestSchema>;
-
-export const grantConsentSchema = z.object({
-  parentName: z.string().trim().min(2, "Enter your full name.").max(120),
-  declaration: z.literal(true, { errorMap: () => ({ message: "Tick the box to confirm." }) }),
-});
-export type GrantConsentInput = z.infer<typeof grantConsentSchema>;

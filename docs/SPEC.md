@@ -1,6 +1,6 @@
 # E-learner — Phase 1 spec (deliverables 1–5)
 
-**Decisions locked from Q&A:** <500 students · school has Google Workspace with Meet recording · paid courses + subscriptions (Razorpay) · K-12, so minors are in scope.
+**Decisions locked from Q&A:** <500 students · school has Google Workspace with Meet recording · paid courses + subscriptions (Razorpay) · ~~K-12, so minors are in scope~~ (changed 2026-10-16: all students are 18+, so there is no parental-consent flow; see CHANGELOG).
 
 **What that changes from the default brief**
 

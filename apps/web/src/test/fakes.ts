@@ -147,8 +147,6 @@ export async function world() {
         role,
         emailVerified: true,
         isActive: true,
-        // Adult students, so join flows aren't gated on parental consent (consent tests set their own).
-        ...(role === Role.STUDENT ? { dateOfBirth: new Date("2000-01-01T00:00:00Z") } : {}),
       },
     });
   const [admin, teacher, otherTeacher, student, outsider, parent] = await Promise.all([

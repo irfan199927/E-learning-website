@@ -15,7 +15,6 @@ import { JoinRequestStatus } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess } from "../policies";
-import { assertMayJoinCourses } from "./consent";
 import { notifyUsers } from "./notifications";
 
 export type CatalogState = "enrolled" | "pending" | "declined" | "none";
@@ -85,7 +84,6 @@ export async function requestToJoin(
   if (!course) throw Errors.notFound("Course");
   const enrolled = await deps.db.enrollment.count({ where: { courseId, userId: actor.id, revokedAt: null } });
   if (enrolled) throw Errors.conflict("You're already in this course.");
-  await assertMayJoinCourses(deps, actor.id, "self"); // date of birth given; under-18s need a parent's consent
 
   const message = input.message || null;
   await deps.db.joinRequest.upsert({
@@ -169,7 +167,6 @@ export async function decideJoinRequest(
     throw Errors.conflict("This request was already answered.");
 
   const approve = input.decision === "approve";
-  if (approve) await assertMayJoinCourses(deps, request.userId, "teacher");
   const now = deps.now();
   await deps.db.$transaction([
     deps.db.joinRequest.update({

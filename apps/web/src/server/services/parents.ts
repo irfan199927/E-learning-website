@@ -2,14 +2,12 @@
  * Parents: a read-only view of their children's learning, and how parents get linked to children.
  *
  * - A parent sees a child only through a VERIFIED `ParentLink`. Anything else is NOT_FOUND (no id leaks).
- * - Links are verified when an admin links them (Users page), or when a parent who has an account gives
- *   parental consent from the emailed link (the link proves they control that email), or when an admin adds a
- *   parent account whose email already gave consent for a student.
+ * - Links are made (and verified) by an admin on the Users page.
  * - The view reuses the learner read models (learning.ts) for the child, so parents see exactly the numbers the
  *   child sees: streak, today's watch time, monthly activity and per-course progress. Plus class attendance.
  */
 import { assertCan, Errors, type LinkChildInput } from "@elearner/core";
-import { ClassStatus, ConsentType, Role, type Db } from "@elearner/db";
+import { ClassStatus, Role, type Db } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { getLearnerOverview, listMyCourses, type CourseCard, type LearnerOverview } from "./learning";
@@ -283,39 +281,4 @@ export async function unlinkChild(deps: Deps, actor: Actor, linkId: string): Pro
     { type: "ParentLink", id: link.id },
     { studentId: link.studentId },
   );
-}
-
-/**
- * Verified links for a parent email that gave consent: called after a parent consents (if they have an
- * account) and after an admin adds a parent account (for consents given earlier). Returns how many it made.
- */
-export async function linkByConsentEmail(db: Db, parentEmail: string, now: Date): Promise<number> {
-  const email = parentEmail.trim().toLowerCase();
-  const parent = await db.user.findFirst({
-    where: { email, role: Role.PARENT, deletedAt: null },
-    select: { id: true },
-  });
-  if (!parent) return 0;
-  const consents = await db.consent.findMany({
-    where: {
-      type: ConsentType.PARENTAL_VERIFIABLE,
-      withdrawnAt: null,
-      parentEmail: { equals: email, mode: "insensitive" },
-      user: { role: Role.STUDENT, deletedAt: null },
-    },
-    select: { userId: true },
-  });
-  for (const { userId } of consents) {
-    await db.parentLink.upsert({
-      where: { parentId_studentId: { parentId: parent.id, studentId: userId } },
-      create: { parentId: parent.id, studentId: userId, verifiedAt: now },
-      update: {},
-    });
-  }
-  // A link that existed unverified is verified now; verified ones keep their original date.
-  await db.parentLink.updateMany({
-    where: { parentId: parent.id, studentId: { in: consents.map((c) => c.userId) }, verifiedAt: null },
-    data: { verifiedAt: now },
-  });
-  return consents.length;
 }

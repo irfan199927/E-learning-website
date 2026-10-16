@@ -22,8 +22,8 @@ and artwork.
 | Course thumbnails                                | `CourseTile`: generated cover in the course colour                             | No image uploads needed; decorative (`aria-hidden`)            |
 
 **Deliberately not adopted:** Refer & Earn, Career services, masterclass "Register" banners, counsellor
-call-back bar and the profile-completion nag. They are marketing patterns for adult upskilling. We serve K-12
-students who are minors (DPDP Act), and referral or marketing prompts aimed at them are inappropriate.
+call-back bar and the profile-completion nag. They are marketing patterns for adult upskilling. A school's
+learners don't need referral or marketing prompts inside their coursework.
 
 ## App shell
 
@@ -67,7 +67,7 @@ list.
 - `/notifications` lists the newest 50 (then **Older**): unread ones are bold with a dot (and "(unread)" for
   screen readers). Opening one marks it read and follows its link; **Mark all as read** clears the rest.
 - What creates them: join requests (to the teacher), approvals and declines, grades, new assignments and quizzes
-  (to the course's students, once per item), parental consent, class reminders, and recording problems (to the
+  (to the course's students, once per item), class reminders, and recording problems (to the
   host). Links are always same-site paths.
 
 ### Assignments (`/assignments/:id`; new at `/courses/:id/assignments/new`)
@@ -123,9 +123,7 @@ list.
   progress** (browsable by month), each course's progress (lessons done, state, last active), and **Live
   classes, last 30 days** with Attended / Missed / Not recorded (attendance comes from Google Meet).
 - Any child id that isn't the parent's own verified child is a plain 404.
-- Parents get linked to a child when they consent from the emailed link while having an account with that
-  email, when an admin adds a parent account whose email already consented, or by an admin on the Users page
-  (**Link a student** by email; **Unlink**).
+- Parents get linked to a student by an admin on the Users page (**Link a student** by email; **Unlink**).
 
 ### My courses (`/courses`)
 
@@ -168,19 +166,6 @@ published at once. A badge on each course, such as "2 students waiting to join",
 
 - Staff also see **Students (n)**: everyone enrolled, with **Remove** (asks to confirm). Removing ends access at
   once; the student can ask to join again.
-
-### Welcome (`/welcome`) and parental consent
-
-- A student's first visit to any app page sends them to **Welcome**, which asks for their date of birth once.
-  Changing it later needs the school.
-- **Under 18 without a parent's consent:**
-  - **My courses** shows "A parent needs to approve your account" with a parent-email box;
-  - **Find a course** can be browsed, but each card says "Needs your parent's approval first" instead of
-    **Ask to join**.
-- **The parent's page** (`/consent/:token`, public, from the email) shows what the school keeps and why, the
-  notice version, the parent's full name and a declaration checkbox. It's a single-use link, valid for 7 days.
-  Expired and used links get a clear message.
-- **Users page:** under-18 students carry a badge, "waiting for parent" or "parent consented".
 
 ### Users (`/admin/users`, admins only)
 
