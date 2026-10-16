@@ -78,6 +78,10 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - e2e locators: use `exact: true` for nav links. Empty-state copy ("See my courses") also matches substrings.
 - MinIO no longer publishes `minio/minio` images; compose uses pinned `pgsty/minio` (also ships `mc`).
 - CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
+- `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
+  vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
+- Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
+  stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 
 ## Status (end of first build session)
 
@@ -85,6 +89,7 @@ Done & verified: monorepo, schema + migration, all packages, web API + UI (sign-
 scheduling + drag reschedule, upload, player), worker jobs. 89 tests green (52 unit + 23 integration on real Postgres incl.
 real ffmpeg + 14 Playwright e2e desktop/mobile); lint + prettier clean), web production build + worker build pass.
 
+Public landing page at `/` (2026-10-16): animated course advert, Enroll → sign-in; see `docs/ui.md` "Landing page".
 Learner redesign (2026-10-16): sidebar/drawer shell, streak, student Overview (resume card, today's progress, monthly
 activity), My courses with filters, course pages. UI rules and per-role screens: `docs/ui.md`. History: `CHANGELOG.md`.
 

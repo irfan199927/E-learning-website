@@ -47,6 +47,11 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
 - [x] Learner progress: streak, today's watch time, monthly activity calendar, resume card (`LearningDay` table)
+- [x] Public landing page at `/` (animated, advertises a course, Enroll → sign-in). Copy is SAMPLE content in
+      `apps/web/src/app/(marketing)/course.ts`
+- [ ] Replace the sample landing copy with a real course, or render it from a published `Course` once course CRUD
+      exists; add real (consented) student work or testimonials if the school has them
+- [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [ ] Parent view of a child's progress (lessons completed, streak) — read-only, per verified ParentLink
 - [ ] Per-school daily watch goal (now a 30-min constant in `dashboard/page.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist

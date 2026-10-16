@@ -5,6 +5,27 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — public landing page (2026-10-16)
+
+- `/` is now an animated landing page advertising a sample coding course ("Code Foundations"). It used to be a
+  redirect to the dashboard. Every **Enroll** button leads to sign-in, then on to My courses. Signed-in visitors get
+  "Go to dashboard".
+- Hero: **Glyph Portal** (`src/components/ui/glyph-portal.tsx`, MIT). Scrolling flies the camera through the word
+  CODE and into the course.
+- Other sections:
+  - course facts;
+  - a technology marquee;
+  - a self-typing code editor;
+  - a 12-week curriculum timeline;
+  - project cards;
+  - the next batch;
+  - FAQ and the final CTA.
+- Design direction from the ui-ux-pro-max skill: a dark terminal theme, JetBrains Mono headings and a green
+  action colour. Motion respects reduced-motion and no-JS visitors.
+- The sign-in page logo now links back to the landing page.
+- e2e: `landing.spec.ts` covers the content, the Enroll → sign-in → My courses flow, the signed-in state, and
+  reduced motion.
+
 ### Added — delivery: Docker images, CI and deploy (2026-10-16)
 
 - `apps/web/Dockerfile` (Next standalone, ~470 MB, non-root, healthcheck) and `apps/worker/Dockerfile`

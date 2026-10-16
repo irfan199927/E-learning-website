@@ -88,6 +88,51 @@ Until lessons CRUD exists, a course's lessons are its READY videos in upload ord
 
 A back link to the course, then the HLS player with resume and speed controls.
 
+## Landing page (`/`)
+
+The public front page advertises a course. Visitors who click **Enroll now** go to
+`/sign-in?next=/courses`; after signing in they land on My courses. Visitors who are already signed in see **Go to
+dashboard** instead. The signed-in app keeps its own design system; the landing page is scoped under `.lp`.
+
+| Piece                                                                                 | File                                                                                |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Page (server component; plain HTML for SEO)                                           | `apps/web/src/app/(marketing)/page.tsx`                                             |
+| Course copy: **sample** "Code Foundations" coding course, the only place to edit text | `apps/web/src/app/(marketing)/course.ts`                                            |
+| Styles, tokens and motion                                                             | `apps/web/src/app/(marketing)/landing.css`                                          |
+| Hero: scroll-driven camera through the word CODE                                      | `src/components/landing/hero-portal.tsx` wraps `src/components/ui/glyph-portal.tsx` |
+| Scroll reveal, typing editor, sticky header                                           | `src/components/landing/{reveal,typing-terminal,site-header}.tsx`                   |
+
+**Design direction.** It comes from the ui-ux-pro-max skill's design-system search for "coding bootcamp developer
+course teens":
+
+- a dark "terminal" style;
+- JetBrains Mono for headings and Figtree for body text, both already self-hosted;
+- one green accent (`#22C55E`, with dark text on it) reserved for actions.
+
+We skipped the skill's testimonial carousel: we have no real testimonials, and invented ones would be fake reviews.
+The projects students build serve as the proof instead.
+
+**Glyph Portal** (MIT, © Christian Katzmann; keep the notice):
+
+- **Fonts.** It measures the letters once when it mounts, so `HeroPortal` waits for our self-hosted mono font (1.6 s
+  timeout, then a system font). Never point it at a third-party font URL: the CSP blocks it, and so does our rule
+  of self-hosting every font.
+- **Placement.** The component exposes `--gp-word-top` and `--gp-word-bottom`. The eyebrow and the CTA block are
+  positioned from them.
+- **Overriding its styles.** Its injected `<style>` comes later in the document than our CSS, so an override needs
+  higher specificity (e.g. `.lp .lp-portal [data-gp-content]`).
+
+**Motion rules.** These follow the skill's UX guidelines:
+
+- Only 1–2 key animations per screen: the portal, the typing editor, staggered card entrances, a pulsing "live" dot
+  and the technology marquee.
+- Shared timing tokens: `--lp-dur-fast`, `--lp-dur`, `--lp-dur-slow` and `--lp-ease`.
+- Hover and press feedback on every interactive element.
+- **Reduced motion.** The portal renders statically, `Reveal` content is shown, the editor shows the finished program,
+  and the marquee wraps instead of scrolling. This is tested in `e2e/landing.spec.ts`.
+- **No JavaScript.** `Reveal` hides content only under `@media (scripting: enabled)`, so it never disappears for
+  visitors without JavaScript.
+
 ## Streak rules
 
 These are pure functions in `packages/core/src/learning.ts`, unit-tested in `learning.test.ts`.
