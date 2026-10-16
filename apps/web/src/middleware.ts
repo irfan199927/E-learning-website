@@ -45,6 +45,10 @@ export function middleware(req: NextRequest) {
   headers.set("content-security-policy", policy);
   const res = NextResponse.next({ request: { headers } });
   res.headers.set("content-security-policy", policy);
+  if (process.env.APP_URL?.startsWith("https://")) {
+    res.headers.set("strict-transport-security", "max-age=63072000; includeSubDomains; preload");
+    res.headers.set("cross-origin-opener-policy", "same-origin");
+  }
   return res;
 }
 

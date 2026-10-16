@@ -87,13 +87,14 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 - **CSP** (`apps/web/src/middleware.ts`): a per-request nonce with `strict-dynamic`; no `unsafe-inline` scripts;
   `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`. Forms may post only to the app and Google
   sign-in.
-- **Headers** (`apps/web/next.config.ts`):
-  - HSTS with preload;
+- **Headers** (`apps/web/next.config.ts`, on every response):
   - `nosniff`;
   - `X-Frame-Options: DENY`;
   - a strict referrer policy;
-  - a Permissions-Policy that turns off camera, microphone and geolocation;
-  - `Cross-Origin-Opener-Policy: same-origin`.
+  - a Permissions-Policy that turns off camera, microphone and geolocation.
+- **HTTPS-only protections**, on when `APP_URL` is `https://` (middleware): HSTS with preload,
+  `Cross-Origin-Opener-Policy: same-origin`, the CSP's `upgrade-insecure-requests`, and `Secure` cookies. A
+  plain-HTTP LAN UAT has none of them, which is one reason it must hold test data only.
 
   The static landing site sets the same headers through `vercel.json`.
 
