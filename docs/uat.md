@@ -95,18 +95,20 @@ cd app && deploy/uat/deploy.sh
 
 ## First users
 
-Without Google, people sign in with a password. You create accounts on the VM:
+Without Google, people sign in with a password. Create **the first admin** (you) on the VM:
 
 ```bash
 sudo -iu elearner
 cd app
 deploy/uat/manage.sh create-user you@example.com "Your Name" ADMIN
-deploy/uat/manage.sh create-user teacher@example.com "Meera Kulkarni" TEACHER
-deploy/uat/manage.sh create-user student@example.com "Aanya Sharma" STUDENT
 ```
 
-Each command prints a **temporary password** once. Share it privately. People can change their password with
-**Forgot password** on the sign-in page; the reset email appears in the UAT inbox at `http://192.168.1.50:8025`.
+It prints a **temporary password** once. Sign in at `http://192.168.1.50`, then change it with **Forgot
+password**. The email appears in the UAT inbox at `http://192.168.1.50:8025`.
+
+Add everyone else from the app: **Users → Add people**, one at a time or from a spreadsheet (CSV). Each person
+gets a "choose a password" email. On UAT that email lands in the inbox at `:8025`, so open it there and pass the
+link on, or set `SMTP_URL` in `uat.env` to send real email.
 
 Students then ask to join a teacher's course from **My courses → Find a course**, and the teacher approves the
 request on the course page.

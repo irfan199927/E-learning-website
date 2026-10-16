@@ -5,12 +5,14 @@ import { notFound } from "next/navigation";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
 import { JoinRequestList } from "@/components/join-request-list";
+import { RosterList } from "@/components/roster-list";
 import { buttonClasses } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listJoinRequests } from "@/server/services/join-requests";
 import { getCourseDetail, type CourseLesson } from "@/server/services/learning";
+import { listRoster } from "@/server/services/roster";
 
 export const metadata: Metadata = { title: "Course" };
 
@@ -34,7 +36,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     throw err;
   });
   const learner = !course.canManage;
-  const requests = course.canManage ? await listJoinRequests(deps(), actor, courseId) : [];
+  const [requests, roster] = course.canManage
+    ? await Promise.all([listJoinRequests(deps(), actor, courseId), listRoster(deps(), actor, courseId)])
+    : [[], []];
   const day = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
 
   return (
@@ -100,6 +104,26 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
               email: r.student.email,
               message: r.message,
               requestedOn: day.format(r.createdAt),
+            }))}
+          />
+        </section>
+      )}
+
+      {course.canManage && (
+        <section
+          aria-labelledby="students-h"
+          className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <h2 id="students-h" className="mb-3 font-display text-xl font-bold">
+            Students ({roster.length})
+          </h2>
+          <RosterList
+            courseId={courseId}
+            students={roster.map((s) => ({
+              userId: s.userId,
+              name: s.name,
+              email: s.email,
+              enrolledOn: day.format(s.enrolledAt),
             }))}
           />
         </section>

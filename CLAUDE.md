@@ -91,8 +91,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
   headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
 - Access model: anyone may sign up with Google (auth.ts `databaseHooks.user.create` makes them an active STUDENT);
-  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Roles change
-  only via `pnpm db:set-role` / the "Admin: set user role" workflow.
+  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Admins manage
+  accounts at `/admin/users` (services/admin-users.ts: invites via `deps.sendPasswordSetup`, which reuses Better
+  Auth's reset flow); `pnpm db:set-role` / `db:create-user` are for bootstrapping the first admin.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is
   public), production later on AWS. Google is optional: empty `GOOGLE_CLIENT_ID` = password sign-in only.

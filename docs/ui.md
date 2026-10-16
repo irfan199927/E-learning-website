@@ -96,6 +96,26 @@ published at once. A badge on each course, such as "2 students waiting to join",
 
 Until lessons CRUD exists, a course's lessons are its READY videos in upload order.
 
+- Staff also see **Students (n)**: everyone enrolled, with **Remove** (asks to confirm). Removing ends access at
+  once; the student can ask to join again.
+
+### Users (`/admin/users`, admins only)
+
+- **Add people:** one person (name, email, role), or **From a spreadsheet**, a CSV with an `email,name[,role]`
+  header and up to 500 rows.
+  - The file is checked in the browser first: bad and duplicate lines are listed with line numbers before
+    anything is sent.
+  - Existing emails are skipped, never changed.
+  - Each new person gets a "Welcome, choose a password" email. Nobody types or shares passwords.
+- **Search** by name or email, and filter by role. Pages hold 50 people; the search is a plain GET form, so
+  results can be bookmarked.
+- **Per person:**
+  - a role picker that saves on change;
+  - **Switch off / Switch on**: switching off signs them out everywhere at once;
+  - **Resend invite** for accounts that never set a password (invite links expire after an hour).
+- **Guard rails:** you can't change your own role or switch yourself off, and the last active admin can't be
+  demoted.
+
 ### Lesson (`/library/:videoId`)
 
 A back link to the course, then the HLS player with resume and speed controls.

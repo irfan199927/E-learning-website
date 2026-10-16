@@ -57,6 +57,17 @@ export const templates = {
       ),
     };
   },
+  /** First password for an account an admin created. Same link as a reset; different words. */
+  invite(name: string, url: string): Message {
+    return {
+      subject: "You've been added to E-learner",
+      text: `Hi ${name},\n\nYour school added you to E-learner. Choose a password to sign in:\n${url}\n\nThis link expires in 1 hour. If it has expired, use "Forgot password" on the sign-in page.`,
+      html: layout(
+        "Welcome to E-learner",
+        `<p>Hi ${esc(name)},</p><p>Your school added you to E-learner. Choose a password to sign in.</p>${button(url, "Choose a password")}<p style="color:#4B5162;font-size:13px">This link expires in 1 hour. If it has expired, use “Forgot password” on the sign-in page.</p>`,
+      ),
+    };
+  },
   classReminder(p: {
     name: string;
     classTitle: string;

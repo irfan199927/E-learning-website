@@ -65,7 +65,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 - Google sign-in requests login scopes only. API access is a separate teacher grant (see below).
 - **Self sign-up only with Google**, which verifies the email. New accounts are active students with no courses;
   a teacher approves each course join request (`server/services/join-requests.ts`). Password accounts are
-  created by admins only. Roles are changed only by an admin (Actions → "Admin: set user role").
+  created by admins only. Roles are changed only by an admin (the Users page, or `db:set-role` for the very first admin).
 - Sessions are stored in Postgres, last 7 days and are refreshed daily. Every request checks the database, so
   revoking a session or deactivating a user takes effect immediately.
 - A session can't be created for a user who is inactive or soft-deleted.
@@ -167,12 +167,13 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `video.upload`
 - `user.purge` (written by the worker)
 - `course.create`, `course.join_request`, `enrollment.approve`, `enrollment.decline`
-- `user.role` (written by the "Admin: set user role" workflow)
+- `user.create`, `user.invite`, `user.role`, `user.activate`, `user.deactivate` (the admin Users page, and
+  `user.role` also from the "Admin: set user role" workflow)
+- `enrollment.remove` (a teacher removes a student from a course)
 
 **Must be added with the features that need them:**
 
 - grade edits
-- enrolments removed by staff
 - consent granted or withdrawn
 - user deletion requests
 - denied video access

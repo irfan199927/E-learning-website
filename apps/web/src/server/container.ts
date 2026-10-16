@@ -46,6 +46,11 @@ function build(): Container {
     mailer: createSmtpMailer(e.SMTP_URL, e.MAIL_FROM),
     credentials,
     googleFor: (userId) => createTeacherGoogle(google, credentials, userId),
+    // Imported lazily: lib/auth itself depends on this container.
+    sendPasswordSetup: async (email) => {
+      const { auth } = await import("@/lib/auth");
+      await auth().api.requestPasswordReset({ body: { email, redirectTo: "/reset-password" } });
+    },
     now: () => new Date(),
     config: {
       appUrl: e.APP_URL,

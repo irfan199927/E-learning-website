@@ -5,6 +5,30 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — admin Users page and course rosters (2026-10-16)
+
+- **Users** (`/admin/users`, admins): add people one at a time or from a CSV (`email,name[,role]`, up to 500).
+  - Bad lines are reported with line numbers before anything is sent.
+  - Each new person gets a **welcome email to choose a password**. It reuses Better Auth's reset flow, with its
+    own "You've been added" wording.
+  - Also: search, filter by role, change roles, **switch accounts off** (signs them out everywhere at once),
+    and resend invites.
+  - Guard rails: no changing your own role or switching yourself off, and the last admin can't be demoted.
+- **Students** section on each course page for its teacher: the roster, with **Remove**, which ends access at
+  once and keeps the history.
+- API:
+  - `GET`/`POST /api/v1/admin/users`
+  - `PATCH /api/v1/admin/users/:id`
+  - `POST /api/v1/admin/users/:id/invite`
+  - `DELETE /api/v1/courses/:id/students/:userId`
+
+  All of them are audited.
+
+- CI's e2e job now runs Mailpit, so the e2e test follows a real invite email to set a password.
+- Tests: CSV parser unit test; 5 integration tests (create/skip/invite, search and permissions, deactivation
+  revokes sessions, self-lockout guards, roster removal); e2e for the invite → password → switch-off flow and
+  for non-admins being refused.
+
 ### Added — UAT on a home-lab VM (2026-10-16)
 
 - **`deploy/uat/`:** the whole app on one Linux VM with Docker Compose.

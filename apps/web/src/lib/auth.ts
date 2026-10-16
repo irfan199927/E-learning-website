@@ -37,7 +37,14 @@ function createAuth() {
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
-        await deps.mailer.send(user.email, templates.resetPassword(user.name, url));
+        // No password yet = an admin just created the account: send the welcome wording instead.
+        const hasPassword = await getDb().account.count({
+          where: { userId: user.id, providerId: "credential" },
+        });
+        const message = hasPassword
+          ? templates.resetPassword(user.name, url)
+          : templates.invite(user.name, url);
+        await deps.mailer.send(user.email, message);
       },
     },
     emailVerification: {

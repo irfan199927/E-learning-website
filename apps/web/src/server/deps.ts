@@ -53,6 +53,11 @@ export interface Deps {
   jobs: JobsPort;
   mailer: Mailer;
   credentials: CredentialStore;
+  /**
+   * Email a link to choose a password (Better Auth's reset flow; it also creates the password login if the
+   * user has none, so it doubles as an invite for admin-created accounts).
+   */
+  sendPasswordSetup(email: string): Promise<void>;
   /** Google client acting as the given teacher (throws GOOGLE_RECONNECT_REQUIRED if no grant). */
   googleFor(userId: string): Promise<TeacherGoogle>;
   now(): Date;

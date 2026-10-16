@@ -52,7 +52,9 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 ## 4. Product (MVP backlog from docs/SPEC.md)
 
 - [x] Open Google sign-up; students ask to join courses, teachers approve (`JoinRequest`); teachers create courses
-- [ ] Admin: user CSV import, role management UI (now a workflow), removing students, parental-consent flow (DPDP) UI
+- [x] Admin Users page (`/admin/users`): add one or CSV import with email invites, roles, switch off/on; course
+      roster with Remove
+- [ ] Parental-consent flow (DPDP): minors flagged, parent verifies (email OTP + declaration), `Consent` recorded
 - [ ] Courses/modules/lessons CRUD + attachments (course pages exist since 2026-10-16 but list READY videos in upload
       order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list

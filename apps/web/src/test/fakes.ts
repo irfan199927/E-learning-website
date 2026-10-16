@@ -102,6 +102,7 @@ export function makeDeps(over: Partial<Deps> & { google?: TeacherGoogle } = {}):
     mailer: createMemoryMailer(),
     credentials: noCredentials,
     googleFor: async () => google,
+    sendPasswordSetup: async () => undefined,
     now: () => new Date(),
     config: {
       appUrl: "http://localhost:3000",
