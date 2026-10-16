@@ -3,7 +3,8 @@
  * NEVER run against production (guarded below).
  *
  * Accounts created (password for all: "Password123!"):
- *   admin@school.edu · teacher@school.edu · aanya@school.edu · rohan@school.edu · parent@example.com
+ *   admin@school.edu · teacher@school.edu · aanya@school.edu · rohan@school.edu · kabir@school.edu (no courses)
+ *   · parent@example.com
  */
 import { hashPassword } from "better-auth/crypto";
 import { createDb } from "../src/client";
@@ -42,6 +43,8 @@ async function main() {
   const aanya = await upsertUser("aanya@school.edu", "Aanya Sharma", Role.STUDENT, { isMinor: true });
   const rohan = await upsertUser("rohan@school.edu", "Rohan Patil", Role.STUDENT, { isMinor: true });
   const parent = await upsertUser("parent@example.com", "Sunita Sharma", Role.PARENT);
+  // Like someone who just signed up with Google: a student with no courses yet (asks to join from /courses).
+  await upsertUser("kabir@school.edu", "Kabir Rao", Role.STUDENT);
 
   await db.parentLink.upsert({
     where: { parentId_studentId: { parentId: parent.id, studentId: aanya.id } },

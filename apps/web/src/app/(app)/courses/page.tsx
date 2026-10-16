@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
+import { JoinCourseButton } from "@/components/join-course-button";
 import { ProgressRing } from "@/components/progress-ring";
 import { buttonClasses } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
+import { listCatalog, pendingJoinCounts, type CatalogCourse } from "@/server/services/join-requests";
 import { listMyCourses, type CourseCard } from "@/server/services/learning";
 
 export const metadata: Metadata = { title: "Courses" };
@@ -27,18 +29,31 @@ export default async function CoursesPage({
   const { filter: raw } = await searchParams;
   const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "all";
   const learner = actor.role === "STUDENT";
-  const all = await listMyCourses(deps(), actor);
+  const [all, catalog, pending] = await Promise.all([
+    listMyCourses(deps(), actor),
+    listCatalog(deps(), actor),
+    pendingJoinCounts(deps(), actor),
+  ]);
+  const joinable = catalog.filter((c) => c.state !== "enrolled");
   const courses = learner && filter !== "all" ? all.filter((c) => c.state === filter) : all;
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          {learner ? "My courses" : "Courses"}
-        </h1>
-        <p className="mt-1 text-muted">
-          {learner ? "Pick up where you left off." : "Courses you teach, with their lessons and students."}
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight">
+            {learner ? "My courses" : "Courses"}
+          </h1>
+          <p className="mt-1 text-muted">
+            {learner ? "Pick up where you left off." : "Courses you teach, with their lessons and students."}
+          </p>
+        </div>
+        {!learner && (
+          <Link href="/courses/new" className={buttonClasses("primary")}>
+            <Icon name="plus" size={18} />
+            New course
+          </Link>
+        )}
       </header>
 
       {learner && (
@@ -72,8 +87,8 @@ export default async function CoursesPage({
         <p className="rounded-[var(--radius-card)] border border-line bg-surface p-8 text-center text-muted">
           {all.length === 0
             ? learner
-              ? "You aren't enrolled in any courses yet. Your school adds you to courses."
-              : "You don't teach any courses yet."
+              ? "You aren't in any courses yet. Ask to join one below. Your teacher approves it."
+              : "You don't teach any courses yet. Create one to get started."
             : filter === "completed"
               ? "No completed courses yet. Keep going!"
               : "Nothing in progress. Start a course from the All tab."}
@@ -82,16 +97,66 @@ export default async function CoursesPage({
         <ul className="flex flex-col gap-5">
           {courses.map((c) => (
             <li key={c.id}>
-              <CourseRow course={c} learner={learner} />
+              <CourseRow course={c} learner={learner} pendingRequests={pending.get(c.id) ?? 0} />
             </li>
           ))}
         </ul>
+      )}
+
+      {learner && (
+        <section aria-labelledby="find-h" className="flex flex-col gap-4">
+          <div>
+            <h2 id="find-h" className="font-display text-2xl font-bold tracking-tight">
+              Find a course
+            </h2>
+            <p className="mt-1 text-muted">Ask to join. The course opens once your teacher approves.</p>
+          </div>
+          {joinable.length === 0 ? (
+            <p className="rounded-[var(--radius-card)] border border-line bg-surface p-6 text-center text-muted">
+              {catalog.length === 0
+                ? "No courses are open yet. Check back soon."
+                : "You're in every open course."}
+            </p>
+          ) : (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {joinable.map((c) => (
+                <li key={c.id}>
+                  <CatalogCard course={c} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
     </div>
   );
 }
 
-function CourseRow({ course: c, learner }: { course: CourseCard; learner: boolean }) {
+function CatalogCard({ course: c }: { course: CatalogCourse }) {
+  return (
+    <article className="flex h-full flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-5">
+      <CourseTile title={c.title} grade={c.grade} color={c.color} className="h-24 w-full" />
+      <div>
+        <h3 className="text-lg font-semibold">{c.title}</h3>
+        <p className="text-sm text-muted">With {c.teacherName}</p>
+      </div>
+      {c.description && <p className="line-clamp-3 text-sm">{c.description}</p>}
+      <div className="mt-auto flex justify-end pt-1">
+        <JoinCourseButton courseId={c.id} title={c.title} state={c.state === "enrolled" ? "none" : c.state} />
+      </div>
+    </article>
+  );
+}
+
+function CourseRow({
+  course: c,
+  learner,
+  pendingRequests,
+}: {
+  course: CourseCard;
+  learner: boolean;
+  pendingRequests: number;
+}) {
   const cta = !learner
     ? { href: `/courses/${c.id}`, label: "Open course", variant: "secondary" as const }
     : c.state === "completed"
@@ -120,6 +185,14 @@ function CourseRow({ course: c, learner }: { course: CourseCard; learner: boolea
             <p className="mt-1 text-sm text-muted">
               {learner ? `With ${c.teacherName}` : `${plural(c.studentCount, "student")} enrolled`}
             </p>
+            {pendingRequests > 0 && (
+              <Link
+                href={`/courses/${c.id}#join-requests`}
+                className="mt-2 inline-flex rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-fg"
+              >
+                {plural(pendingRequests, "student")} waiting to join
+              </Link>
+            )}
             {learner && c.next && <p className="mt-2 font-bold">Lesson: {c.next.title}</p>}
           </div>
           {learner && (

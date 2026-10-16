@@ -19,6 +19,7 @@ export type Permission =
   | "video:upload"
   | "video:watch"
   | "course:manage"
+  | "course:join"
   | "google:connect"
   | "user:manage"
   | "report:export";
@@ -47,7 +48,7 @@ const GRANTS: Record<Role, ReadonlySet<Permission>> = {
     "google:connect",
     "report:export",
   ]),
-  STUDENT: new Set<Permission>(["class:read", "class:join", "video:watch"]),
+  STUDENT: new Set<Permission>(["class:read", "class:join", "video:watch", "course:join"]),
   PARENT: new Set<Permission>(["class:read", "attendance:read"]),
 };
 

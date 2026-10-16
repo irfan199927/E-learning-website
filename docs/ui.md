@@ -73,6 +73,16 @@ Students see:
 Filter chips are links, so filtered views can be bookmarked and work without JavaScript. Teachers see the
 student count and an **Open course** CTA. Parents are redirected to the Overview.
 
+**Find a course** (students only, below their own courses):
+
+- It lists published courses the student isn't in yet, each with **Ask to join**.
+- After asking, the card shows "Request sent. Waiting for your teacher." If the request was declined, it shows
+  **Ask again**.
+- Course content stays closed (404) until the teacher approves.
+
+Teachers get a **New course** button (`/courses/new`: title, optional grade and description). New courses are
+published at once. A badge on each course, such as "2 students waiting to join", links to that course's requests.
+
 ### Course (`/courses/:courseId`)
 
 - The header shows the cover, teacher and student count. Students also get a progress bar
@@ -81,6 +91,8 @@ student count and an **Open course** CTA. Parents are redirected to the Overview
 - Staff also see videos that are still processing or that failed, so they know what students can't see yet.
 - Access follows the same rule as video playback (`assertCourseAccess(..., "watch")`). Anyone else gets a
   plain 404.
+- The course teacher and admins see **Join requests** (`#join-requests`): who asked, when, and their note, with
+  **Approve** and **Decline**. Approving enrols the student and sends them an in-app notification.
 
 Until lessons CRUD exists, a course's lessons are its READY videos in upload order.
 

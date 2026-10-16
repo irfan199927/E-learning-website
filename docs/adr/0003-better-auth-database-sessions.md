@@ -10,7 +10,8 @@ consent is withdrawn, a device is lost, or an account is misused.
 
 Other requirements:
 
-- No self sign-up. Admins create accounts.
+- No self sign-up with a password. Admins create password accounts. (Since 2026-10-16, anyone may sign up with
+  Google; the account has no course access until a teacher approves a join request.)
 - Email and password for parents, who often don't have school Google accounts.
 - Google sign-in for school accounts.
 - Mandatory email verification and password reset.
@@ -23,7 +24,8 @@ sessions**:
 
 - Sessions are rows in Postgres, checked on every request. The cookie cache is off.
 - Sessions last 7 days and are refreshed daily. A password reset revokes every session.
-- Sign-up is disabled for both email and Google. Google sign-in is limited to the school's Workspace domain.
+- Sign-up is disabled for email. Google sign-up creates an active student with no courses. When
+  `GOOGLE_WORKSPACE_DOMAIN` is set, Google sign-in is limited to that domain.
 - A database hook refuses to create a session for an inactive or deleted user.
 - Rate limits are stored in Redis through an atomic Lua `consume()`. Better Auth 1.7 needs this for custom storage.
 

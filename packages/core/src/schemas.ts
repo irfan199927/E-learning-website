@@ -110,3 +110,18 @@ export type VideoProgressInput = z.infer<typeof videoProgressSchema>;
 export function partCount(sizeBytes: number, partBytes = UPLOAD_PART_BYTES): number {
   return Math.ceil(sizeBytes / partBytes);
 }
+
+export const createCourseSchema = z.object({
+  title: z.string().trim().min(3, "Title is too short.").max(120),
+  grade: z.string().trim().max(20).optional(),
+  description: z.string().trim().max(2000).optional(),
+});
+export type CreateCourseInput = z.infer<typeof createCourseSchema>;
+
+export const joinRequestSchema = z.object({
+  message: z.string().trim().max(500, "Keep the note under 500 characters.").optional(),
+});
+export type JoinRequestInput = z.infer<typeof joinRequestSchema>;
+
+export const decideJoinRequestSchema = z.object({ decision: z.enum(["approve", "decline"]) });
+export type DecideJoinRequestInput = z.infer<typeof decideJoinRequestSchema>;

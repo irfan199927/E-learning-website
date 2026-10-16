@@ -22,7 +22,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 ## Actors and trust boundaries
 
 - **Anonymous visitors** can reach only the landing page, sign-in, password reset and `/api/health`. Accounts
-  are created by admins; there is no self sign-up.
+  sign up with Google (or are created by admins) and start with no course access.
 - **Students, parents, teachers and admins** are authenticated. The role comes from the database on every
   request, never from the client.
 - **Google** calls one public endpoint: the Calendar push webhook, which is authenticated by a per-channel
@@ -33,27 +33,27 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 
 ## Threat model
 
-| #   | Threat                                                      | Controls                                                                                         | Status                                          |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| T1  | Credential stuffing or password guessing                    | Sign-in limited to 5/min/IP; passwords at least 10 characters; email verification required       | Built                                           |
-| T2  | Stolen session used after the user is removed               | Database sessions checked on every request, no cookie cache; password reset revokes all sessions | Built                                           |
-| T3  | Someone from outside the school signs in with Google        | No sign-up via Google; the Workspace domain is checked on the `hd` claim and the email           | Built                                           |
-| T4  | Student reads another course's videos, classes or progress  | `assertCan()` role checks plus resource policies (`server/policies.ts`); enrollment is the gate  | Built                                           |
-| T5  | Probing ids to discover what exists                         | Resources you can't access return 404 NOT_FOUND, the same as missing ones                        | Built                                           |
-| T6  | Sharing a video link outside the school                     | Private bucket; segment URLs are presigned per viewer and expire                                 | Built                                           |
-| T7  | Cross-site request forgery                                  | `SameSite=Lax` cookies; API writes require a same-origin `Origin` header                         | Built                                           |
-| T8  | Cross-site scripting                                        | React escaping; per-request nonce CSP with `strict-dynamic`, no inline scripts                   | Built                                           |
-| T9  | Clickjacking                                                | `frame-ancestors 'none'` and `X-Frame-Options: DENY`                                             | Built                                           |
-| T10 | Database leak exposes Google tokens                         | Tokens encrypted with AES-256-GCM under a key that lives only in the environment                 | Built                                           |
-| T11 | Forged Google Calendar push notifications                   | Per-channel random token, stored hashed, compared on every push; rate-limited                    | Built                                           |
-| T12 | OAuth callback forged or replayed                           | Signed, expiring `state` bound to the user                                                       | Built                                           |
-| T13 | Huge uploads or request bodies                              | JSON bodies capped at 1 MB; upload size cap (`MAX_UPLOAD_BYTES`); upload endpoints rate-limited  | Built                                           |
-| T14 | Path traversal in HLS file requests                         | Paths resolved and checked against the video's prefix before signing                             | Built                                           |
-| T15 | Malicious dependency or tampered CI action                  | Lockfile installs; actions pinned to commit SHAs; Dependabot; `contents: read` CI token          | Built                                           |
-| T16 | Unreviewed code or migrations reaching production           | Required checks, CODEOWNERS on sensitive paths, `production` environment approval before deploy  | Built (needs repo settings, see deployment.md)  |
-| T17 | Minor's data processed without parental consent             | Accounts start inactive and can't sign in; consent flow                                          | Partly: inactive gate built, consent UI planned |
-| T18 | Insider abuse (staff changing roles, grades, deleting data) | Append-only audit log                                                                            | Partly: see [Audit logging](#audit-logging)     |
-| T19 | Redis outage locks everyone out                             | Rate limiter fails open and logs `rate limiter unavailable`                                      | Built (alert on the log line)                   |
+| #   | Threat                                                      | Controls                                                                                                                                                                                                                                | Status                                         |
+| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| T1  | Credential stuffing or password guessing                    | Sign-in limited to 5/min/IP; passwords at least 10 characters; email verification required                                                                                                                                              | Built                                          |
+| T2  | Stolen session used after the user is removed               | Database sessions checked on every request, no cookie cache; password reset revokes all sessions                                                                                                                                        | Built                                          |
+| T3  | Strangers sign up and reach course content                  | Google sign-up creates a student with **no courses**; content needs an enrolment, which only the course teacher or an admin grants by approving a join request. With `GOOGLE_WORKSPACE_DOMAIN` set, only that domain can sign in at all | Built                                          |
+| T4  | Student reads another course's videos, classes or progress  | `assertCan()` role checks plus resource policies (`server/policies.ts`); enrollment is the gate                                                                                                                                         | Built                                          |
+| T5  | Probing ids to discover what exists                         | Resources you can't access return 404 NOT_FOUND, the same as missing ones                                                                                                                                                               | Built                                          |
+| T6  | Sharing a video link outside the school                     | Private bucket; segment URLs are presigned per viewer and expire                                                                                                                                                                        | Built                                          |
+| T7  | Cross-site request forgery                                  | `SameSite=Lax` cookies; API writes require a same-origin `Origin` header                                                                                                                                                                | Built                                          |
+| T8  | Cross-site scripting                                        | React escaping; per-request nonce CSP with `strict-dynamic`, no inline scripts                                                                                                                                                          | Built                                          |
+| T9  | Clickjacking                                                | `frame-ancestors 'none'` and `X-Frame-Options: DENY`                                                                                                                                                                                    | Built                                          |
+| T10 | Database leak exposes Google tokens                         | Tokens encrypted with AES-256-GCM under a key that lives only in the environment                                                                                                                                                        | Built                                          |
+| T11 | Forged Google Calendar push notifications                   | Per-channel random token, stored hashed, compared on every push; rate-limited                                                                                                                                                           | Built                                          |
+| T12 | OAuth callback forged or replayed                           | Signed, expiring `state` bound to the user                                                                                                                                                                                              | Built                                          |
+| T13 | Huge uploads or request bodies                              | JSON bodies capped at 1 MB; upload size cap (`MAX_UPLOAD_BYTES`); upload endpoints rate-limited                                                                                                                                         | Built                                          |
+| T14 | Path traversal in HLS file requests                         | Paths resolved and checked against the video's prefix before signing                                                                                                                                                                    | Built                                          |
+| T15 | Malicious dependency or tampered CI action                  | Lockfile installs; actions pinned to commit SHAs; Dependabot; `contents: read` CI token                                                                                                                                                 | Built                                          |
+| T16 | Unreviewed code or migrations reaching production           | Required checks, CODEOWNERS on sensitive paths, `production` environment approval before deploy                                                                                                                                         | Built (needs repo settings, see deployment.md) |
+| T17 | Minor's data processed without parental consent             | Admin-created accounts start inactive; consent flow. Open Google sign-up skips the inactive gate, so the teacher's approval is the only check                                                                                           | Partly: consent UI planned (see Known gaps)    |
+| T18 | Insider abuse (staff changing roles, grades, deleting data) | Append-only audit log                                                                                                                                                                                                                   | Partly: see [Audit logging](#audit-logging)    |
+| T19 | Redis outage locks everyone out                             | Rate limiter fails open and logs `rate limiter unavailable`                                                                                                                                                                             | Built (alert on the log line)                  |
 
 ## Controls in the code
 
@@ -63,7 +63,9 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 
 - Email and password, with **email verification required** before sign-in. Passwords are 10–128 characters.
 - Google sign-in requests login scopes only. API access is a separate teacher grant (see below).
-- **No self sign-up**, by password or Google. Admins provision accounts.
+- **Self sign-up only with Google**, which verifies the email. New accounts are active students with no courses;
+  a teacher approves each course join request (`server/services/join-requests.ts`). Password accounts are
+  created by admins only. Roles are changed only by an admin (Actions → "Admin: set user role").
 - Sessions are stored in Postgres, last 7 days and are refreshed daily. Every request checks the database, so
   revoking a session or deactivating a user takes effect immediately.
 - A session can't be created for a user who is inactive or soft-deleted.
@@ -163,12 +165,13 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `class.schedule`, `class.reschedule`, `class.cancel`
 - `video.upload`
 - `user.purge` (written by the worker)
+- `course.create`, `course.join_request`, `enrollment.approve`, `enrollment.decline`
+- `user.role` (written by the "Admin: set user role" workflow)
 
 **Must be added with the features that need them:**
 
-- role changes
 - grade edits
-- enrolment changes
+- enrolments removed by staff
 - consent granted or withdrawn
 - user deletion requests
 - denied video access
@@ -218,6 +221,9 @@ The security-relevant gaps, most important first:
 
 - **Parental consent and recording consent flows aren't built.** Until they are, admins activate minors' accounts
   only after collecting consent outside the app. Record that consent.
+- **Open Google sign-up lets a minor create an account without parental consent.** The account holds only their
+  name and email until a teacher approves a join request. Teachers should approve only students whose consent the
+  school already has, until the consent flow exists.
 - **Audit coverage is partial.** See [Audit logging](#audit-logging).
 - **The general API rate limit (120/min/user in the spec) isn't applied to every route.** Only the routes in the
   table above are limited.
