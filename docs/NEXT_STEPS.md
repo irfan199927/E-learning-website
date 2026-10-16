@@ -76,6 +76,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)
-- [ ] Assignments & MCQ quizzes; teacher attendance page with manual override
+- [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
+- [ ] Assignments & MCQ quizzes
 - [ ] In-app notifications UI; Razorpay checkout + webhooks
 - [ ] i18n (next-intl: en/hi/mr), PWA

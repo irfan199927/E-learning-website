@@ -87,15 +87,18 @@ export const templates = {
     timeZone: string;
     kind: "24h" | "15m";
     url: string;
+    /** Room or place, for classes that meet in person. */
+    location?: string | null;
   }): Message {
     const when = formatInZone(p.startsAt, p.timeZone);
+    const where = p.location ? `\nWhere: ${p.location}` : "";
     const lead = p.kind === "15m" ? "starts in 15 minutes" : "is tomorrow";
     return {
       subject: `${p.classTitle} ${lead}`,
-      text: `Hi ${p.name},\n\n${p.classTitle} (${p.courseTitle}) ${lead} — ${when}.\nJoin from your dashboard: ${p.url}`,
+      text: `Hi ${p.name},\n\n${p.classTitle} (${p.courseTitle}) ${lead} — ${when}.${where}\nJoin from your dashboard: ${p.url}`,
       html: layout(
         `${p.classTitle} ${lead}`,
-        `<p>Hi ${esc(p.name)},</p><p><b>${esc(p.classTitle)}</b> · ${esc(p.courseTitle)}<br>${esc(when)}</p>${button(p.url, "Open dashboard")}<p style="color:#4B5162;font-size:13px">The Join button appears 10 minutes before the class starts.</p>`,
+        `<p>Hi ${esc(p.name)},</p><p><b>${esc(p.classTitle)}</b> · ${esc(p.courseTitle)}<br>${esc(when)}${p.location ? `<br>Where: ${esc(p.location)}` : ""}</p>${button(p.url, "Open dashboard")}<p style="color:#4B5162;font-size:13px">The Join button appears 10 minutes before the class starts.</p>`,
       ),
     };
   },

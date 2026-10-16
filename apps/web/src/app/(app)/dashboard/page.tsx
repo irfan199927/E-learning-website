@@ -221,16 +221,25 @@ function UpcomingClasses({
                 <b className="text-[15px]">{c.title}</b>
                 <span className="text-sm text-muted">
                   {c.course.title} · {formatInZone(new Date(c.startsAt), actor.timezone)}
+                  {c.location && ` · ${c.location}`}
                 </span>
               </span>
-              {actor.role !== "PARENT" && (
-                <JoinButton
-                  classId={c.id}
-                  startsAt={c.startsAt}
-                  endsAt={c.endsAt}
-                  timeZone={actor.timezone}
-                />
+              {c.canManage && new Date(c.startsAt) <= new Date() && (
+                <Link href={`/classes/${c.id}/attendance`} className={buttonClasses("secondary")}>
+                  Take attendance
+                </Link>
               )}
+              {actor.role !== "PARENT" &&
+                (c.online ? (
+                  <JoinButton
+                    classId={c.id}
+                    startsAt={c.startsAt}
+                    endsAt={c.endsAt}
+                    timeZone={actor.timezone}
+                  />
+                ) : (
+                  <span className="text-sm text-muted">In person</span>
+                ))}
             </li>
           ))}
         </ul>

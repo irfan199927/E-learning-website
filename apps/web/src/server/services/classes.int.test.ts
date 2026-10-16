@@ -21,6 +21,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(48.75),
       timezone: "Asia/Kolkata",
       notifyParents: true,
+      meeting: "google" as const,
     });
 
     expect(cls?.meetLink).toBe("https://meet.google.com/abc-defg-hij");
@@ -57,6 +58,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(25),
       timezone: "Asia/Kolkata",
       notifyParents: false,
+      meeting: "google" as const,
       recurrence: { freq: "WEEKLY", byDay: ["WE"], until: inHours(24 * 20) },
     });
     expect(out).toHaveLength(3);
@@ -73,6 +75,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(6),
       timezone: "Asia/Kolkata",
       notifyParents: true,
+      meeting: "google" as const,
     };
     await expect(scheduleClass(deps, w.otherTeacher, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(scheduleClass(deps, w.student, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -101,6 +104,7 @@ describe("classes service (integration)", () => {
         endsAt: inHours(4),
         timezone: "UTC",
         notifyParents: false,
+        meeting: "google" as const,
       }),
     ).rejects.toThrow();
     expect(google.calls.cancelEvent?.[0]).toEqual(["dup"]);
@@ -116,6 +120,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(11),
       timezone: "UTC",
       notifyParents: true,
+      meeting: "google" as const,
     });
 
     const forStudent = await listClasses(deps, w.student, { ...range, courseId: w.course.id });
@@ -138,6 +143,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(2),
       timezone: "UTC",
       notifyParents: false,
+      meeting: "google" as const,
     });
 
     const early = makeDeps({ now: () => new Date(startsAt.getTime() - 30 * 60_000) });
@@ -160,6 +166,7 @@ describe("classes service (integration)", () => {
       endsAt: inHours(31),
       timezone: "UTC",
       notifyParents: false,
+      meeting: "google" as const,
     });
 
     const moved = await rescheduleClass(deps, w.teacher, cls!.id, {

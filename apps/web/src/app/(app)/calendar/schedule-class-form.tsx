@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
+import { plural } from "@/lib/format";
 
 export interface CourseOption {
   id: string;
@@ -16,6 +17,8 @@ export interface CourseOption {
 
 interface Props {
   courses: CourseOption[];
+  /** With Google: a Calendar invite and a Meet link. Without: a room and/or a pasted link. */
+  googleConnected: boolean;
   timeZone: string;
   initialStart: Date;
   onClose(): void;
@@ -32,7 +35,15 @@ const DAY_LABEL: Record<Weekday, string> = {
   SU: "Sun",
 };
 
-export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, onScheduled }: Props) {
+export function ScheduleClassForm({
+  courses,
+  googleConnected,
+  timeZone,
+  initialStart,
+  onClose,
+  onScheduled,
+}: Props) {
+  const [meeting, setMeeting] = useState<"google" | "none">(googleConnected ? "google" : "none");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [needsGoogle, setNeedsGoogle] = useState(false);
@@ -52,6 +63,9 @@ export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, on
       startsAt,
       endsAt: new Date(startsAt.getTime() + minutes * 60_000),
       timezone: timeZone,
+      meeting,
+      location: meeting === "none" ? String(f.get("location") || "").trim() || undefined : undefined,
+      meetingUrl: meeting === "none" ? String(f.get("meetingUrl") || "").trim() || undefined : undefined,
       recurrence: repeat
         ? { freq: "WEEKLY" as const, byDay: days, until: fromLocalInput(`${f.get("until")}T23:59`, timeZone) }
         : undefined,
@@ -125,7 +139,7 @@ export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, on
           >
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.title} ({c.students} students)
+                {c.title} ({plural(c.students, "student")})
               </option>
             ))}
           </select>
@@ -202,6 +216,59 @@ export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, on
           </fieldset>
         )}
 
+        {googleConnected && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1.5 text-sm font-semibold">Where</legend>
+            {(
+              [
+                [
+                  "google",
+                  "Google Meet",
+                  "Calendar invite and a Meet link; the recording is added afterwards.",
+                ],
+                ["none", "A room or another link", "No Google. You take attendance yourself."],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <label key={value} className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm">
+                <input
+                  type="radio"
+                  name="meeting"
+                  value={value}
+                  checked={meeting === value}
+                  onChange={() => setMeeting(value)}
+                  className="mt-0.5 size-5 accent-[var(--color-primary)]"
+                />
+                <span>
+                  <span className="font-semibold">{label}</span>
+                  <span className="block text-muted">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {meeting === "none" && (
+          <>
+            <Field
+              id="location"
+              name="location"
+              label="Room or place (optional)"
+              maxLength={120}
+              placeholder="Room 4"
+              error={errors.location}
+            />
+            <Field
+              id="meetingUrl"
+              name="meetingUrl"
+              type="url"
+              inputMode="url"
+              label="Meeting link (optional)"
+              placeholder="https://"
+              hint="Zoom, Teams, Jitsi or any https link. Students can open it from 10 minutes before the class."
+              error={errors.meetingUrl}
+            />
+          </>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="agenda" className="text-sm font-semibold">
             Agenda <span className="font-normal text-muted">(optional)</span>
@@ -215,10 +282,18 @@ export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, on
           />
         </div>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating Meet link…" : "Schedule + create Meet link"}
+          {meeting === "google"
+            ? pending
+              ? "Creating Meet link…"
+              : "Schedule + create Meet link"
+            : pending
+              ? "Scheduling…"
+              : "Schedule class"}
         </Button>
         <p className="text-[13px] text-muted">
-          Enrolled students get a Google Calendar invite and reminders 24 h and 15 min before.
+          {meeting === "google"
+            ? "Enrolled students get a Google Calendar invite and reminders 24 h and 15 min before."
+            : "Enrolled students see the class in their calendar here and get reminders 24 h and 15 min before."}
         </p>
       </form>
     </aside>

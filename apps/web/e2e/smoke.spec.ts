@@ -47,7 +47,9 @@ test("teacher signs in and sees the dashboard and calendar", async ({ page }) =>
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Meera");
   await expect(page.getByRole("link", { name: "Connect Google" })).toBeVisible(); // no grant yet
   await page.getByRole("link", { name: "Calendar" }).first().click();
-  await expect(page.getByRole("link", { name: "Connect Google to schedule" })).toBeVisible();
+  // Teachers can schedule without Google (a room or a pasted link); Google adds Meet.
+  await expect(page.getByRole("button", { name: "Schedule class" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Connect Google for Meet" })).toBeVisible();
 });
 
 test("students cannot schedule classes or upload videos", async ({ page }) => {

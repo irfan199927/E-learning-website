@@ -5,7 +5,7 @@ import { AppError, Errors, isAppError } from "./errors";
 import { isPlaylist, resolveHlsPath, rewritePlaylist } from "./hls";
 import { buildIcs, escapeText, foldLine } from "./ics";
 import { assertCan, can } from "./rbac";
-import { buildRRule } from "./rrule";
+import { buildRRule, expandWeekly } from "./rrule";
 import {
   createClassSchema,
   initUploadSchema,
@@ -115,6 +115,35 @@ describe("rrule", () => {
       buildRRule({ freq: "WEEKLY", byDay: ["WE", "MO", "WE"], until: t("2026-12-18T18:29:59.000Z") }),
     ).toBe("RRULE:FREQ=WEEKLY;BYDAY=MO,WE;UNTIL=20261218T182959Z");
     expect(() => buildRRule({ freq: "WEEKLY", byDay: [], until: new Date() })).toThrow();
+  });
+
+  it("expands a weekly series in the class's own time zone", () => {
+    // Mon 19 Oct 2026, 09:00–10:00 IST; Mondays and Thursdays until Thu 29 Oct (inclusive, IST date).
+    const out = expandWeekly(t("2026-10-19T03:30:00Z"), t("2026-10-19T04:30:00Z"), "Asia/Kolkata", {
+      freq: "WEEKLY",
+      byDay: ["MO", "TH"],
+      until: t("2026-10-29T18:00:00Z"), // 23:30 IST on the 29th
+    });
+    expect(out.map((o) => o.startsAt.toISOString())).toEqual([
+      "2026-10-19T03:30:00.000Z",
+      "2026-10-22T03:30:00.000Z",
+      "2026-10-26T03:30:00.000Z",
+      "2026-10-29T03:30:00.000Z",
+    ]);
+    expect(out.every((o) => o.endsAt.getTime() - o.startsAt.getTime() === 3600_000)).toBe(true);
+  });
+
+  it("keeps the local wall-clock time across a DST change", () => {
+    // 09:00 in London on Thursdays: BST (UTC+1) before 25 Oct 2026, GMT after.
+    const out = expandWeekly(t("2026-10-22T08:00:00Z"), t("2026-10-22T09:00:00Z"), "Europe/London", {
+      freq: "WEEKLY",
+      byDay: ["TH"],
+      until: t("2026-10-30T00:00:00Z"),
+    });
+    expect(out.map((o) => o.startsAt.toISOString())).toEqual([
+      "2026-10-22T08:00:00.000Z",
+      "2026-10-29T09:00:00.000Z",
+    ]);
   });
 });
 

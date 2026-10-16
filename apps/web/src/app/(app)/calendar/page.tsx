@@ -32,6 +32,7 @@ export default async function CalendarPage({
         timeZone={actor.timezone}
         canSchedule={isTeacher}
         googleConnected={googleConnected}
+        googleAvailable={!!d.config.google.clientId}
         courses={courses.map((c) => ({ id: c.id, title: c.title, students: c._count.enrollments }))}
       />
     </div>
