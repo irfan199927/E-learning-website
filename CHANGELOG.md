@@ -5,6 +5,25 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — classes without Google, and manual attendance (2026-10-16)
+
+- **Schedule a class without Google**: in a room and/or on any https meeting link the teacher pastes. Weekly
+  repeats are expanded by the app (`expandWeekly` in core, keeping the wall-clock time across DST). These
+  classes reschedule and cancel without Google, get reminders (which name the room), and never queue a recording
+  sync. With Google connected, the teacher chooses Google Meet or "A room or another link".
+- **Take attendance** (`/classes/:id/attendance`): Present / Absent per student, Mark everyone present, Save.
+  Open to the host, the course teacher and admins once the class has started. The teacher's mark wins over Google
+  Meet's automatic one. Reached from a new **Attendance** section on the course page, **Take attendance** on the
+  Overview for a class in progress, and by clicking a started class in the Calendar.
+- Students see the room on their Overview ("In person" instead of Join). Parents see classes from the moment they
+  start, so a mark taken during the class shows up straight away.
+- Migration `class_location` adds `ClassSession.location` (nullable).
+- API: `GET|PUT /api/v1/classes/:id/attendance`; `POST /api/v1/classes` takes `meeting` ("google" | "none"),
+  `location` and `meetingUrl`. Audited as `attendance.mark`.
+- Tests: 2 unit tests (weekly expansion, DST); 2 integration tests (scheduling, rescheduling, cancelling and
+  joining without Google; attendance rules, Meet override, parent view, recent classes); an e2e test from
+  scheduling an in-person class to the parent seeing "Attended".
+
 ### Added — parent progress view (2026-10-16)
 
 - **My children** for parents (`/children`, and a "Your children" section on the Overview): one card per linked

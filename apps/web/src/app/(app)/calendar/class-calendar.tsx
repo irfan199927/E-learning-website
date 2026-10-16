@@ -6,6 +6,7 @@ import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction"
 import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { FormAlert } from "@/components/form";
 import { buttonClasses } from "@/components/ui/button";
@@ -17,10 +18,13 @@ interface Props {
   timeZone: string;
   canSchedule: boolean;
   googleConnected: boolean;
+  /** Google sign-in is configured for this school (it isn't on a LAN-only UAT). */
+  googleAvailable: boolean;
   courses: CourseOption[];
 }
 
-export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses }: Props) {
+export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAvailable, courses }: Props) {
+  const router = useRouter();
   const ref = useRef<FullCalendar>(null);
   const [error, setError] = useState<string | null>(null);
   const [draftStart, setDraftStart] = useState<Date | null>(null);
@@ -38,7 +42,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
       backgroundColor: c.course.color,
       borderColor: c.course.color,
       editable: c.canManage && new Date(c.startsAt) > new Date(),
-      extendedProps: { meetLink: c.meetLink },
+      extendedProps: { meetLink: c.meetLink, canManage: c.canManage },
     }));
   }, []);
 
@@ -56,7 +60,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
   }
 
   function onDateClick(arg: DateClickArg) {
-    if (canSchedule && googleConnected && arg.date > new Date()) setDraftStart(arg.date);
+    if (canSchedule && arg.date > new Date()) setDraftStart(arg.date);
   }
 
   return (
@@ -73,7 +77,15 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
               Export .ics
             </a>
           )}
-          {canSchedule && googleConnected && (
+          {canSchedule && googleAvailable && !googleConnected && (
+            <a
+              href="/api/v1/google/connect?returnTo=/calendar"
+              className={buttonClasses("secondary", "h-10")}
+            >
+              Connect Google for Meet
+            </a>
+          )}
+          {canSchedule && (
             <button
               type="button"
               className={buttonClasses("primary", "h-10")}
@@ -81,11 +93,6 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
             >
               Schedule class
             </button>
-          )}
-          {canSchedule && !googleConnected && (
-            <a href="/api/v1/google/connect?returnTo=/calendar" className={buttonClasses("primary", "h-10")}>
-              Connect Google to schedule
-            </a>
           )}
         </div>
         {error && <FormAlert>{error}</FormAlert>}
@@ -111,13 +118,19 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
           eventDurationEditable={false}
           dateClick={onDateClick}
           eventClick={(arg) => {
+            // Teachers: a class that has started opens its attendance; an upcoming one opens its meeting link.
+            if (arg.event.extendedProps.canManage && arg.event.start && arg.event.start <= new Date()) {
+              router.push(`/classes/${arg.event.id}/attendance`);
+              return;
+            }
             const link = arg.event.extendedProps.meetLink as string | null;
             if (link) window.open(link, "_blank", "noopener");
           }}
         />
         {canSchedule && (
           <p className="mt-3 text-[13px] text-muted">
-            Drag a class to reschedule it — students get an updated Google Calendar invite.
+            Drag a class to reschedule it (Google classes also update students&apos; Calendar invites). Click
+            a class that has started to take attendance.
           </p>
         )}
       </section>
@@ -125,6 +138,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
       {draftStart && (
         <ScheduleClassForm
           courses={courses}
+          googleConnected={googleConnected}
           timeZone={timeZone}
           initialStart={draftStart}
           onClose={() => setDraftStart(null)}

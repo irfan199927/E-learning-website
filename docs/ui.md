@@ -60,6 +60,26 @@ list.
 - **Parent:** **Your children** (one card per linked child: streak, today's minutes, lessons done, courses, and
   **See progress**), then upcoming classes for their children, read-only, with no Join button.
 
+### Calendar: scheduling without Google
+
+- **Schedule class** is always there for teachers. With Google connected, the form asks **Where**: Google Meet
+  (Calendar invite, Meet link, recording afterwards) or **A room or another link**. Without Google (or on a
+  school with Google switched off) only the second applies: **Room or place** and/or a **Meeting link** (any
+  https link; students open it from 10 minutes before, like Meet).
+- Classes without Google repeat weekly too (expanded by the app), can be dragged to reschedule and cancelled.
+- Students and parents see the room on the Overview; an in-person class shows "In person" instead of **Join**.
+- Clicking a class that has started opens its attendance (teachers); an upcoming one opens its meeting link.
+
+### Attendance (`/classes/:classId/attendance`, the host, the course teacher and admins)
+
+- Every student in the course with **Present** / **Absent** (a radio pair per student, named by the student),
+  **Mark everyone present**, and **Save attendance**. Each row says whether the mark came from Google Meet (with
+  minutes) or a teacher.
+- Saving is only possible once the class has started; cancelled classes have nothing to take.
+- A teacher's mark always wins: the Meet sync never overwrites it. Parents see the marks on their child's page.
+- Reached from the course page's **Attendance** section (recent classes, "Not taken" / "n of m present"), the
+  Overview's upcoming list (**Take attendance** on a class in progress), and the Calendar.
+
 ### My children (`/children`, `/children/:childId`, parents)
 
 - `/children` lists the same child cards as the Overview, or explains how children get linked.

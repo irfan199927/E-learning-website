@@ -30,6 +30,25 @@ export const createClassSchema = z
     timezone: z.string().refine(isValidTimeZone, "Unknown timezone.").default("Asia/Kolkata"),
     recurrence: recurrenceSchema.optional(),
     notifyParents: z.boolean().default(true),
+    /**
+     * "google": a Google Calendar event with a Meet link (needs the teacher's Google connection).
+     * "none": no Google. The class can have a room and/or a meeting link the teacher pastes (Zoom, Teams, Jitsi…).
+     */
+    meeting: z.enum(["google", "none"]).default("google"),
+    meetingUrl: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z
+        .string()
+        .trim()
+        .url("Enter the full meeting link, starting with https://")
+        .max(2000)
+        .refine((u) => /^https:\/\//i.test(u), "Meeting links must start with https://")
+        .optional(),
+    ),
+    location: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z.string().trim().max(120, "Keep the place under 120 characters.").optional(),
+    ),
   })
   .superRefine((v, ctx) => {
     const minutes = (v.endsAt.getTime() - v.startsAt.getTime()) / 60_000;
@@ -58,6 +77,16 @@ export const createClassSchema = z
     }
   });
 export type CreateClassInput = z.infer<typeof createClassSchema>;
+
+export const MAX_ATTENDANCE_MARKS = 500;
+
+export const markAttendanceSchema = z.object({
+  marks: z
+    .array(z.object({ userId: id, present: z.boolean() }))
+    .min(1, "Mark at least one student.")
+    .max(MAX_ATTENDANCE_MARKS),
+});
+export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;
 
 export const rescheduleClassSchema = z
   .object({ startsAt: isoDate, endsAt: isoDate })

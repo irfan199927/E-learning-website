@@ -24,10 +24,12 @@ Everything is defined in `deploy/uat/`. Settings and secrets live **on the VM on
   emails, which you can read in the Mailpit inbox.
 - Teachers creating courses, join requests and approvals, uploading videos, transcoding, the player, progress
   and the calendar view.
+- Scheduling classes in a room or on any meeting link you paste (Zoom, Teams, Jitsi…), and taking attendance by
+  hand; parents see the marks.
 
 What doesn't:
 
-- **Google sign-in and scheduling on Google Meet.** Google only accepts a public HTTPS address (or `localhost`)
+- **Google sign-in, Google Meet classes and their automatic recordings and attendance.** Google only accepts a public HTTPS address (or `localhost`)
   as a sign-in redirect, so the Google button is hidden while `GOOGLE_CLIENT_ID` is empty. When you have a domain,
   see [Later: a public HTTPS address](#later-a-public-https-address).
 

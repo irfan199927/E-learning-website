@@ -72,6 +72,7 @@ export async function sendReminder(
           timeZone: user.timezone,
           kind: job.kind,
           url: `${ctx.config.appUrl}/dashboard`,
+          location: cls.location,
         }),
       );
       await ctx.db.notification.update({ where: { dedupeKey }, data: { sentAt: ctx.now() } });

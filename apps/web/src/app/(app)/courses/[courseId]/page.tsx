@@ -1,4 +1,4 @@
-import { isAppError } from "@elearner/core";
+import { formatInZone, isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +10,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { minutes, plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
+import { recentClasses } from "@/server/services/attendance";
 import { listJoinRequests } from "@/server/services/join-requests";
 import { getCourseDetail, type CourseLesson } from "@/server/services/learning";
 import { listRoster } from "@/server/services/roster";
@@ -38,9 +39,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     throw err;
   });
   const learner = !course.canManage;
-  const [requests, roster] = course.canManage
-    ? await Promise.all([listJoinRequests(deps(), actor, courseId), listRoster(deps(), actor, courseId)])
-    : [[], []];
+  const [requests, roster, recent] = course.canManage
+    ? await Promise.all([
+        listJoinRequests(deps(), actor, courseId),
+        listRoster(deps(), actor, courseId),
+        recentClasses(deps(), actor, courseId),
+      ])
+    : [[], [], null];
   const day = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
 
   return (
@@ -134,6 +139,51 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
               enrolledOn: day.format(s.enrolledAt),
             }))}
           />
+        </section>
+      )}
+
+      {recent && (
+        <section
+          id="attendance"
+          aria-labelledby="attendance-h"
+          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <h2 id="attendance-h" className="mb-1 font-display text-xl font-bold">
+            Attendance
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Recent classes. Google Meet classes fill in by themselves; take attendance for the rest.
+          </p>
+          {recent.classes.length === 0 ? (
+            <p className="text-muted">
+              No classes have started yet.{" "}
+              <Link href="/calendar" className="font-semibold text-primary-fg">
+                Schedule one in the Calendar
+              </Link>
+              .
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-line">
+              {recent.classes.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{c.title}</p>
+                    <p className="text-sm text-muted">
+                      {formatInZone(c.startsAt, actor.timezone)} ·{" "}
+                      {c.marked === 0 ? "Not taken" : `${c.present} of ${recent.students} present`}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/classes/${c.id}/attendance`}
+                    className={buttonClasses(c.marked === 0 ? "primary" : "secondary")}
+                    aria-label={`${c.marked === 0 ? "Take" : "Edit"} attendance for ${c.title}, ${formatInZone(c.startsAt, actor.timezone)}`}
+                  >
+                    {c.marked === 0 ? "Take attendance" : "Edit"}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

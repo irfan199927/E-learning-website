@@ -108,11 +108,12 @@ export async function getChildProgress(
   const [overview, courses, classes] = await Promise.all([
     getLearnerOverview(deps, learner, opts),
     listMyCourses(deps, learner),
-    // Past classes of the child's current courses.
+    // The child's current courses' classes.
     deps.db.classSession.findMany({
       where: {
         status: { not: ClassStatus.CANCELLED },
-        endsAt: { lt: now, gt: new Date(now.getTime() - ATTENDANCE_DAYS * 86_400_000) },
+        // Classes that have started (one in progress can already be marked), from the last 30 days.
+        startsAt: { lte: now, gt: new Date(now.getTime() - ATTENDANCE_DAYS * 86_400_000) },
         course: { enrollments: { some: { userId: child.id, revokedAt: null } } },
       },
       select: {

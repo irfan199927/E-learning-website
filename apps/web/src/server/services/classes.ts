@@ -12,6 +12,7 @@ import {
   buildIcs,
   buildRRule,
   Errors,
+  expandWeekly,
   formatInZone,
   joinWindow,
   type CreateClassInput,
@@ -33,6 +34,10 @@ export interface ClassDto {
   course: { id: string; title: string; color: string };
   /** Only for the class host/admin; students go through /join (time-gated). */
   meetLink: string | null;
+  /** Has a meeting link (Meet or pasted). False = in person only. */
+  online: boolean;
+  /** Room or place, for classes that meet in person. */
+  location: string | null;
   canManage: boolean;
 }
 
@@ -46,6 +51,7 @@ type ClassRow = {
   status: ClassStatus;
   seriesId: string | null;
   meetLink: string | null;
+  location: string | null;
   hostId: string;
   course: { id: string; title: string; color: string; teacherId: string };
 };
@@ -61,6 +67,8 @@ function toDto(row: ClassRow, actor: Actor): ClassDto {
     seriesId: row.seriesId,
     course: { id: row.course.id, title: row.course.title, color: row.course.color },
     meetLink: canManage ? row.meetLink : null,
+    online: row.meetLink !== null,
+    location: row.location,
     canManage,
   };
 }
@@ -102,6 +110,8 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
     select: { user: { select: { email: true } } },
   });
 
+  if (input.meeting === "none") return scheduleWithoutGoogle(deps, actor, input, course.id);
+
   const google = await deps.googleFor(actor.id);
   const rrule = input.recurrence ? buildRRule(input.recurrence) : undefined;
   const created = await google.createClassEvent({
@@ -135,6 +145,7 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
             googleEventEtag: created.etag,
             meetLink: created.meetLink,
             meetConferenceId: created.conferenceId,
+            location: input.location ?? null,
             notifyParents: input.notifyParents,
           },
           include: classInclude,
@@ -160,13 +171,60 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
   return sessions.map((s) => toDto(s, actor));
 }
 
+/**
+ * A class without Google: no Calendar invite, no Meet, no recording sync. It can meet in a room and/or on a link the
+ * teacher pasted; attendance is marked by hand. A weekly series is expanded here instead of by Google.
+ */
+async function scheduleWithoutGoogle(
+  deps: Deps,
+  actor: Actor,
+  input: CreateClassInput,
+  courseId: string,
+): Promise<ClassDto[]> {
+  const occurrences = input.recurrence
+    ? expandWeekly(input.startsAt, input.endsAt, input.timezone, input.recurrence)
+    : [{ startsAt: input.startsAt, endsAt: input.endsAt }];
+  const seriesId = input.recurrence ? `local_${randomUUID()}` : null;
+  const sessions = await deps.db.$transaction(
+    occurrences.map((o) =>
+      deps.db.classSession.create({
+        data: {
+          courseId,
+          hostId: actor.id,
+          title: input.title,
+          agenda: input.agenda,
+          startsAt: o.startsAt,
+          endsAt: o.endsAt,
+          timezone: input.timezone,
+          recurrenceRule: input.recurrence ? buildRRule(input.recurrence) : null,
+          seriesId,
+          meetLink: input.meetingUrl ?? null,
+          location: input.location ?? null,
+          autoAttachRecording: false,
+          notifyParents: input.notifyParents,
+        },
+        include: classInclude,
+      }),
+    ),
+  );
+  const now = deps.now();
+  await Promise.all(sessions.map((s) => deps.jobs.scheduleReminders(s.id, s.startsAt, now)));
+  await audit(
+    deps.db,
+    actor,
+    "class.schedule",
+    { type: "Course", id: courseId },
+    { sessions: sessions.length, meeting: "none" },
+  );
+  return sessions.map((s) => toDto(s, actor));
+}
+
 async function loadManageable(deps: Deps, actor: Actor, classId: string) {
   const session = await deps.db.classSession.findUnique({ where: { id: classId }, include: classInclude });
   if (!session) throw Errors.notFound("Class");
   if (!(actor.role === "ADMIN" || session.hostId === actor.id)) throw Errors.notFound("Class");
   if (session.status !== ClassStatus.SCHEDULED)
     throw Errors.conflict("Only upcoming classes can be changed.");
-  if (!session.googleEventId) throw Errors.conflict("This class has no Google Calendar event.");
   return session;
 }
 
@@ -180,13 +238,17 @@ export async function rescheduleClass(
   const session = await loadManageable(deps, actor, classId);
   if (input.startsAt < deps.now()) throw Errors.validation("Pick a start time in the future.");
 
-  const google = await deps.googleFor(session.hostId);
-  const { etag } = await google.rescheduleEvent(
-    session.googleEventId!,
-    input.startsAt,
-    input.endsAt,
-    session.timezone,
-  );
+  // Google first (when the class has an event), then the DB.
+  let etag = session.googleEventEtag;
+  if (session.googleEventId) {
+    const google = await deps.googleFor(session.hostId);
+    ({ etag } = await google.rescheduleEvent(
+      session.googleEventId,
+      input.startsAt,
+      input.endsAt,
+      session.timezone,
+    ));
+  }
   const updated = await deps.db.classSession.update({
     where: { id: classId },
     data: { startsAt: input.startsAt, endsAt: input.endsAt, googleEventEtag: etag },
@@ -210,8 +272,7 @@ export async function rescheduleClass(
 export async function cancelClass(deps: Deps, actor: Actor, classId: string): Promise<void> {
   assertCan(actor.role, "class:schedule");
   const session = await loadManageable(deps, actor, classId);
-  const google = await deps.googleFor(session.hostId);
-  await google.cancelEvent(session.googleEventId!);
+  if (session.googleEventId) await (await deps.googleFor(session.hostId)).cancelEvent(session.googleEventId);
   await deps.db.classSession.update({ where: { id: classId }, data: { status: ClassStatus.CANCELLED } });
   await deps.jobs.cancelReminders(classId, session.startsAt);
   await audit(deps.db, actor, "class.cancel", { type: "ClassSession", id: classId });
@@ -222,12 +283,26 @@ export async function getJoinUrl(deps: Deps, actor: Actor, classId: string): Pro
   assertCan(actor.role, "class:join");
   const session = await deps.db.classSession.findUnique({
     where: { id: classId },
-    select: { courseId: true, startsAt: true, endsAt: true, status: true, meetLink: true, hostId: true },
+    select: {
+      courseId: true,
+      startsAt: true,
+      endsAt: true,
+      status: true,
+      meetLink: true,
+      hostId: true,
+      location: true,
+      googleEventId: true,
+    },
   });
   if (!session) throw Errors.notFound("Class");
   await assertCourseAccess(deps.db, actor, session.courseId, "watch");
   if (session.status === ClassStatus.CANCELLED) throw Errors.conflict("This class was cancelled.");
-  if (!session.meetLink) throw Errors.conflict("This class has no Meet link yet.");
+  if (!session.meetLink)
+    throw Errors.conflict(
+      session.googleEventId
+        ? "This class has no Meet link yet."
+        : `This class meets in person${session.location ? `: ${session.location}` : ""}.`,
+    );
   if (session.hostId === actor.id) return session.meetLink; // host can always open their own meeting
 
   const w = joinWindow(session.startsAt, session.endsAt, deps.now(), deps.config.joinOpensMinutesBefore);
@@ -247,7 +322,7 @@ export async function exportIcs(deps: Deps, actor: Actor, q: ListClassesQuery): 
       startsAt: new Date(c.startsAt),
       endsAt: new Date(c.endsAt),
       url: `${deps.config.appUrl}/dashboard`,
-      location: "Google Meet (join from E-learner)",
+      location: c.location ?? (c.online ? "Online (join from E-learner)" : undefined),
       updatedAt: deps.now(),
     })),
     "E-learner classes",

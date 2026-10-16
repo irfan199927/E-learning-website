@@ -333,17 +333,17 @@ model Module {
 }
 
 model Lesson {
-  id          String       @id @default(cuid())
+  id          String           @id @default(cuid())
   moduleId    String
   title       String
   type        LessonType
   position    Int
-  body        String?      @db.Text // markdown notes
+  body        String?          @db.Text // markdown notes
   url         String? // external link / slides
-  videoId     String?      @unique
+  videoId     String?          @unique
   publishedAt DateTime?
-  module      Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  video       Video?       @relation(fields: [videoId], references: [id])
+  module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  video       Video?           @relation(fields: [videoId], references: [id])
   attachments Attachment[]
   threads     Thread[]
   progress    LessonProgress[]
@@ -394,6 +394,8 @@ model ClassSession {
   googleEventEtag     String?
   meetLink            String?
   meetConferenceId    String? // meeting code, e.g. abc-defg-hij
+  /// Classes scheduled without Google: a room ("Room 4"). A pasted meeting link goes in meetLink.
+  location            String?
   autoAttachRecording Boolean     @default(true)
   notifyParents       Boolean     @default(true)
   recordingSyncedAt   DateTime?
