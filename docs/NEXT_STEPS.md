@@ -26,3 +26,47 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Public HTTPS for UAT (Cloudflare Tunnel) so Google sign-in works; then `SITE_APP_URL` on the landing page
 - [ ] Production on AWS (docs/deployment.md "Production on AWS"): IaC, ECR, ECS, RDS, ElastiCache, S3+CloudFront,
       SES, OIDC deploy role; ADR for the choices
+- [ ] Protect `main` with the required CI checks (docs/deployment.md, "Branch protection")
+- [x] GitHub Actions pinned to commit SHAs (`# vX.Y.Z` comment; Dependabot updates both), at the versions that ran green.
+- [x] Worker image size: `googleapis` replaced by `@googleapis/calendar`, `/drive`, `/meet` (production
+      `node_modules` 354 MB → 174 MB).
+
+## 3. Documentation set (user asked for proper docs)
+
+- [x] `README.md` (overview, quickstart, repo map, scripts)
+- [x] `docs/ui.md` (app shell, screens per role, UI rules) and `CHANGELOG.md`
+- [x] `CONTRIBUTING.md` (branching, conventional commits, PR checklist, definition of done)
+- [x] `SECURITY.md` + `docs/security.md` (threat model, controls, DPDP handling)
+- [x] `docs/architecture.md` — system design (requirements, flows, load estimates, failure modes, trade-offs)
+- [x] G4 reminder reconciliation and G6 raw-file cleanup (`docs/architecture.md` §7)
+- [ ] Remaining design gaps G2, G3, G5, G7 in `docs/architecture.md` §7 (G5 needs real accounts in the pilot; G7 is a
+      hosting decision)
+- [x] `docs/adr/0001…0007` — monorepo; route handlers + worker vs NestJS; Better Auth + DB sessions; Prisma 7;
+      R2 + gated HLS playlists; separate Google API grant (Internal OAuth app); recurring classes as Google instances
+- [x] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)
+- [x] `docs/google-setup.md` (GCP project, Internal consent screen, scopes, Workspace recording policy)
+- [x] `docs/deployment.md` (Vercel, Render, Neon, Redis w/ `noeviction`, R2 bucket + CORS exposing `ETag`, rollback)
+- [ ] `docs/testing.md`, `docs/api.md` (+ OpenAPI), runbooks: recording-sync, transcode-failures, google-reconnect,
+      restore-database, rotate-secrets, incident-response
+
+## 4. Product (MVP backlog from docs/SPEC.md)
+
+- [x] Open Google sign-up; students ask to join courses, teachers approve (`JoinRequest`); teachers create courses
+- [ ] Admin: user CSV import, role management UI (now a workflow), removing students, parental-consent flow (DPDP) UI
+- [ ] Courses/modules/lessons CRUD + attachments (course pages exist since 2026-10-16 but list READY videos in upload
+      order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
+- [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
+- [x] Learner progress: streak, today's watch time, monthly activity calendar, resume card (`LearningDay` table)
+- [x] Public landing page at `/` (animated, advertises a course, Enroll → sign-in). Copy is SAMPLE content in
+      `apps/web/src/app/(marketing)/course.ts`
+- [ ] Replace the sample landing copy with a real course, or render it from a published `Course` once course CRUD
+      exists; add real (consented) student work or testimonials if the school has them
+- [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
+- [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
+- [ ] Parent view of a child's progress (lessons completed, streak) — read-only, per verified ParentLink
+- [ ] Per-school daily watch goal (now a 30-min constant in `dashboard/page.tsx`)
+- [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
+- [ ] Course cover images (optional upload; `CourseTile` is the fallback)
+- [ ] Assignments & MCQ quizzes; teacher attendance page with manual override
+- [ ] In-app notifications UI; Razorpay checkout + webhooks
+- [ ] i18n (next-intl: en/hi/mr), PWA
