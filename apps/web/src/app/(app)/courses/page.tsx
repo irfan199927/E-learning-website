@@ -3,11 +3,13 @@ import Link from "next/link";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
 import { JoinCourseButton } from "@/components/join-course-button";
+import { ParentConsentPanel } from "@/components/parent-consent-panel";
 import { ProgressRing } from "@/components/progress-ring";
 import { buttonClasses } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
+import { getConsentState } from "@/server/services/consent";
 import { listCatalog, pendingJoinCounts, type CatalogCourse } from "@/server/services/join-requests";
 import { listMyCourses, type CourseCard } from "@/server/services/learning";
 
@@ -29,11 +31,13 @@ export default async function CoursesPage({
   const { filter: raw } = await searchParams;
   const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "all";
   const learner = actor.role === "STUDENT";
-  const [all, catalog, pending] = await Promise.all([
+  const [all, catalog, pending, consent] = await Promise.all([
     listMyCourses(deps(), actor),
     listCatalog(deps(), actor),
     pendingJoinCounts(deps(), actor),
+    getConsentState(deps(), actor.id),
   ]);
+  const needsConsent = consent.kind === "needs-consent";
   const joinable = catalog.filter((c) => c.state !== "enrolled");
   const courses = learner && filter !== "all" ? all.filter((c) => c.state === filter) : all;
 
@@ -55,6 +59,8 @@ export default async function CoursesPage({
           </Link>
         )}
       </header>
+
+      {needsConsent && <ParentConsentPanel pendingEmail={consent.pendingEmail} />}
 
       {learner && (
         <nav aria-label="Filter courses">
@@ -121,7 +127,7 @@ export default async function CoursesPage({
             <ul className="grid gap-4 sm:grid-cols-2">
               {joinable.map((c) => (
                 <li key={c.id}>
-                  <CatalogCard course={c} />
+                  <CatalogCard course={c} blocked={needsConsent} />
                 </li>
               ))}
             </ul>
@@ -132,7 +138,7 @@ export default async function CoursesPage({
   );
 }
 
-function CatalogCard({ course: c }: { course: CatalogCourse }) {
+function CatalogCard({ course: c, blocked }: { course: CatalogCourse; blocked: boolean }) {
   return (
     <article className="flex h-full flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-5">
       <CourseTile title={c.title} grade={c.grade} color={c.color} className="h-24 w-full" />
@@ -142,7 +148,17 @@ function CatalogCard({ course: c }: { course: CatalogCourse }) {
       </div>
       {c.description && <p className="line-clamp-3 text-sm">{c.description}</p>}
       <div className="mt-auto flex justify-end pt-1">
-        <JoinCourseButton courseId={c.id} title={c.title} state={c.state === "enrolled" ? "none" : c.state} />
+        {blocked ? (
+          <p className="inline-flex h-11 items-center text-sm text-muted">
+            Needs your parent&apos;s approval first
+          </p>
+        ) : (
+          <JoinCourseButton
+            courseId={c.id}
+            title={c.title}
+            state={c.state === "enrolled" ? "none" : c.state}
+          />
+        )}
       </div>
     </article>
   );

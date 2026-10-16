@@ -5,6 +5,26 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — parental consent for under-18s (DPDP) (2026-10-16)
+
+- **Date of birth at first sign-in.** Every student is sent to `/welcome` once.
+- **Under-18s can browse courses but can't join** until a parent consents. Teachers can't approve them either.
+  The rule is enforced in the services, not only in the UI.
+- **Parent consent by email.**
+  - The student enters a parent's email, and the parent gets a single-use link, valid for 7 days. Only its hash
+    is stored; asking again replaces the old link.
+  - The link opens a public page explaining what the school keeps and why.
+  - The parent confirms they're the parent or guardian and types their name. No account needed.
+  - `Consent` records the parent's name and email, the time, the IP, the method and the notice version.
+- The Users page shows each under-18 student's consent status.
+- New `ConsentRequest` table and `Consent.parentName` / `parentEmail` (migration `parental_consent`, additive).
+- API: `POST /api/v1/me/date-of-birth`, `POST /api/v1/me/parent-consent`, and the public
+  `POST /api/v1/consent/:token`. Audited as `user.dob`, `consent.request` and `consent.grant`.
+- The seed gives demo students birth dates, and consent records for the two minors.
+- Tests: age unit test; 3 integration tests (date-of-birth gate, the full consent flow including the teacher
+  approval gate, expiry, replacement and unknown links); an e2e test from admin invite → date of birth → parent's
+  email → parent consents → student can ask to join.
+
 ### Added — admin Users page and course rosters (2026-10-16)
 
 - **Users** (`/admin/users`, admins): add people one at a time or from a CSV (`email,name[,role]`, up to 500).

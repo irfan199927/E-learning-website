@@ -22,6 +22,7 @@ export interface UserRowData {
   isActive: boolean;
   needsInvite: boolean;
   isSelf: boolean;
+  minor: null | { consent: boolean };
   meta: string;
 }
 
@@ -80,6 +81,13 @@ export function UserRow({ user }: { user: UserRowData }) {
         <p className="font-semibold">
           {user.name}
           {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">(you)</span>}
+          {user.minor && (
+            <span
+              className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${user.minor.consent ? "bg-success-soft text-[#0C6447]" : "bg-primary-soft text-primary-fg"}`}
+            >
+              {user.minor.consent ? "Under 18 · parent consented" : "Under 18 · waiting for parent"}
+            </span>
+          )}
           {!active && (
             <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
               Switched off

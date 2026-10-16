@@ -125,7 +125,15 @@ export async function world() {
   const tag = randomUUID().slice(0, 8);
   const mk = (role: Role, name: string) =>
     db.user.create({
-      data: { email: `${name}-${tag}@test.local`, name, role, emailVerified: true, isActive: true },
+      data: {
+        email: `${name}-${tag}@test.local`,
+        name,
+        role,
+        emailVerified: true,
+        isActive: true,
+        // Adult students, so join flows aren't gated on parental consent (consent tests set their own).
+        ...(role === Role.STUDENT ? { dateOfBirth: new Date("2000-01-01T00:00:00Z") } : {}),
+      },
     });
   const [admin, teacher, otherTeacher, student, outsider, parent] = await Promise.all([
     mk(Role.ADMIN, "admin"),

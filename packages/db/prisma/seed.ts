@@ -8,7 +8,7 @@
  */
 import { hashPassword } from "better-auth/crypto";
 import { createDb } from "../src/client";
-import { Role } from "../src/generated/prisma/enums";
+import { ConsentType, Role } from "../src/generated/prisma/enums";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Refusing to seed a production database.");
@@ -18,11 +18,14 @@ if (process.env.NODE_ENV === "production") {
 const db = createDb(process.env.DATABASE_URL ?? "");
 const PASSWORD = "Password123!";
 
-async function upsertUser(email: string, name: string, role: Role, extra: { isMinor?: boolean } = {}) {
+async function upsertUser(email: string, name: string, role: Role, extra: { dateOfBirth?: string } = {}) {
+  // Students get a date of birth so the app doesn't stop them at /welcome; under-18s get a consent row below.
+  const dateOfBirth = extra.dateOfBirth ? new Date(`${extra.dateOfBirth}T00:00:00Z`) : undefined;
+  const isMinor = dateOfBirth ? new Date().getUTCFullYear() - dateOfBirth.getUTCFullYear() < 18 : false;
   const user = await db.user.upsert({
     where: { email },
-    update: {},
-    create: { email, name, role, emailVerified: true, isActive: true, isMinor: extra.isMinor ?? false },
+    update: dateOfBirth ? { dateOfBirth, isMinor } : {},
+    create: { email, name, role, emailVerified: true, isActive: true, dateOfBirth, isMinor },
   });
   await db.account.upsert({
     where: { providerId_accountId: { providerId: "credential", accountId: user.id } },
@@ -40,11 +43,36 @@ async function upsertUser(email: string, name: string, role: Role, extra: { isMi
 async function main() {
   await upsertUser("admin@school.edu", "Asha Admin", Role.ADMIN);
   const teacher = await upsertUser("teacher@school.edu", "Meera Kulkarni", Role.TEACHER);
-  const aanya = await upsertUser("aanya@school.edu", "Aanya Sharma", Role.STUDENT, { isMinor: true });
-  const rohan = await upsertUser("rohan@school.edu", "Rohan Patil", Role.STUDENT, { isMinor: true });
+  const aanya = await upsertUser("aanya@school.edu", "Aanya Sharma", Role.STUDENT, {
+    dateOfBirth: "2011-04-12",
+  });
+  const rohan = await upsertUser("rohan@school.edu", "Rohan Patil", Role.STUDENT, {
+    dateOfBirth: "2011-09-03",
+  });
   const parent = await upsertUser("parent@example.com", "Sunita Sharma", Role.PARENT);
   // Like someone who just signed up with Google: a student with no courses yet (asks to join from /courses).
-  await upsertUser("kabir@school.edu", "Kabir Rao", Role.STUDENT);
+  await upsertUser("kabir@school.edu", "Kabir Rao", Role.STUDENT, { dateOfBirth: "2006-01-20" });
+
+  // The two minors already have a parent's consent (DPDP), as if their parents had used the emailed link.
+  for (const [student, parentName, parentEmail] of [
+    [aanya, "Sunita Sharma", "parent@example.com"],
+    [rohan, "Anil Patil", "anil.patil@example.com"],
+  ] as const) {
+    const has = await db.consent.count({
+      where: { userId: student.id, type: ConsentType.PARENTAL_VERIFIABLE },
+    });
+    if (!has)
+      await db.consent.create({
+        data: {
+          userId: student.id,
+          type: ConsentType.PARENTAL_VERIFIABLE,
+          version: "2026-10-16",
+          method: "seed",
+          parentName,
+          parentEmail,
+        },
+      });
+  }
 
   await db.parentLink.upsert({
     where: { parentId_studentId: { parentId: parent.id, studentId: aanya.id } },

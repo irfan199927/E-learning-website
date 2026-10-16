@@ -99,6 +99,19 @@ Until lessons CRUD exists, a course's lessons are its READY videos in upload ord
 - Staff also see **Students (n)**: everyone enrolled, with **Remove** (asks to confirm). Removing ends access at
   once; the student can ask to join again.
 
+### Welcome (`/welcome`) and parental consent
+
+- A student's first visit to any app page sends them to **Welcome**, which asks for their date of birth once.
+  Changing it later needs the school.
+- **Under 18 without a parent's consent:**
+  - **My courses** shows "A parent needs to approve your account" with a parent-email box;
+  - **Find a course** can be browsed, but each card says "Needs your parent's approval first" instead of
+    **Ask to join**.
+- **The parent's page** (`/consent/:token`, public, from the email) shows what the school keeps and why, the
+  notice version, the parent's full name and a declaration checkbox. It's a single-use link, valid for 7 days.
+  Expired and used links get a clear message.
+- **Users page:** under-18 students carry a badge, "waiting for parent" or "parent consented".
+
 ### Users (`/admin/users`, admins only)
 
 - **Add people:** one person (name, email, role), or **From a spreadsheet**, a CSV with an `email,name[,role]`

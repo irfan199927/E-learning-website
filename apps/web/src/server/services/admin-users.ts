@@ -6,11 +6,12 @@
 import {
   assertCan,
   Errors,
+  isMinorOn,
   type CreateUsersInput,
   type ListUsersQuery,
   type UpdateUserInput,
 } from "@elearner/core";
-import { Role } from "@elearner/db";
+import { ConsentType, Role } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 
@@ -26,6 +27,8 @@ export interface AdminUserRow {
   hasGoogle: boolean;
   createdAt: Date;
   courseCount: number;
+  /** Students only: under 18 (from their date of birth), and whether a parent's consent is on file. */
+  minor: null | { consent: boolean };
 }
 
 export async function listUsers(
@@ -57,7 +60,13 @@ export async function listUsers(
         role: true,
         isActive: true,
         createdAt: true,
+        dateOfBirth: true,
         accounts: { select: { providerId: true } },
+        consents: {
+          where: { type: ConsentType.PARENTAL_VERIFIABLE, withdrawnAt: null },
+          select: { id: true },
+          take: 1,
+        },
         _count: { select: { enrollments: { where: { revokedAt: null } }, coursesTaught: true } },
       },
       orderBy: [{ createdAt: "desc" }, { id: "asc" }],
@@ -79,6 +88,10 @@ export async function listUsers(
       hasPassword: u.accounts.some((a) => a.providerId === "credential"),
       hasGoogle: u.accounts.some((a) => a.providerId === "google"),
       courseCount: u.role === Role.TEACHER ? u._count.coursesTaught : u._count.enrollments,
+      minor:
+        u.role === Role.STUDENT && u.dateOfBirth && isMinorOn(u.dateOfBirth, deps.now())
+          ? { consent: u.consents.length > 0 }
+          : null,
     })),
   };
 }

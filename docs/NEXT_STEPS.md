@@ -54,7 +54,10 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Open Google sign-up; students ask to join courses, teachers approve (`JoinRequest`); teachers create courses
 - [x] Admin Users page (`/admin/users`): add one or CSV import with email invites, roles, switch off/on; course
       roster with Remove
-- [ ] Parental-consent flow (DPDP): minors flagged, parent verifies (email OTP + declaration), `Consent` recorded
+- [x] Parental consent (DPDP): DOB at first sign-in, minors browse but can't join until a parent consents by
+      emailed single-use link; `Consent` + `ConsentRequest`
+- [ ] Recording consent (`ConsentType.RECORDING`) and self-service consent withdrawal for parents; a search box for
+      long course catalogs
 - [ ] Courses/modules/lessons CRUD + attachments (course pages exist since 2026-10-16 but list READY videos in upload
       order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
