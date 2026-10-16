@@ -36,7 +36,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] G4 reminder reconciliation and G6 raw-file cleanup (`docs/architecture.md` §7)
 - [ ] Remaining design gaps G2, G3, G5, G7 in `docs/architecture.md` §7 (G5 needs real accounts in the pilot; G7 is a
       hosting decision)
-- [ ] `docs/adr/0001…0007` — monorepo; route handlers + worker vs NestJS; Better Auth + DB sessions; Prisma 7;
+- [x] `docs/adr/0001…0007` — monorepo; route handlers + worker vs NestJS; Better Auth + DB sessions; Prisma 7;
       R2 + gated HLS playlists; separate Google API grant (Internal OAuth app); recurring classes as Google instances
 - [x] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)
 - [x] `docs/google-setup.md` (GCP project, Internal consent screen, scopes, Workspace recording policy)

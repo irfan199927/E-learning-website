@@ -23,6 +23,9 @@ Dates are in IST.
   rotate the token encryption key and fix common configuration errors.
 - `SECURITY.md` (private vulnerability reporting) and `docs/security.md`: threat model, the controls in the code,
   audit logging, DPDP handling and known security gaps. Each item is marked built or planned.
+- `docs/adr/0001`–`0007`: architecture decision records for the choices code comments already cite (monorepo,
+  route handlers + worker, Better Auth sessions, Prisma 7, gated HLS on R2, the separate Google grant, recurring
+  classes as Google instances).
 - `docs/google-setup.md`: the one-time Google Cloud and Workspace setup (APIs, Internal consent screen, scopes,
   redirect URIs, Meet recording policy) with a troubleshooting table.
 
