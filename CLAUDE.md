@@ -96,6 +96,12 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   the emailed link (`services/consent.ts`, `assertMayJoinCourses`). Admins manage
   accounts at `/admin/users` (services/admin-users.ts: invites via `deps.sendPasswordSetup`, which reuses Better
   Auth's reset flow); `pnpm db:set-role` / `db:create-user` are for bootstrapping the first admin.
+- Course content: a course is ordered Modules → Lessons (`services/course-content.ts` edits, `learning.ts` reads).
+  Students see published lessons only, video lessons once READY (`visibleLessonWhere`); every video has a lesson
+  (uploads, recordings), else it's a staff-only "loose video". Completion = VideoProgress for videos,
+  LessonProgress ticks otherwise. Attachments: presigned PUT, then `completeAttachment` rebuilds the key and
+  checks the real size; downloads redirect with `Content-Disposition: attachment`.
+- Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is
   public), production later on AWS. Google is optional: empty `GOOGLE_CLIENT_ID` = password sign-in only.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fakeJobs, fakeStorage, makeDeps, world } from "@/test/fakes";
+import { addVideoLesson, fakeJobs, fakeStorage, makeDeps, world } from "@/test/fakes";
 import { completeUpload, getHlsFile, getPlayerData, initUpload, presignParts, saveProgress } from "./videos";
 
 const MASTER = "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360\n360p/index.m3u8\n";
@@ -32,6 +32,13 @@ describe("videos service (integration)", () => {
       parts: [1, 2, 3].map((n) => ({ partNumber: n, etag: `"e${n}"` })),
     });
     expect(jobs.log).toContain(`transcode:${init.videoId}`);
+    // The upload became a lesson in the course's "Videos" module.
+    const lesson = await deps.db.lesson.findUnique({
+      where: { videoId: init.videoId },
+      select: { title: true, type: true, publishedAt: true, module: { select: { title: true } } },
+    });
+    expect(lesson).toMatchObject({ title: "Lesson 1", type: "VIDEO", module: { title: "Videos" } });
+    expect(lesson?.publishedAt).not.toBeNull();
     expect((await deps.db.video.findUnique({ where: { id: init.videoId } }))?.status).toBe("UPLOADED");
     await expect(
       completeUpload(deps, w.teacher, init.videoId, { parts: [{ partNumber: 1, etag: "x" }] }),
@@ -59,18 +66,7 @@ describe("videos service (integration)", () => {
 
   it("serves rewritten playlists only to enrolled users, and records progress", async () => {
     const w = await world();
-    const deps0 = makeDeps();
-    const video = await deps0.db.video.create({
-      data: {
-        title: "Ready",
-        source: "UPLOAD",
-        status: "READY",
-        uploaderId: w.teacher.id,
-        courseId: w.course.id,
-        hlsPrefix: "videos/v/hls/",
-        durationSeconds: 600,
-      },
-    });
+    const { video, lesson } = await addVideoLesson(w, { title: "Ready", hlsPrefix: "videos/v/hls/" });
     const storage = fakeStorage({
       "videos/v/hls/master.m3u8": MASTER,
       "videos/v/hls/360p/index.m3u8": VARIANT,
@@ -108,5 +104,10 @@ describe("videos service (integration)", () => {
       (await saveProgress(deps, w.student, video.id, { positionSeconds: 590, watchedDeltaSeconds: 0 }))
         .completed,
     ).toBe(true);
+
+    // A hidden lesson's video is staff-only.
+    await deps.db.lesson.update({ where: { id: lesson.id }, data: { publishedAt: null } });
+    await expect(getPlayerData(deps, w.student, video.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await getPlayerData(deps, w.teacher, video.id)).lessonId).toBe(lesson.id);
   });
 });

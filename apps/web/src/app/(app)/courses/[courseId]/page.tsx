@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseTile } from "@/components/course-tile";
-import { Icon } from "@/components/icons";
+import { Icon, type IconName } from "@/components/icons";
 import { JoinRequestList } from "@/components/join-request-list";
 import { RosterList } from "@/components/roster-list";
 import { buttonClasses } from "@/components/ui/button";
-import { plural } from "@/lib/format";
+import { minutes, plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listJoinRequests } from "@/server/services/join-requests";
@@ -16,17 +16,19 @@ import { listRoster } from "@/server/services/roster";
 
 export const metadata: Metadata = { title: "Course" };
 
-const STATUS_LABEL: Partial<Record<CourseLesson["status"], string>> = {
+const STATUS_LABEL: Partial<Record<NonNullable<CourseLesson["video"]>["status"], string>> = {
+  PENDING_UPLOAD: "Uploading",
   UPLOADED: "Queued for processing",
   TRANSCODING: "Processing",
   FAILED: "Processing failed",
 };
 
-function duration(seconds: number | null): string | null {
-  if (!seconds) return null;
-  const m = Math.round(seconds / 60);
-  return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.max(1, m)} min`;
-}
+const TYPE: Record<string, { icon: IconName; label: string }> = {
+  VIDEO: { icon: "play", label: "Video" },
+  NOTE: { icon: "text", label: "Reading" },
+  LINK: { icon: "link", label: "Link" },
+  DOCUMENT: { icon: "file", label: "Files" },
+};
 
 export default async function CoursePage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
@@ -77,10 +79,16 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
             </div>
           )}
           {course.canManage && (
-            <Link href="/library/upload" className={buttonClasses("secondary", "mt-auto w-fit")}>
-              <Icon name="upload" size={18} />
-              Upload video
-            </Link>
+            <div className="mt-auto flex flex-wrap gap-2 pt-2">
+              <Link href={`/courses/${course.id}/edit`} className={buttonClasses("primary")}>
+                <Icon name="edit" size={18} />
+                Edit course
+              </Link>
+              <Link href={`/library/upload?course=${course.id}`} className={buttonClasses("secondary")}>
+                <Icon name="upload" size={18} />
+                Upload video
+              </Link>
+            </div>
           )}
         </div>
       </header>
@@ -136,56 +144,70 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         <h2 id="lessons-h" className="mb-2 font-display text-xl font-bold">
           Lessons
         </h2>
-        {course.lessons.length === 0 ? (
+        {course.modules.length === 0 ? (
           <p className="py-6 text-muted">
-            No lessons yet. Class recordings and uploaded videos will appear here.
+            {course.canManage
+              ? "No lessons yet. Use Edit course to add modules and lessons; class recordings and uploaded videos are added automatically."
+              : "No lessons yet. Your teacher's lessons and class recordings will appear here."}
           </p>
         ) : (
-          <ol className="divide-y divide-line">
-            {course.lessons.map((l, i) => {
-              const ready = l.status === "READY";
-              const meta = [duration(l.durationSeconds), STATUS_LABEL[l.status]].filter(Boolean).join(" · ");
-              const body = (
-                <>
-                  <span
-                    className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
-                      l.completed
-                        ? "bg-success text-white"
-                        : l.percent > 0
-                          ? "bg-primary-soft text-primary-fg-strong"
-                          : "bg-canvas text-muted"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {l.completed ? <Icon name="check" size={18} /> : i + 1}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="font-semibold">{l.title}</span>
-                    <span className="text-sm text-muted">
-                      {meta}
-                      {learner &&
-                        (l.completed ? " · Completed" : l.percent > 0 ? ` · ${l.percent}% watched` : "")}
-                    </span>
-                  </span>
-                  {ready && <Icon name="play" size={18} className="text-primary-fg" />}
-                </>
-              );
-              return (
-                <li key={l.videoId}>
-                  {ready ? (
-                    <Link
-                      href={`/library/${l.videoId}`}
-                      className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
-                    >
-                      {body}
-                    </Link>
-                  ) : (
-                    <div className="flex items-center gap-4 py-3 opacity-80">{body}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
+          <div className="flex flex-col gap-5">
+            {course.modules.map((m) => (
+              <div key={m.id}>
+                <h3 className="mb-1 text-sm font-bold uppercase tracking-wide text-muted">{m.title}</h3>
+                <ol className="divide-y divide-line">
+                  {m.lessons.map((l) => {
+                    const type = TYPE[l.type] ?? TYPE.NOTE!;
+                    const meta = [
+                      type.label,
+                      minutes(l.video?.durationSeconds ?? null),
+                      l.video ? STATUS_LABEL[l.video.status] : null,
+                      l.attachmentCount ? plural(l.attachmentCount, "file") : null,
+                      l.hidden ? "Hidden from students" : null,
+                      learner && l.completed ? "Completed" : null,
+                      learner && !l.completed && l.percent > 0 ? `${l.percent}% watched` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
+                    return (
+                      <li key={l.id}>
+                        <Link
+                          href={`/courses/${course.id}/lessons/${l.id}`}
+                          className={`-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas ${
+                            l.number === null ? "opacity-75" : ""
+                          }`}
+                        >
+                          <span
+                            className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                              l.completed
+                                ? "bg-success text-white"
+                                : l.percent > 0
+                                  ? "bg-primary-soft text-primary-fg-strong"
+                                  : "bg-canvas text-muted"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {l.completed ? (
+                              <Icon name="check" size={18} />
+                            ) : l.number === null ? (
+                              <Icon name={l.hidden ? "eyeOff" : "clock"} size={18} />
+                            ) : (
+                              l.number
+                            )}
+                          </span>
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="font-semibold">{l.title}</span>
+                            <span className="text-sm text-muted">{meta}</span>
+                          </span>
+                          <Icon name={type.icon} size={18} className="shrink-0 text-primary-fg" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            ))}
+          </div>
         )}
       </section>
     </div>

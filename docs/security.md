@@ -113,6 +113,8 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 | Schedule a class                          | 30 / h / teacher     |
 | Start an upload                           | 10 / h / user        |
 | Upload part URLs                          | 600 / h / user       |
+| Start an attachment upload                | 120 / h / user       |
+| Attachment downloads                      | 300 / 10 min / user  |
 | HLS files                                 | 2000 / 10 min / user |
 | Progress beacons                          | 240 / h / user       |
 | Google Calendar push                      | 600 / min            |
@@ -141,6 +143,17 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
   presigned URL that expires after twice the video's length plus 30 minutes, with a minimum of 1 hour.
 - Uploads go straight from the browser to storage using presigned part URLs that expire after 1 hour. Size is
   capped, and stale multipart uploads are aborted every hour.
+- Students only get videos that are in a lesson the teacher hasn't hidden.
+
+### Lesson files
+
+- Teachers upload with a presigned PUT (15 minutes) to `attachments/<lessonId>/<uuid>/<name>`. Only listed file
+  types are accepted (PDF, Office, OpenDocument, text, CSV, PNG/JPEG/GIF/WebP, zip; no HTML or SVG), up to
+  50 MB, checked again against the stored object's real size when the upload is recorded.
+- The server rebuilds the key from the lesson and attachment id when recording a file, so a request can't claim
+  another lesson's object.
+- Downloads check access (staff, or students enrolled in the course when the lesson is visible), then redirect to
+  a 5-minute presigned URL with `Content-Disposition: attachment`, so a file never renders inline on our origin.
 
 ### Logging
 
@@ -172,6 +185,8 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `enrollment.remove` (a teacher removes a student from a course)
 - `user.dob`, `consent.request`, `consent.grant` (parental consent; the grant has no actor because the parent has
   no account)
+- `course.update`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
+  `attachment.create`, `attachment.delete` (course editing)
 
 **Must be added with the features that need them:**
 

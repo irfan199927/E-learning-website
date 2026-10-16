@@ -19,6 +19,16 @@ const PATHS = {
   users:
     "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM22 19v-1a4 4 0 0 0-3-3.9M16 3.1a3.5 3.5 0 0 1 0 6.8",
   video: "M3 6h12v12H3zM15 10l6-3v10l-6-3",
+  file: "M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6",
+  text: "M4 6h16M4 10h16M4 14h10M4 18h12",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  edit: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+  arrowUp: "M12 19V5M6 11l6-6 6 6",
+  arrowDown: "M12 5v14M6 13l6 6 6-6",
+  trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
+  download: "M12 4v12M7 11l5 5 5-5M4 20h16",
+  eyeOff:
+    "M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 9 6 9 6a16 16 0 0 1-2.6 3.2M6.3 7.6C4.2 9.2 3 12 3 12s4 6 9 6a8.6 8.6 0 0 0 4-1M9.9 9.9a3 3 0 0 0 4.2 4.2",
 } as const;
 
 export type IconName = keyof typeof PATHS | "flame";

@@ -66,17 +66,32 @@ export function fakeJobs(): JobsPort & { log: string[] } {
   };
 }
 
-export function fakeStorage(files: Record<string, string> = {}): StoragePort & { completed: string[] } {
+export function fakeStorage(
+  files: Record<string, string> = {},
+): StoragePort & { completed: string[]; deleted: string[]; sizes: Map<string, number> } {
   const completed: string[] = [];
+  const deleted: string[] = [];
+  /** Objects "uploaded" with presignPut: set a key's size here to make head() find it. */
+  const sizes = new Map<string, number>();
   return {
     completed,
+    deleted,
+    sizes,
+    presignPut: async (key, contentType) =>
+      `https://storage.test/${key}?put=${encodeURIComponent(contentType)}`,
+    deleteObject: async (key) => void deleted.push(key),
     createMultipart: async () => "upload-123",
     presignPart: async (key, uploadId, n) =>
       `https://storage.test/${key}?uploadId=${uploadId}&partNumber=${n}`,
     completeMultipart: async (key) => void completed.push(key),
     abortMultipart: async () => undefined,
     presignGet: async (key, ttl) => `https://storage.test/${key}?ttl=${ttl}`,
-    head: async () => ({ size: 1234, contentType: "video/mp4" }),
+    head: async (key) =>
+      key.startsWith("attachments/")
+        ? sizes.has(key)
+          ? { size: sizes.get(key)!, contentType: undefined }
+          : null
+        : { size: 1234, contentType: "video/mp4" },
     getText: async (key) => {
       const f = files[key];
       if (f === undefined) throw new Error("NoSuchKey");
@@ -166,4 +181,41 @@ export async function world() {
     outsider: actor(outsider),
     parent: actor(parent),
   };
+}
+
+/**
+ * A course video with its published VIDEO lesson, as uploads create them. Lessons go into one "Videos" module
+ * per course, in call order.
+ */
+export async function addVideoLesson(
+  w: { course: { id: string }; teacher: { id: string } },
+  opts: { title: string; status?: "READY" | "TRANSCODING"; durationSeconds?: number; hlsPrefix?: string },
+) {
+  const db = testDb();
+  const mod =
+    (await db.module.findFirst({ where: { courseId: w.course.id, title: "Videos" } })) ??
+    (await db.module.create({ data: { courseId: w.course.id, title: "Videos", position: 1 } }));
+  const video = await db.video.create({
+    data: {
+      title: opts.title,
+      source: "UPLOAD",
+      status: opts.status ?? "READY",
+      uploaderId: w.teacher.id,
+      courseId: w.course.id,
+      durationSeconds: opts.durationSeconds ?? 600,
+      hlsPrefix: opts.hlsPrefix ?? null,
+    },
+  });
+  const position = (await db.lesson.count({ where: { moduleId: mod.id } })) + 1;
+  const lesson = await db.lesson.create({
+    data: {
+      moduleId: mod.id,
+      title: opts.title,
+      type: "VIDEO",
+      position,
+      videoId: video.id,
+      publishedAt: new Date(),
+    },
+  });
+  return { video, lesson, moduleId: mod.id };
 }

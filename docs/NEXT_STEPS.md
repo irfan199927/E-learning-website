@@ -58,8 +58,10 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       emailed single-use link; `Consent` + `ConsentRequest`
 - [ ] Recording consent (`ConsentType.RECORDING`) and self-service consent withdrawal for parents; a search box for
       long course catalogs
-- [ ] Courses/modules/lessons CRUD + attachments (course pages exist since 2026-10-16 but list READY videos in upload
-      order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
+- [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
+      lesson page with Mark as done; course pages follow Module/Lesson order
+- [ ] Rich text for readings (Markdown with a sanitiser); drag-and-drop reordering; video lesson re-upload
+- [ ] Clean up storage for attachment uploads that were never recorded (presigned PUT without the complete call)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
 - [x] Learner progress: streak, today's watch time, monthly activity calendar, resume card (`LearningDay` table)
 - [x] Public landing page at `/` (animated, advertises a course, Enroll → sign-in). Copy is SAMPLE content in

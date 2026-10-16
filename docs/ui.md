@@ -87,14 +87,15 @@ published at once. A badge on each course, such as "2 students waiting to join",
 
 - The header shows the cover, teacher and student count. Students also get a progress bar
   (`role="progressbar"`).
-- Lessons are numbered and marked completed (check), partly watched ("45% watched") or untouched.
-- Staff also see videos that are still processing or that failed, so they know what students can't see yet.
+- Lessons are grouped by module, in the teacher's order, and numbered across the course. Each row shows its type
+  (Video, Reading, Link, Files), how many files it has, and whether it's completed (check), partly watched
+  ("45% watched") or untouched.
+- Staff also see hidden lessons and videos still processing or that failed, unnumbered, so they know what students
+  can't see yet. They get **Edit course** and **Upload video** in the header.
 - Access follows the same rule as video playback (`assertCourseAccess(..., "watch")`). Anyone else gets a
   plain 404.
 - The course teacher and admins see **Join requests** (`#join-requests`): who asked, when, and their note, with
   **Approve** and **Decline**. Approving enrols the student and sends them an in-app notification.
-
-Until lessons CRUD exists, a course's lessons are its READY videos in upload order.
 
 - Staff also see **Students (n)**: everyone enrolled, with **Remove** (asks to confirm). Removing ends access at
   once; the student can ask to join again.
@@ -129,9 +130,35 @@ Until lessons CRUD exists, a course's lessons are its READY videos in upload ord
 - **Guard rails:** you can't change your own role or switch yourself off, and the last active admin can't be
   demoted.
 
-### Lesson (`/library/:videoId`)
+### Lesson (`/courses/:courseId/lessons/:lessonId`)
 
-A back link to the course, then the HLS player with resume and speed controls.
+- A back link to the course; staff also get **Edit lesson** and a note when the lesson is hidden.
+- Video lessons: the HLS player with resume and speed controls. A video still processing shows a placeholder.
+- Readings show their text (plain text, line breaks kept). Links open in a new tab (`rel="noopener noreferrer"`).
+- **Files** lists attachments with their size; each downloads through `/api/v1/attachments/:id`.
+- Students tick readings, links and file lessons with **Mark as done** (`aria-pressed`). Videos complete by
+  watching 95%.
+- **Previous / Next** follow the course order, skipping lessons students can't see.
+- `/library/:videoId` still exists for staff to preview a video that isn't in a lesson; otherwise it redirects
+  to the lesson.
+
+### Edit course (`/courses/:courseId/edit`, the course teacher and admins)
+
+- **Modules and lessons:** add, rename, move up/down and delete modules (only empty ones, so no lessons are lost);
+  add lessons per module (Reading, Link, Files, or Video, which goes to the upload page with the module
+  preselected); move lessons up/down, **Hide** / **Show**, delete (asks to confirm; a video lesson's video is
+  kept).
+- **Videos not in a lesson** lists course videos without a lesson, with **Add as lesson** into a chosen module.
+- **Course details:** title, grade, description, card colour (six presets that pass contrast with white text) and
+  **Listed in Find a course**.
+- Every control is a labelled button (icon buttons have names like "Move Worksheet up"), 44 px square.
+
+### Edit lesson (`/courses/:courseId/lessons/:lessonId/edit`)
+
+- Title, text or instructions, web address (links), module (moving puts the lesson at the end) and **Visible to
+  students**.
+- **Files:** pick one or more files; each uploads straight to storage, with progress in a `role="status"` line.
+  PDF, Office, OpenDocument, text, CSV, images or zip, up to 50 MB, 20 per lesson.
 
 ## Landing page (`/`)
 

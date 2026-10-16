@@ -92,7 +92,31 @@ async function main() {
       publishedAt: new Date(),
       modules: {
         create: [
-          { title: "Quadratics", position: 1 },
+          {
+            title: "Quadratics",
+            position: 1,
+            lessons: {
+              create: [
+                {
+                  title: "What is a quadratic?",
+                  type: "NOTE",
+                  position: 1,
+                  publishedAt: new Date(),
+                  body:
+                    "A quadratic expression has the form ax² + bx + c, where a ≠ 0.\n\n" +
+                    "This week we factorise quadratics and solve equations like x² − 5x + 6 = 0.",
+                },
+                {
+                  title: "Graphing calculator",
+                  type: "LINK",
+                  position: 2,
+                  publishedAt: new Date(),
+                  url: "https://www.desmos.com/calculator",
+                  body: "Plot y = x² − 5x + 6 and find where it crosses the x-axis.",
+                },
+              ],
+            },
+          },
           { title: "Class recordings", position: 99 },
         ],
       },

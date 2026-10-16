@@ -11,6 +11,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
   ListObjectsV2Command,
   S3Client,
   UploadPartCommand,
@@ -71,6 +72,17 @@ export class Storage {
       this.s3,
       new UploadPartCommand({ Bucket: this.bucket, Key: key, UploadId: uploadId, PartNumber: partNumber }),
       { expiresIn: expiresInSec },
+    );
+  }
+
+  /** One-request browser upload for small files (attachments). The browser must send the same Content-Type. */
+  presignPut(key: string, contentType: string, expiresInSec = 900): Promise<string> {
+    return getSignedUrl(
+      this.s3,
+      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }),
+      {
+        expiresIn: expiresInSec,
+      },
     );
   }
 

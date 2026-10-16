@@ -37,6 +37,8 @@ export type StoragePort = Pick<
   | "presignGet"
   | "head"
   | "getText"
+  | "presignPut"
+  | "deleteObject"
 >;
 
 export interface AppConfig {

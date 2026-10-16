@@ -135,6 +135,7 @@ model User {
   attendances      Attendance[]
   videosUploaded   Video[]           @relation("VideoUploader")
   videoProgress    VideoProgress[]
+  lessonProgress   LessonProgress[]
   learningDays     LearningDay[]
   videoNotes       VideoNote[]
   submissions      Submission[]
@@ -345,8 +346,22 @@ model Lesson {
   video       Video?       @relation(fields: [videoId], references: [id])
   attachments Attachment[]
   threads     Thread[]
+  progress    LessonProgress[]
 
   @@index([moduleId, position])
+}
+
+/// "Done" ticks for lessons that aren't videos (video lessons use VideoProgress.completed).
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
 }
 
 model Attachment {

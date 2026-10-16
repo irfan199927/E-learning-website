@@ -9,11 +9,11 @@ const VARIANTS = {
 
 export type ButtonVariant = keyof typeof VARIANTS;
 
-/** 44px minimum touch target (WCAG 2.5.5). Disabled state keeps readable contrast. */
+/** 44px minimum touch target (WCAG 2.5.5). Disabled state keeps readable contrast in both themes (theme tokens, ~6:1). */
 export function buttonClasses(variant: ButtonVariant = "primary", extra = ""): string {
   return [
     "inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] px-4 text-[15px] font-semibold transition-colors",
-    "disabled:cursor-not-allowed disabled:bg-[#ECEEF2] disabled:text-[#4B5162] disabled:border-transparent",
+    "disabled:cursor-not-allowed disabled:bg-line disabled:text-muted disabled:border-transparent",
     VARIANTS[variant],
     extra,
   ].join(" ");

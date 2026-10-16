@@ -81,6 +81,8 @@ export const initUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
   mimeType: z.enum(VIDEO_MIME_TYPES, { errorMap: () => ({ message: "Upload an MP4, WebM or MOV video." }) }),
   sizeBytes: z.number().int().positive(),
+  /** Module to add the video lesson to. Without one it goes into the course's "Videos" module. */
+  moduleId: id.optional(),
 });
 export type InitUploadInput = z.infer<typeof initUploadSchema>;
 
@@ -118,6 +120,129 @@ export const createCourseSchema = z.object({
   description: z.string().trim().max(2000).optional(),
 });
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
+
+/** Course card colours teachers can pick from (each passes contrast with white text). */
+export const COURSE_COLORS = [
+  { value: "#2340D9", name: "Blue" },
+  { value: "#0F7B5F", name: "Green" },
+  { value: "#B4357A", name: "Pink" },
+  { value: "#8A4B08", name: "Brown" },
+  { value: "#5B3CC4", name: "Purple" },
+  { value: "#B3261E", name: "Red" },
+] as const;
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => v || null)
+    .nullable()
+    .optional();
+
+export const updateCourseSchema = z
+  .object({
+    title: z.string().trim().min(3, "Title is too short.").max(120).optional(),
+    grade: optionalText(20),
+    description: optionalText(2000),
+    color: z
+      .string()
+      .refine((c) => COURSE_COLORS.some((x) => x.value === c), "Pick one of the colours.")
+      .optional(),
+    /** false hides the course from "Find a course"; students already in it keep access. */
+    listed: z.boolean().optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), "Nothing to change.");
+export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
+
+// ── Course content: modules, lessons, attachments ──
+
+const moveSchema = z.enum(["up", "down"]);
+
+export const createModuleSchema = z.object({
+  title: z.string().trim().min(1, "Give the module a name.").max(120),
+});
+export type CreateModuleInput = z.infer<typeof createModuleSchema>;
+
+export const updateModuleSchema = z
+  .object({ title: createModuleSchema.shape.title.optional(), move: moveSchema.optional() })
+  .refine((v) => v.title !== undefined || v.move !== undefined, "Nothing to change.");
+export type UpdateModuleInput = z.infer<typeof updateModuleSchema>;
+
+const lessonTitle = z.string().trim().min(1, "Give the lesson a title.").max(160);
+const lessonBody = z.string().trim().max(20_000, "Keep the text under 20,000 characters.");
+const lessonUrl = z
+  .string()
+  .trim()
+  .url("Enter a full web address, starting with https://")
+  .max(2000)
+  .refine((u) => /^https?:\/\//i.test(u), "Only http:// and https:// links work.");
+
+/** Video lessons for new uploads are created by the upload itself; this adds an existing course video. */
+export const createLessonSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("VIDEO"), title: lessonTitle, videoId: id }),
+  z.object({ type: z.literal("NOTE"), title: lessonTitle, body: lessonBody.min(1, "Write something.") }),
+  z.object({ type: z.literal("LINK"), title: lessonTitle, url: lessonUrl, body: lessonBody.optional() }),
+  z.object({ type: z.literal("DOCUMENT"), title: lessonTitle, body: lessonBody.optional() }),
+]);
+export type CreateLessonInput = z.infer<typeof createLessonSchema>;
+
+export const updateLessonSchema = z
+  .object({
+    title: lessonTitle.optional(),
+    body: lessonBody.optional(),
+    url: lessonUrl.optional(),
+    moduleId: id.optional(),
+    published: z.boolean().optional(),
+    move: moveSchema.optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), "Nothing to change.");
+export type UpdateLessonInput = z.infer<typeof updateLessonSchema>;
+
+export const ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
+export const MAX_ATTACHMENTS_PER_LESSON = 20;
+/** Files teachers can attach. Downloads are always served as attachments, never rendered inline. */
+export const ATTACHMENT_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.oasis.opendocument.presentation",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/zip",
+  "text/plain",
+  "text/csv",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+] as const;
+
+const attachmentFile = {
+  fileName: z.string().trim().min(1).max(200),
+  mimeType: z.enum(ATTACHMENT_MIME_TYPES, {
+    errorMap: () => ({
+      message: "That file type can't be attached. Use PDF, Office, text, image or zip files.",
+    }),
+  }),
+};
+
+export const initAttachmentSchema = z.object({
+  ...attachmentFile,
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(ATTACHMENT_MAX_BYTES, `Files can be at most ${ATTACHMENT_MAX_BYTES / 1024 ** 2} MB.`),
+});
+export type InitAttachmentInput = z.infer<typeof initAttachmentSchema>;
+
+export const completeAttachmentSchema = z.object({ attachmentId: z.string().uuid(), ...attachmentFile });
+export type CompleteAttachmentInput = z.infer<typeof completeAttachmentSchema>;
 
 export const joinRequestSchema = z.object({
   message: z.string().trim().max(500, "Keep the note under 500 characters.").optional(),
