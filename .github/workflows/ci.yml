@@ -64,6 +64,8 @@ jobs:
       - name: Install ffmpeg (worker transcode test runs it for real)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm install --frozen-lockfile
+      # The Prisma client is gitignored and only turbo tasks generate it; seed and test:int bypass turbo.
+      - run: pnpm db:generate
       - run: pnpm db:deploy # prisma migrate deploy: proves migrations apply cleanly from zero
       - run: pnpm --filter @elearner/web test:int
       - run: pnpm --filter @elearner/worker test:int
@@ -111,6 +113,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The Prisma client is gitignored and only turbo tasks generate it; seed and test:int bypass turbo.
+      - run: pnpm db:generate
       - run: pnpm db:deploy
       # The seed refuses NODE_ENV=production on purpose; this database is a throwaway service container.
       - run: pnpm db:seed

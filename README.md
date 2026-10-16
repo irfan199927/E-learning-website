@@ -28,7 +28,7 @@ Prerequisites: Node 22, pnpm 10, Docker, and ffmpeg (for the worker).
 pnpm install
 pnpm infra:up                      # postgres, redis, minio, mailpit (docker compose)
 cp .env.example .env               # fill the secrets; comments explain each one
-pnpm db:migrate && pnpm db:seed
+pnpm db:generate && pnpm db:migrate && pnpm db:seed
 pnpm dev                           # web on :3000 + worker
 ```
 

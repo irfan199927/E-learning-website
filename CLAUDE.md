@@ -28,7 +28,7 @@ packages/notify   SMTP mailer + email templates
 pnpm install
 pnpm infra:up                 # docker compose: postgres, redis, minio, mailpit
 cp .env.example .env          # fill secrets (see comments)
-pnpm db:migrate && pnpm db:seed   # seeded users: *@school.edu / parent@example.com, password Password123!
+pnpm db:generate && pnpm db:migrate && pnpm db:seed   # seeded users: *@school.edu / parent@example.com, password Password123!
 pnpm dev                      # web :3000 + worker
 
 pnpm typecheck | pnpm lint | pnpm test          # unit tests (all packages)
@@ -63,6 +63,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Worker bundles workspace packages with tsup but keeps npm deps external — runtime deps of bundled packages are
   listed in `apps/worker/package.json` on purpose.
 - Prisma 7: `prisma.config.ts` holds the datasource URL; generated client lives in `packages/db/src/generated` (gitignored).
+  `migrate dev` no longer generates it, and only turbo tasks depend on `generate`: anything run outside turbo
+  (`db:seed`, `test:int`) on a fresh checkout needs `pnpm db:generate` first (CI does this explicitly).
 - Initial migration `20261015000000_init` has not been deployed anywhere yet; after first deploy, never edit it — add new migrations.
 - Streak / activity days are the learner's LOCAL date (`localDayKey(now, actor.timezone)`), stored in `LearningDay.day`
   (`@db.Date`). Never bucket learner activity by UTC day.

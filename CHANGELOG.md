@@ -30,6 +30,8 @@ Dates are in IST.
 ### Fixed
 
 - The e2e "My courses" locator also matched the Overview's "See my courses" link on a fresh database.
+- CI integration and e2e jobs (and the quickstart) now run `pnpm db:generate` first. The seed and integration tests
+  import the gitignored Prisma client, which nothing had generated on a fresh checkout.
 
 ### Added — learner experience redesign (2026-10-16)
 
