@@ -3,6 +3,7 @@
 import type { EventDropArg, EventInput, EventSourceFuncArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction";
+import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { useCallback, useRef, useState } from "react";
@@ -90,7 +91,8 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, courses 
         {error && <FormAlert>{error}</FormAlert>}
         <FullCalendar
           ref={ref}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          // luxonPlugin makes the named `timeZone` real; without it FullCalendar silently renders UTC.
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
           initialView="timeGridWeek"
           headerToolbar={{
             left: "prev,next today",
