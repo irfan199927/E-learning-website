@@ -60,6 +60,16 @@ list.
 - **Parent:** **Your children** (one card per linked child: streak, today's minutes, lessons done, courses, and
   **See progress**), then upcoming classes for their children, read-only, with no Join button.
 
+### Notifications (bell, `/notifications`)
+
+- Every signed-in page has a bell in the top bar. Its accessible name says "Notifications, 3 unread"; the red
+  badge shows up to "9+". The count is worked out on each page load.
+- `/notifications` lists the newest 50 (then **Older**): unread ones are bold with a dot (and "(unread)" for
+  screen readers). Opening one marks it read and follows its link; **Mark all as read** clears the rest.
+- What creates them: join requests (to the teacher), approvals and declines, grades, new assignments and quizzes
+  (to the course's students, once per item), parental consent, class reminders, and recording problems (to the
+  host). Links are always same-site paths.
+
 ### Assignments (`/assignments/:id`; new at `/courses/:id/assignments/new`)
 
 - The course page has an **Assignments** section (due date and status: To do, Handed in, Handed in late, Not

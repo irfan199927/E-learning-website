@@ -1,4 +1,5 @@
 import type { Role } from "@elearner/core";
+import Link from "next/link";
 import { Icon } from "./icons";
 import { ShellFrame } from "./shell-frame";
 import { ThemeToggle } from "./theme-toggle";
@@ -7,11 +8,14 @@ import { SignOutButton } from "./sign-out-button";
 export function AppShell({
   user,
   streak,
+  unread,
   children,
 }: {
   user: { name: string; role: Role };
   /** Learning streak in days (students only). */
   streak: number | null;
+  /** Unread in-app notifications (the bell's badge). */
+  unread: number;
   children: React.ReactNode;
 }) {
   const initials = user.name
@@ -36,6 +40,21 @@ export function AppShell({
           )}
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle className="text-muted hover:text-ink" />
+            <Link
+              href="/notifications"
+              className="relative grid size-11 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
+              aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+            >
+              <Icon name="bell" size={22} />
+              {unread > 0 && (
+                <span
+                  className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-live px-1 text-[11px] font-bold text-white"
+                  aria-hidden="true"
+                >
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
             <span className="hidden min-w-0 flex-col text-right sm:flex">
               <span className="truncate text-sm font-semibold">{user.name}</span>
               <span className="text-xs capitalize text-muted">{user.role.toLowerCase()}</span>

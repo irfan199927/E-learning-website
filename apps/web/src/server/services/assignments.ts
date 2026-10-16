@@ -27,6 +27,18 @@ import { keys } from "@elearner/storage";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess } from "../policies";
+import { courseStudentIds, notifyUsers } from "./notifications";
+
+/** Tell the course's students about newly visible work (once per assignment, however often it's re-published). */
+async function announce(deps: Deps, courseId: string, id: string, title: string) {
+  await notifyUsers(deps, await courseStudentIds(deps, courseId), {
+    type: "assignment.published",
+    title: `New assignment: ${title}`,
+    body: "Open it to see the instructions and the due date.",
+    link: `/assignments/${id}`,
+    dedupeKey: `assignment_published_${id}`,
+  });
+}
 
 /** Display name of a stored file: the last part of its key. */
 export const fileNameOf = (key: string) => key.slice(key.lastIndexOf("/") + 1);
@@ -137,6 +149,7 @@ export async function createAssignment(
     select: { id: true },
   });
   await audit(deps.db, actor, "assignment.create", { type: "Assignment", id: a.id });
+  if (input.published) await announce(deps, courseId, a.id, input.title);
   return a;
 }
 
@@ -173,6 +186,8 @@ export async function updateAssignment(
     },
   });
   await audit(deps.db, actor, "assignment.update", { type: "Assignment", id: assignmentId });
+  if (input.published && !a.publishedAt)
+    await announce(deps, a.courseId, assignmentId, input.title ?? a.title);
   return { id: assignmentId };
 }
 

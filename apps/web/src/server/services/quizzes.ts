@@ -24,6 +24,18 @@ import type { Prisma } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess } from "../policies";
+import { courseStudentIds, notifyUsers } from "./notifications";
+
+/** Tell the course's students about a newly visible quiz (once per quiz). */
+async function announce(deps: Deps, courseId: string, id: string, title: string) {
+  await notifyUsers(deps, await courseStudentIds(deps, courseId), {
+    type: "quiz.published",
+    title: `New quiz: ${title}`,
+    body: "Open it when you're ready to start.",
+    link: `/quizzes/${id}`,
+    dedupeKey: `quiz_published_${id}`,
+  });
+}
 
 type Answers = Record<string, number[]>;
 
@@ -150,6 +162,7 @@ export async function createQuiz(
     return q;
   });
   await audit(deps.db, actor, "quiz.create", { type: "Quiz", id: quiz.id });
+  if (input.published) await announce(deps, courseId, quiz.id, input.title);
   return quiz;
 }
 
@@ -199,6 +212,7 @@ export async function updateQuiz(
     }
   });
   await audit(deps.db, actor, "quiz.update", { type: "Quiz", id: quizId }, { questionsChanged: changed });
+  if (input.published && !quiz.publishedAt) await announce(deps, quiz.courseId, quizId, input.title);
   return { id: quizId };
 }
 

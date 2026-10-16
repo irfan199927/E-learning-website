@@ -110,6 +110,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Assignments (`services/assignments.ts`) and quizzes (`services/quizzes.ts`): students see published ones of
   enrolled courses only (NOT_FOUND otherwise). Quiz correct options never leave the server before submit; scoring
   is `scoreQuiz` in core. Submission files must live under `keys.submissionPrefix(assignment, student)`.
+- Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
+  or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is
