@@ -1,0 +1,13 @@
+# Reviewers requested automatically. Later rules win. Add team handles as the team grows.
+* @irfan199927
+
+# Security-sensitive: auth, access control, crypto, schema/migrations, CI/CD and deploy config.
+/apps/web/src/lib/auth.ts           @irfan199927
+/apps/web/src/lib/http.ts           @irfan199927
+/apps/web/src/middleware.ts         @irfan199927
+/apps/web/src/server/policies.ts    @irfan199927
+/packages/core/src/rbac.ts          @irfan199927
+/packages/core/src/crypto.ts        @irfan199927
+/packages/db/prisma/                @irfan199927
+/.github/                           @irfan199927
+**/Dockerfile                       @irfan199927
