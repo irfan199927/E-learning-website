@@ -79,10 +79,10 @@ test("student sees their learning overview and courses", async ({ page, isMobile
 
   if (isMobile) {
     // The drawer is closed (and out of the tab order) until the menu button opens it.
-    await expect(page.getByRole("link", { name: "My courses" })).toBeHidden();
+    await expect(page.getByRole("link", { name: "My courses", exact: true })).toBeHidden();
     await page.getByRole("button", { name: "Open menu" }).click();
   }
-  await page.getByRole("link", { name: "My courses" }).click();
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
   await expect(page).toHaveURL(/\/courses$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("My courses");
   await expect(page.getByRole("link", { name: "Mathematics · Grade 9-A" })).toBeVisible();
