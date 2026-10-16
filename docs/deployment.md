@@ -32,6 +32,55 @@ The env values in the workflow are throwaway CI values, not secrets. The Playwri
 artifact when e2e fails. Reproduce any job locally with the same commands (README, "Scripts"). For e2e:
 `pnpm db:seed && pnpm --filter @elearner/web build && pnpm test:e2e`.
 
+## Static landing site (Vercel, now)
+
+Until the full app is deployed, only the public landing page goes live, as plain static files. It uses the same
+source as the app's `/` route, so there's nothing to keep in sync.
+
+```bash
+pnpm build:site            # → apps/web/out (≈1.2 MB): index.html, enroll/index.html, 404.html, _next/static
+```
+
+**How it works.**
+
+- `STATIC_SITE=1` (`apps/web/next.config.ts`) switches Next to `output: "export"` and only routes named `*.site.tsx`:
+  `layout.site.tsx`, `(marketing)/page.site.tsx` and `(marketing)/enroll/page.site.tsx`. The signed-in app, the API
+  and the middleware are left out.
+- The normal app build ignores `*.site.tsx`.
+
+**Enrol links.**
+
+- With no server, the static page can't tell who is signed in.
+- Without `SITE_APP_URL`, "Enroll" and "Sign in" go to `/enroll/`, a page that says online enrolment opens soon.
+- Once the full app is live, set `SITE_APP_URL=https://<app domain>` and redeploy. The buttons then go to
+  `<app>/sign-in?next=/courses`.
+
+**Deploy on Vercel (one time).**
+
+1. Vercel → **Add New… → Project** → import `irfan199927/E-learning-website`.
+2. Leave **Root Directory** as the repository root. The root `vercel.json` sets everything else: install with pnpm,
+   build with `pnpm build:site`, output `apps/web/out`, no framework preset, security and cache headers. Don't
+   override these in the dashboard.
+3. **Environment variables:** none are needed. Optionally add `SITE_APP_URL` later (see above).
+4. **Deploy.**
+   - Vercel builds the **production branch** (`main` by default).
+   - Until this work is merged, pick the `claude/serene-goldberg-jpzwca` branch for a preview, or merge first.
+5. Optional: add your domain under **Settings → Domains**.
+
+**Checks.**
+
+- The `Static landing site` CI job runs the same build on every PR.
+- To check locally: `cd apps/web/out && python3 -m http.server 4173`.
+
+**Not on the static site:**
+
+- the CSP nonce: only the app's middleware sets it (`vercel.json` adds the other security headers);
+- server-rendered theme: a saved theme is re-applied after load, so a short flash is possible;
+- sign-in itself.
+
+When the full app goes live it's a **separate** Vercel project with Root Directory `apps/web` (see one-time setup
+below). That project doesn't read the repository-root `vercel.json`.
+
 ## One-time setup
 
 1. **GitHub → Settings → Branches:** protect `main`. Require a PR and require the checks

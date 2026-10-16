@@ -3,7 +3,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 const VARIANTS = {
   primary: "bg-primary text-white hover:bg-primary-strong",
   secondary: "border border-line-strong bg-surface text-ink hover:bg-canvas",
-  ghost: "bg-transparent text-primary hover:bg-primary-soft",
+  ghost: "bg-transparent text-primary-fg hover:bg-primary-soft",
   live: "bg-live text-white hover:brightness-95",
 } as const;
 

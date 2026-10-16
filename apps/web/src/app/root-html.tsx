@@ -1,0 +1,25 @@
+import type { Metadata, Viewport } from "next";
+import type { Theme } from "@/lib/theme";
+import { bricolage, figtree, mono } from "./fonts";
+import "./globals.css";
+
+/** Shared by the app root layout (layout.tsx) and the static-export root layout (layout.site.tsx). */
+export const rootMetadata: Metadata = {
+  title: { default: "E-learner", template: "%s · E-learner" },
+  description: "Live classes, recorded lessons and schedules for your school.",
+  robots: { index: false, follow: false },
+};
+
+export const rootViewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#2340D9" };
+
+export function RootHtml({ theme, children }: { theme: Theme | null; children: React.ReactNode }) {
+  return (
+    <html
+      lang="en"
+      data-theme={theme ?? undefined}
+      className={`${figtree.variable} ${bricolage.variable} ${mono.variable}`}
+    >
+      <body className="min-h-dvh antialiased">{children}</body>
+    </html>
+  );
+}

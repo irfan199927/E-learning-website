@@ -5,6 +5,53 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — static landing site for Vercel (2026-10-16)
+
+- `pnpm build:site` exports just the public landing page as static files (`apps/web/out`, about 1.2 MB). It shares
+  its source with the app's `/` route through `*.site.tsx` route files and `STATIC_SITE=1` in `next.config.ts`.
+- The root `vercel.json` holds the build, output, security and cache-header settings, so a Vercel project only needs
+  the repository imported.
+- Without a deployed app, Enroll and Sign in go to a new "Online enrolment opens soon" page. Setting
+  `SITE_APP_URL` points them at the real sign-in instead.
+- The theme switch re-applies a saved choice on the static site, where no server can read the cookie.
+- New CI job **Static landing site** builds and checks the export on every PR.
+
+### Added — light/dark theme switch and a light landing page (2026-10-16)
+
+- **Theme switch** on every page: the landing header, the app top bar and the sign-in pages.
+  - The choice is kept in a cookie and rendered on the server, so there's no flash of the wrong theme.
+  - With no choice, the site follows the OS.
+  - Switching animates as a circle growing from the button.
+- **Light landing page**, now the default for light-mode visitors:
+  - product-launch style with huge heavy headlines;
+  - a blue → violet → pink → orange gradient through the CODE letters;
+  - frosted header, soft-shadow cards and pill buttons.
+  - The terminal look stays as the dark theme.
+- **Fixed:** in dark mode, brand-blue text (active sidebar item, links) was hard to read. New `primary-fg` tokens keep
+  it readable in both themes.
+- e2e: the switch flips the theme, updates `aria-pressed`, and the server renders the saved choice after reload.
+
+### Added — public landing page (2026-10-16)
+
+- `/` is now an animated landing page advertising a sample coding course ("Code Foundations"). It used to be a
+  redirect to the dashboard. Every **Enroll** button leads to sign-in, then on to My courses. Signed-in visitors get
+  "Go to dashboard".
+- Hero: **Glyph Portal** (`src/components/ui/glyph-portal.tsx`, MIT). Scrolling flies the camera through the word
+  CODE and into the course.
+- Other sections:
+  - course facts;
+  - a technology marquee;
+  - a self-typing code editor;
+  - a 12-week curriculum timeline;
+  - project cards;
+  - the next batch;
+  - FAQ and the final CTA.
+- Design direction from the ui-ux-pro-max skill: a dark terminal theme, JetBrains Mono headings and a green
+  action colour. Motion respects reduced-motion and no-JS visitors.
+- The sign-in page logo now links back to the landing page.
+- e2e: `landing.spec.ts` covers the content, the Enroll → sign-in → My courses flow, the signed-in state, and
+  reduced motion.
+
 ### Added — delivery: Docker images, CI and deploy (2026-10-16)
 
 - `apps/web/Dockerfile` (Next standalone, ~470 MB, non-root, healthcheck) and `apps/worker/Dockerfile`

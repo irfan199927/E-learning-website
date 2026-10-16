@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       )}
-      <Link href="/sign-in" className="mt-5 inline-block text-sm font-semibold text-primary">
+      <Link href="/sign-in" className="mt-5 inline-block text-sm font-semibold text-primary-fg">
         Back to sign in
       </Link>
     </>

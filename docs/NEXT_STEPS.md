@@ -19,6 +19,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Dependabot (npm, actions, docker, compose; grouped), CODEOWNERS, PR template.
 - [x] e2e: calendar shows a class at its school-timezone time in a UTC browser (fails if the 8a4c37a fix regresses).
 - [x] `docker-compose.yml`: MinIO stopped publishing images; switched to pinned `pgsty/minio` (server + `mc`).
+- [x] Static landing site: `pnpm build:site` + root `vercel.json` (docs/deployment.md "Static landing site")
+- [ ] Import the repo in Vercel to publish the static landing site; set `SITE_APP_URL` once the full app is live
 - [ ] Do the one-time setup in `docs/deployment.md` (accounts, secrets, branch protection), then first deploy.
 - [ ] Pin GitHub Actions to commit SHAs (Dependabot keeps them current) once the workflows have run green on GitHub.
 - [ ] Worker image size: ~190 MB of `node_modules` is `googleapis`; switch to the per-API packages
@@ -47,6 +49,12 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
 - [x] Learner progress: streak, today's watch time, monthly activity calendar, resume card (`LearningDay` table)
+- [x] Public landing page at `/` (animated, advertises a course, Enroll → sign-in). Copy is SAMPLE content in
+      `apps/web/src/app/(marketing)/course.ts`
+- [ ] Replace the sample landing copy with a real course, or render it from a published `Course` once course CRUD
+      exists; add real (consented) student work or testimonials if the school has them
+- [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
+- [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [ ] Parent view of a child's progress (lessons completed, streak) — read-only, per verified ParentLink
 - [ ] Per-school daily watch goal (now a 30-min constant in `dashboard/page.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist

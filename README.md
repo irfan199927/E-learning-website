@@ -52,15 +52,16 @@ docs/             Spec, system design, UI guide, next steps
 
 ## Scripts
 
-| Command                                              | What it does                                                    |
-| ---------------------------------------------------- | --------------------------------------------------------------- |
-| `pnpm dev`                                           | Web + worker in watch mode                                      |
-| `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | Static checks (also run by the pre-commit hook)                 |
-| `pnpm test`                                          | Unit tests, all packages                                        |
-| `pnpm --filter @elearner/web test:int`               | Web integration tests against real Postgres                     |
-| `pnpm --filter @elearner/worker test:int`            | Worker integration tests, including a real ffmpeg transcode     |
-| `pnpm --filter @elearner/web build && pnpm test:e2e` | Playwright smoke tests (desktop + mobile) on a production build |
-| `pnpm db:migrate` · `pnpm db:seed`                   | Apply migrations and seed demo users (never in production)      |
+| Command                                              | What it does                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`                                           | Web + worker in watch mode                                                                             |
+| `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | Static checks (also run by the pre-commit hook)                                                        |
+| `pnpm test`                                          | Unit tests, all packages                                                                               |
+| `pnpm --filter @elearner/web test:int`               | Web integration tests against real Postgres                                                            |
+| `pnpm --filter @elearner/worker test:int`            | Worker integration tests, including a real ffmpeg transcode                                            |
+| `pnpm --filter @elearner/web build && pnpm test:e2e` | Playwright smoke tests (desktop + mobile) on a production build                                        |
+| `pnpm build:site`                                    | Static export of the public landing page → `apps/web/out` (what Vercel serves, see docs/deployment.md) |
+| `pnpm db:migrate` · `pnpm db:seed`                   | Apply migrations and seed demo users (never in production)                                             |
 
 ## Documentation
 

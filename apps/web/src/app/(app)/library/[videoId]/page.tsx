@@ -22,7 +22,7 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
     <div className="flex max-w-5xl flex-col gap-5">
       <Link
         href={`/courses/${video.courseId}`}
-        className="flex w-fit items-center gap-1 text-sm font-semibold text-primary"
+        className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
       >
         <Icon name="chevronLeft" size={16} />
         {video.courseTitle}

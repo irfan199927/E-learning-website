@@ -176,7 +176,7 @@ export function ScheduleClassForm({ courses, timeZone, initialStart, onClose, on
               {WEEKDAYS.map((d) => (
                 <label
                   key={d}
-                  className={`grid h-11 min-w-11 cursor-pointer place-items-center rounded-[var(--radius-control)] border px-2 text-sm font-semibold ${days.includes(d) ? "border-primary bg-primary-soft text-primary-strong" : "border-line-strong bg-surface"}`}
+                  className={`grid h-11 min-w-11 cursor-pointer place-items-center rounded-[var(--radius-control)] border px-2 text-sm font-semibold ${days.includes(d) ? "border-primary bg-primary-soft text-primary-fg-strong" : "border-line-strong bg-surface"}`}
                 >
                   <input
                     type="checkbox"
