@@ -145,6 +145,16 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
   capped, and stale multipart uploads are aborted every hour.
 - Students only get videos that are in a lesson the teacher hasn't hidden.
 
+### Assignment files and quizzes
+
+- Students upload answer files with a presigned PUT under `submissions/<assignment>/<student>/`. A submission may
+  only reference keys under the student's own prefix, and each must exist and be within 25 MB.
+- Downloads are for the student who handed in and the course's staff, through a 5-minute presigned URL with
+  `Content-Disposition: attachment`.
+- Quiz answers and scoring stay on the server: questions sent to students never include the correct options,
+  scores are computed on submit, a submit is claimed atomically (no double scoring), and answers after the time
+  limit plus 60 s are ignored.
+
 ### Lesson files
 
 - Teachers upload with a presigned PUT (15 minutes) to `attachments/<lessonId>/<uuid>/<name>`. Only listed file
@@ -186,6 +196,8 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `user.dob`, `consent.request`, `consent.grant` (parental consent; the grant has no actor because the parent has
   no account)
 - `attendance.mark` (a teacher saves attendance for a class)
+- `assignment.create`, `assignment.update`, `assignment.delete`, `assignment.submit`, `grade.edit` (with the
+  previous and new score), `quiz.create`, `quiz.update`, `quiz.delete`
 - `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)
 - `course.update`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
   `attachment.create`, `attachment.delete` (course editing)

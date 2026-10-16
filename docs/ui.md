@@ -60,6 +60,32 @@ list.
 - **Parent:** **Your children** (one card per linked child: streak, today's minutes, lessons done, courses, and
   **See progress**), then upcoming classes for their children, read-only, with no Join button.
 
+### Assignments (`/assignments/:id`; new at `/courses/:id/assignments/new`)
+
+- The course page has an **Assignments** section (due date and status: To do, Handed in, Handed in late, Not
+  handed in, Graded n/m; staff see "n handed in · m graded" and drafts) with **New assignment** for staff.
+- **Create / edit:** title, instructions, due date (teacher's clock), points, what students hand in (a written
+  answer, files, or both), **Accept late work**, **Visible to students**. Edit also has **Delete…**.
+- **Student:** instructions, then **Your work**: an answer box and/or files (up to 5, 25 MB each, uploaded straight
+  to storage with a `role="status"` line), **Hand in** / **Hand in again** until graded. After the due date it
+  says the work will be marked late, or that it's closed. Once graded: score, feedback, and what they handed in.
+- **Teacher:** every student with a status pill, the written answer (collapsed), files, and a **Grade** form
+  (score out of the points, feedback). Saving tells the student in the app.
+
+### Quizzes (`/quizzes/:id`; new at `/courses/:id/quizzes/new`, edit at `/quizzes/:id/edit`)
+
+- **Quizzes** section on the course page (questions, time limit, closing date, best score / "taken by n").
+- **Editor:** title, time limit (minutes, empty = none), attempts allowed, closing date, shuffle, visible; then
+  questions: text, 2–6 options with a "correct" checkbox each (one or more), points, move up/down, delete. Once a
+  student has submitted, questions are read-only (settings still save).
+- **Taking:** **Start quiz** → questions as radio buttons (one answer) or checkboxes ("choose all that apply"),
+  a countdown pinned at the top (announced once a minute, red under a minute), auto-submit at zero, and a
+  confirmation when questions are unanswered.
+- **Result:** score, attempts used, each question marked Right / Wrong with the student's choice; the correct
+  answers appear once they have no attempts left (or the quiz closed).
+- **Teacher:** a results table (best score, attempts, last attempt per student).
+- Parents see graded assignments and best quiz scores under **Grades** on their child's page.
+
 ### Calendar: scheduling without Google
 
 - **Schedule class** is always there for teachers. With Google connected, the form asks **Where**: Google Meet

@@ -10,8 +10,10 @@ import { buttonClasses } from "@/components/ui/button";
 import { minutes, plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
+import { listCourseAssignments } from "@/server/services/assignments";
 import { recentClasses } from "@/server/services/attendance";
 import { listJoinRequests } from "@/server/services/join-requests";
+import { listCourseQuizzes } from "@/server/services/quizzes";
 import { getCourseDetail, type CourseLesson } from "@/server/services/learning";
 import { listRoster } from "@/server/services/roster";
 
@@ -46,6 +48,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         recentClasses(deps(), actor, courseId),
       ])
     : [[], [], null];
+  const [assignments, quizzes] = await Promise.all([
+    listCourseAssignments(deps(), actor, courseId),
+    listCourseQuizzes(deps(), actor, courseId),
+  ]);
   const day = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
 
   return (
@@ -182,6 +188,115 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   </Link>
                 </li>
               ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {(course.canManage || assignments.length > 0) && (
+        <section
+          id="assignments"
+          aria-labelledby="assignments-h"
+          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="assignments-h" className="font-display text-xl font-bold">
+              Assignments
+            </h2>
+            {course.canManage && (
+              <Link href={`/courses/${course.id}/assignments/new`} className={buttonClasses("secondary")}>
+                <Icon name="plus" size={18} />
+                New assignment
+              </Link>
+            )}
+          </div>
+          {assignments.length === 0 ? (
+            <p className="text-muted">No assignments yet.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-line">
+              {assignments.map((a) => {
+                const status = a.counts
+                  ? `${a.counts.submitted} handed in · ${a.counts.graded} graded${a.published ? "" : " · Draft"}`
+                  : a.mine?.status === "GRADED"
+                    ? `Graded: ${a.mine.score}/${a.maxPoints}`
+                    : a.mine
+                      ? a.mine.status === "LATE"
+                        ? "Handed in late"
+                        : "Handed in"
+                      : a.dueAt < new Date()
+                        ? "Not handed in"
+                        : "To do";
+                return (
+                  <li key={a.id}>
+                    <Link
+                      href={`/assignments/${a.id}`}
+                      className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
+                    >
+                      <Icon name="file" size={20} className="shrink-0 text-primary-fg" />
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="font-semibold">{a.title}</span>
+                        <span className="text-sm text-muted">
+                          Due {formatInZone(a.dueAt, actor.timezone)} · {status}
+                        </span>
+                      </span>
+                      <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {(course.canManage || quizzes.length > 0) && (
+        <section
+          id="quizzes"
+          aria-labelledby="quizzes-h"
+          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="quizzes-h" className="font-display text-xl font-bold">
+              Quizzes
+            </h2>
+            {course.canManage && (
+              <Link href={`/courses/${course.id}/quizzes/new`} className={buttonClasses("secondary")}>
+                <Icon name="plus" size={18} />
+                New quiz
+              </Link>
+            )}
+          </div>
+          {quizzes.length === 0 ? (
+            <p className="text-muted">No quizzes yet.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-line">
+              {quizzes.map((q) => {
+                const meta = [
+                  `${q.questionCount} ${q.questionCount === 1 ? "question" : "questions"}`,
+                  q.timeLimitSec ? `${Math.round(q.timeLimitSec / 60)} min` : null,
+                  q.dueAt ? `closes ${formatInZone(q.dueAt, actor.timezone)}` : null,
+                  q.takenBy !== null ? `taken by ${q.takenBy}` : null,
+                  q.mine ? (q.mine.best === null ? "Not taken" : `Best ${q.mine.best}/${q.maxPoints}`) : null,
+                  q.published ? null : "Draft",
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <li key={q.id}>
+                    <Link
+                      href={`/quizzes/${q.id}`}
+                      className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
+                    >
+                      <Icon name="check" size={20} className="shrink-0 text-primary-fg" />
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="font-semibold">{q.title}</span>
+                        <span className="text-sm text-muted">{meta}</span>
+                      </span>
+                      <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

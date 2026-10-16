@@ -5,6 +5,28 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — assignments and MCQ quizzes (2026-10-16)
+
+- **Assignments:** teachers set work (instructions, due date, points, written answer and/or files, late work
+  allowed or not, draft or visible). Students hand in text and up to 5 files (25 MB each, straight to storage),
+  again until it's graded; late work is marked late or refused. Teachers see every student, read answers,
+  download files and grade with a score and feedback. The student gets an in-app notification; grade changes
+  are audited as `grade.edit` with the previous score.
+- **MCQ quizzes:** a question editor (2–6 options, one or several correct, points, order), time limit, attempts,
+  closing date, shuffled order per attempt. Students take timed attempts with a countdown and auto-submit;
+  scoring happens on the server (all-or-nothing per question). Results show right/wrong at once and the correct
+  answers when no attempts are left. Teachers get a results table. Questions lock once anyone has submitted.
+- Course pages get **Assignments** and **Quizzes** sections; parents see a **Grades** table on their child's page.
+- Core: `grading.ts` (`scoreQuiz`, `seededShuffle`, `submissionTiming`, `attemptDeadline`) and the assignment and
+  quiz schemas. No migration: the tables were in the initial schema.
+- API: `GET|POST /courses/:id/assignments`, `GET|PATCH|DELETE /assignments/:id`, `POST /assignments/:id/files`,
+  `PUT /assignments/:id/submission`, `PATCH /submissions/:id/grade`, `GET /submissions/:id/files/:index`,
+  `GET|POST /courses/:id/quizzes`, `GET|PUT|DELETE /quizzes/:id`, `GET /quizzes/:id/questions`,
+  `GET /quizzes/:id/results`, `POST /quizzes/:id/attempts`, `PUT /attempts/:id`.
+- Tests: 4 unit tests (scoring, shuffle, timing, quiz validation); 4 integration tests (hand-in and grading with
+  files and access rules; due dates and drafts; quiz attempts, limits and reveal; time limit, closing and
+  drafts); an e2e test from setting both to the parent seeing the grades.
+
 ### Added — classes without Google, and manual attendance (2026-10-16)
 
 - **Schedule a class without Google**: in a room and/or on any https meeting link the teacher pastes. Weekly

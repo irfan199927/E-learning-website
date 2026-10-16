@@ -36,6 +36,10 @@ export const keys = {
   videoThumb: (videoId: string) => `videos/${videoId}/thumb.jpg`,
   attachment: (lessonId: string, id: string, fileName: string) =>
     `attachments/${lessonId}/${id}/${fileName.replace(/[^\w.-]+/g, "_").slice(0, 120)}`,
+  /** A student's files for an assignment. The prefix (assignment + student) is what access checks rely on. */
+  submissionPrefix: (assignmentId: string, userId: string) => `submissions/${assignmentId}/${userId}/`,
+  submission: (assignmentId: string, userId: string, id: string, fileName: string) =>
+    `submissions/${assignmentId}/${userId}/${id}/${fileName.replace(/[^\w.-]+/g, "_").slice(0, 120)}`,
 };
 
 export function extensionFor(mimeType: string): string {

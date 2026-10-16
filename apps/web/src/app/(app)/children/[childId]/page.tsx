@@ -123,6 +123,53 @@ export default async function ChildProgressPage({
         )}
       </section>
 
+      <section aria-labelledby="grades-h" className={`p-5 ${card}`}>
+        <h2 id="grades-h" className="mb-3 font-display text-xl font-bold">
+          Grades
+        </h2>
+        {p.grades.length === 0 ? (
+          <p className="text-muted">No graded work or quizzes yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-line text-muted">
+                  <th scope="col" className="py-2 pr-3 font-semibold">
+                    Work
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">
+                    Course
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">
+                    Score
+                  </th>
+                  <th scope="col" className="py-2 font-semibold">
+                    When
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {p.grades.map((g) => (
+                  <tr key={`${g.kind}-${g.id}`}>
+                    <td className="py-2.5 pr-3">
+                      <span className="font-semibold">{g.title}</span>
+                      <span className="block text-muted">
+                        {g.kind === "quiz" ? "Quiz (best attempt)" : "Assignment"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-3">{g.courseTitle}</td>
+                    <td className="py-2.5 pr-3 font-semibold">
+                      {g.score}/{g.max}
+                    </td>
+                    <td className="py-2.5">{date.format(g.at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section aria-labelledby="attendance-h" className={`p-5 ${card}`}>
         <h2 id="attendance-h" className="font-display text-xl font-bold">
           Live classes, last {ATTENDANCE_DAYS} days
