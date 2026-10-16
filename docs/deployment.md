@@ -81,6 +81,94 @@ pnpm build:site            # → apps/web/out (≈1.2 MB): index.html, enroll/in
 When the full app goes live it's a **separate** Vercel project with Root Directory `apps/web` (see one-time setup
 below). That project doesn't read the repository-root `vercel.json`.
 
+## Free-tier setup (web only, no worker)
+
+The cheapest way to put the full app online. It runs everything except the background worker.
+
+**What works:**
+
+- Google sign-up for anyone;
+- teachers create courses and approve join requests;
+- students browse courses, ask to join, and open the courses they're approved for;
+- the calendar and class schedule;
+- scheduling classes on Google Meet, for teachers who connect Google.
+
+**What waits for the worker:**
+
+- class reminders;
+- importing Meet recordings and attendance;
+- video transcoding (uploads stay "Queued for processing");
+- scheduled cleanup.
+
+Add the worker later with _One-time setup_ steps 5 and 6 and the repo variable `WORKER_ENABLED=true`.
+
+| Piece    | Service (free plan)                                  | Region                                         |
+| -------- | ---------------------------------------------------- | ---------------------------------------------- |
+| Web      | Vercel Hobby, a **second** project (Root `apps/web`) | Mumbai (`bom1`, set in `apps/web/vercel.json`) |
+| Postgres | Neon Free                                            | Mumbai if offered, else Singapore              |
+| Redis    | Upstash Redis Free (rate limits and queued jobs)     | Mumbai or Singapore                            |
+| Storage  | Cloudflare R2 (10 GB free; needs a card on file)     | Location hint: Asia-Pacific                    |
+| Email    | Brevo Free SMTP (300 emails a day)                   | none                                           |
+
+Collect each value below as you go. Don't paste secrets into chats, issues or PRs. They only go into Vercel
+and GitHub settings.
+
+1. **Neon:** create a project.
+   - From **Connection details**, copy the **pooled** URL (host contains `-pooler`); this is `DATABASE_URL`.
+   - Turn pooling off and copy the URL again; this is the direct URL for migrations, `DATABASE_DIRECT_URL`.
+2. **Upstash:** create a Redis database with **eviction off**. Copy the `rediss://…` URL; this is `REDIS_URL`.
+3. **Cloudflare R2:** create a private bucket, e.g. `elearner-media`.
+   - From **Manage API tokens**, create an Object Read & Write token for that bucket. It gives you
+     `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
+   - The endpoint is `https://<account id>.r2.cloudflarestorage.com` (`S3_ENDPOINT`). Set `S3_REGION=auto` and
+     `S3_FORCE_PATH_STYLE=false`.
+   - Add a CORS rule: allow `PUT` and `GET` from your app URL, allow the `content-type` header, and **expose
+     `ETag`**.
+4. **Brevo:** add and verify the sender address.
+   - Under **SMTP & API → SMTP**, create an SMTP key.
+   - `SMTP_URL=smtp://<login>:<smtp key>@smtp-relay.brevo.com:587`
+   - `MAIL_FROM="E-learner <the verified address>"`
+5. **Vercel, the app project:**
+   - **Add New → Project**, import the same repository again, and set **Root Directory `apps/web`**.
+     `apps/web/vercel.json` sets the build, the region, and turns off Git auto-deploys, because deploy.yml deploys
+     after CI.
+   - Note the project's `*.vercel.app` address. That's `APP_URL`, e.g. `https://e-learner-app.vercel.app`.
+   - Under **Settings → Environment Variables (Production)**, add:
+     - `APP_URL`, `DATABASE_URL` (pooled) and `REDIS_URL`;
+     - `BETTER_AUTH_SECRET` (`openssl rand -base64 32`);
+     - `TOKEN_ENC_KEYS=v1:<openssl rand -base64 32>` and `TOKEN_ENC_ACTIVE_KEY_ID=v1`;
+     - the five `S3_*` values, `SMTP_URL` and `MAIL_FROM`;
+     - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (step 6).
+
+     Leave `GOOGLE_WORKSPACE_DOMAIN` unset, so any Google account can sign up. See
+     [environment.md](environment.md).
+
+   - **Account Settings → Tokens:** create a token (`VERCEL_TOKEN`). The project's **Settings → General** shows
+     the Project ID, and your team settings show the Team ID (`VERCEL_ORG_ID`).
+
+6. **Google:** follow [google-setup.md](google-setup.md) **"Open sign-up"**. The redirect URIs use your
+   `APP_URL`.
+7. **GitHub → Settings → Environments → New environment `production`:**
+   - Add the secrets `DATABASE_DIRECT_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`.
+   - Add the environment variable `APP_URL`.
+   - Required reviewers are optional when you're the only maintainer.
+8. **GitHub → Settings → Secrets and variables → Actions → Variables:** add `DEPLOY_ENABLED=true`. Leave
+   `WORKER_ENABLED` unset.
+9. **Deploy:** open **Actions → Deploy → Run workflow** on `main`. It runs CI, applies the migrations to Neon, and
+   deploys the web app.
+10. **Make yourself admin:**
+    1. Open `APP_URL` and sign in with Google. You're a student at first.
+    2. Run **Actions → "Admin: set user role"** with your email and `ADMIN`.
+    3. Do the same with `TEACHER` for each teacher after they've signed in once.
+11. **Point the landing page at the app:** in the _static_ Vercel project, set `SITE_APP_URL` to `APP_URL` and
+    redeploy. Its Enroll and Sign in buttons then open the real sign-in.
+
+**Check it:**
+
+- `APP_URL/api/health/ready` returns `{"status":"ok","checks":{"database":"ok","redis":"ok"}}`.
+- In a private window, sign up with a second Google account and ask to join a course. Then, as the teacher,
+  approve it under the course's **Join requests**.
+
 ## One-time setup
 
 1. **GitHub → Settings → Branches:** protect `main`. Require a PR and require the checks

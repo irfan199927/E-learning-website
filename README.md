@@ -62,6 +62,7 @@ docs/             Spec, system design, UI guide, next steps
 | `pnpm --filter @elearner/web build && pnpm test:e2e` | Playwright smoke tests (desktop + mobile) on a production build                                        |
 | `pnpm build:site`                                    | Static export of the public landing page → `apps/web/out` (what Vercel serves, see docs/deployment.md) |
 | `pnpm db:migrate` · `pnpm db:seed`                   | Apply migrations and seed demo users (never in production)                                             |
+| `pnpm db:set-role -- <email> <ROLE>`                 | Give an existing user a role (production: Actions → "Admin: set user role")                            |
 
 ## Documentation
 

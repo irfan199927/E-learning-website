@@ -2,6 +2,7 @@
 #   CI → [approval] migrate DB → deploy web (Vercel) + worker (image on GHCR → Render)
 # Setup (once) and rollback: docs/deployment.md. Until the repo variable DEPLOY_ENABLED is "true",
 # the deploy jobs are skipped, so main stays green before the hosting accounts exist.
+# The worker job also needs WORKER_ENABLED="true" (skipped on the free-tier setup, which has no worker).
 name: Deploy
 
 on:
@@ -79,6 +80,8 @@ jobs:
   worker:
     name: Deploy worker (GHCR → Render)
     needs: migrate
+    # Off until a worker host exists (free-tier setup runs web only). Set the repo variable WORKER_ENABLED=true.
+    if: vars.WORKER_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production

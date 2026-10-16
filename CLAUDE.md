@@ -89,6 +89,11 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Static landing export: `STATIC_SITE=1` builds ONLY `*.site.tsx` routes (pageExtensions) into `apps/web/out`. Keep
   page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
   headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
+- Access model: anyone may sign up with Google (auth.ts `databaseHooks.user.create` makes them an active STUDENT);
+  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Roles change
+  only via `pnpm db:set-role` / the "Admin: set user role" workflow.
+- The full app on Vercel is a separate project rooted at `apps/web` (`apps/web/vercel.json`); the repo-root
+  `vercel.json` is the static landing project. Vercel builds skip `output: "standalone"` (`VERCEL=1`).
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 

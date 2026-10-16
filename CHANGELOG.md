@@ -5,6 +5,27 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — open Google sign-up with teacher-approved course access (2026-10-16)
+
+- **Anyone can sign up with Google.** A new account is an active student with **no courses**. Password accounts
+  are still created by admins only. Setting `GOOGLE_WORKSPACE_DOMAIN` still limits sign-in to one domain.
+- **Find a course** on `/courses`: students see published courses and **Ask to join**. Content stays closed until
+  the teacher approves.
+- **Join requests** on each course page for its teacher (and admins), with **Approve** and **Decline**.
+  - Approving enrols the student and sends an in-app notification.
+  - A badge on the course list shows how many students are waiting.
+  - New `JoinRequest` table (migration `join_requests`) and API: `POST /api/v1/courses/:id/join-requests`,
+    `GET` for teachers, and `PATCH /api/v1/join-requests/:id`.
+- **New course** (`/courses/new`, `POST /api/v1/courses`): teachers create a course, published at once.
+- **Roles:** `pnpm db:set-role -- <email> <ROLE>`, and the GitHub workflow "Admin: set user role" for production.
+- **Free-tier deployment (web only):** docs/deployment.md "Free-tier setup".
+  - The app gets its own Vercel project (`apps/web/vercel.json`: Mumbai region, build from the monorepo root, Git
+    auto-deploys off).
+  - The worker deploy is skipped unless `WORKER_ENABLED=true`.
+  - Builds on Vercel skip `output: "standalone"`.
+- Tests: 5 new integration tests (join flow, declines, access rules, unpublished courses, course creation) and an
+  e2e test of the whole flow on desktop and mobile. The seed adds `kabir@school.edu`, a student with no courses.
+
 ### Fixed — lost reminders and ever-growing storage (2026-10-16)
 
 - **Reminders survive a Redis flush or failover.** Every 15 minutes the worker re-adds the 24 h and 15 min

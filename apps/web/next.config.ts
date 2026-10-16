@@ -31,7 +31,10 @@ const config: NextConfig = {
         images: { unoptimized: true },
         distDir: "out", // the export lands here; Next removes its build internals afterwards
       }
-    : { output: "standalone" }),
+    : // Docker images run the standalone server; Vercel (VERCEL=1 at build) uses its own Next.js output.
+      process.env.VERCEL
+      ? {}
+      : { output: "standalone" }),
   poweredByHeader: false,
   reactStrictMode: true,
   // Workspace packages ship TypeScript source; Next compiles them.

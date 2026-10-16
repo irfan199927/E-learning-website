@@ -8,6 +8,36 @@ e.g. `https://learn.school.edu`). For local development, use `http://localhost:3
 
 Background and design decisions: [SPEC.md](SPEC.md) §3 Google integration.
 
+There are two ways to set it up:
+
+- **Open sign-up** (what the free-tier deployment uses). Anyone with a Google account, including a personal
+  Gmail, can create an account. Teachers approve who joins each course. You don't need Workspace admin rights.
+- **School Workspace only** (sections 1–5). Only accounts in the school's domain can sign in, and Meet recording
+  is set up for teachers.
+
+## Open sign-up (any Google account)
+
+1. Do **section 1** below. Any Google account can own the Cloud project.
+2. **Consent screen:**
+   - **User type: External.**
+   - Fill in the app name, support email and privacy policy URL, and add your `*.vercel.app` (or own) domain under
+     authorised domains.
+   - Add only `openid`, `email` and `profile`. Then **Publish app** (status _In production_). Google doesn't
+     review apps that ask only for these basic scopes.
+3. Do **section 3**, the OAuth client and redirect URIs, with your `APP_URL`.
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, and **leave `GOOGLE_WORKSPACE_DOMAIN` unset**.
+
+New sign-ups are students with no courses. Make the first admin and the teachers with **Actions → "Admin: set
+user role"** (deployment.md, free-tier step 10).
+
+**Teachers scheduling on Google Meet:** when a teacher first schedules a class, the app asks for the Calendar, Meet
+and Drive scopes listed in section 2. Until those scopes pass Google's verification:
+
+- the teacher sees a "Google hasn't verified this app" screen and continues through **Advanced**;
+- Google limits unverified sensitive scopes to 100 users, which is plenty for a school's teachers.
+
+Recording import also needs the worker and Meet recording turned on (section 4).
+
 ## 1. Create the Google Cloud project
 
 1. Sign in to [console.cloud.google.com](https://console.cloud.google.com) with an account in the school's

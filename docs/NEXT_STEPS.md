@@ -20,7 +20,11 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] e2e: calendar shows a class at its school-timezone time in a UTC browser (fails if the 8a4c37a fix regresses).
 - [x] `docker-compose.yml`: MinIO stopped publishing images; switched to pinned `pgsty/minio` (server + `mc`).
 - [x] Static landing site: `pnpm build:site` + root `vercel.json` (docs/deployment.md "Static landing site")
-- [ ] Import the repo in Vercel to publish the static landing site; set `SITE_APP_URL` once the full app is live
+- [x] Import the repo in Vercel to publish the static landing site
+- [ ] Free-tier deploy of the full app (docs/deployment.md "Free-tier setup"): Neon, Upstash, R2, Brevo, second Vercel
+      project, Google OAuth (open sign-up), GitHub `production` environment; then set `SITE_APP_URL` on the static
+      project
+- [ ] Add the worker (Render) when reminders, recording import and transcoding are needed (`WORKER_ENABLED=true`)
 - [ ] Do the one-time setup in `docs/deployment.md` (accounts, secrets, branch protection), then first deploy.
 - [x] GitHub Actions pinned to commit SHAs (`# vX.Y.Z` comment; Dependabot updates both), at the versions that ran green.
 - [x] Worker image size: `googleapis` replaced by `@googleapis/calendar`, `/drive`, `/meet` (production
@@ -46,7 +50,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 
 ## 4. Product (MVP backlog from docs/SPEC.md)
 
-- [ ] Admin: user CSV import, enrollments, parental-consent flow (DPDP) UI
+- [x] Open Google sign-up; students ask to join courses, teachers approve (`JoinRequest`); teachers create courses
+- [ ] Admin: user CSV import, role management UI (now a workflow), removing students, parental-consent flow (DPDP) UI
 - [ ] Courses/modules/lessons CRUD + attachments (course pages exist since 2026-10-16 but list READY videos in upload
       order; switch `server/services/learning.ts` to Module/Lesson order once CRUD lands)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list

@@ -76,7 +76,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.test.ts", "**/*.spec.ts", "**/e2e/**", "**/seed.ts", "**/scripts/**"],
+    files: ["**/*.test.ts", "**/*.spec.ts", "**/e2e/**", "**/seed.ts", "**/set-role.ts", "**/scripts/**"],
     rules: { "no-console": "off", "@typescript-eslint/no-explicit-any": "off" },
   },
 );
