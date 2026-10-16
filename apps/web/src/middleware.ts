@@ -25,7 +25,8 @@ function csp(nonce: string): string {
     "form-action 'self' https://accounts.google.com",
     "base-uri 'self'",
     "object-src 'none'",
-    ...(isDev ? [] : ["upgrade-insecure-requests"]),
+    // Only on HTTPS deployments: on a plain-HTTP LAN host it would send every asset request to https:// and fail.
+    ...(!isDev && process.env.APP_URL?.startsWith("https://") ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 }
 

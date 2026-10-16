@@ -13,7 +13,7 @@ import { templates } from "@elearner/notify";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { env } from "@/env";
+import { env, googleEnabled } from "@/env";
 import { container } from "@/server/container";
 import { consume } from "./rate-limit";
 
@@ -49,14 +49,16 @@ function createAuth() {
       },
     },
 
-    socialProviders: {
-      google: {
-        clientId: e.GOOGLE_CLIENT_ID,
-        clientSecret: e.GOOGLE_CLIENT_SECRET,
-        // Anyone with a Google account may create an account; course access still needs a teacher's approval.
-        prompt: "select_account",
-      },
-    },
+    socialProviders: googleEnabled(e)
+      ? {
+          google: {
+            clientId: e.GOOGLE_CLIENT_ID,
+            clientSecret: e.GOOGLE_CLIENT_SECRET,
+            // Anyone with a Google account may create an account; course access still needs a teacher's approval.
+            prompt: "select_account",
+          },
+        }
+      : {},
     account: {
       // An admin-provisioned user may sign in with Google the first time; Google verifies the email.
       accountLinking: { enabled: true, trustedProviders: ["google"] },
