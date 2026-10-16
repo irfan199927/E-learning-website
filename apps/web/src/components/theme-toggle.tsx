@@ -17,7 +17,15 @@ function effectiveTheme(): Theme {
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [dark, setDark] = useState<boolean | null>(null);
-  useEffect(() => setDark(effectiveTheme() === "dark"), []);
+  useEffect(() => {
+    // The static export can't read the cookie on a server; apply a saved choice after load instead.
+    const root = document.documentElement;
+    if (!root.dataset.theme) {
+      const saved = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=(light|dark)`))?.[1];
+      if (saved) root.dataset.theme = saved;
+    }
+    setDark(effectiveTheme() === "dark");
+  }, []);
 
   function apply(next: Theme) {
     document.documentElement.dataset.theme = next;

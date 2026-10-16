@@ -134,6 +134,27 @@ jobs:
             apps/web/test-results
           retention-days: 7
 
+  static-site:
+    name: Static landing site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Same command Vercel runs (vercel.json); fails if the landing page stops being exportable.
+      - run: pnpm build:site
+      - name: Check the export
+        run: |
+          test -f apps/web/out/index.html
+          test -f apps/web/out/enroll/index.html
+          grep -q "Code Foundations" apps/web/out/index.html
+          du -sh apps/web/out
+
   docker:
     name: Docker images
     runs-on: ubuntu-24.04

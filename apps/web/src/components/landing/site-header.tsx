@@ -5,7 +5,16 @@ import { useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /** Fixed header: transparent over the hero, solid once the page scrolls. Always offers the CTA. */
-export function SiteHeader({ cta }: { cta: { href: string; label: string } | null }) {
+export function SiteHeader({
+  cta,
+  signInHref,
+  hideActions = false,
+}: {
+  cta: { href: string; label: string } | null;
+  signInHref: string;
+  /** Only the logo, section links and theme switch (pages that are themselves the destination). */
+  hideActions?: boolean;
+}) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -39,15 +48,15 @@ export function SiteHeader({ cta }: { cta: { href: string; label: string } | nul
         E-learner
       </Link>
       <nav aria-label="Page sections" className="lp-nav">
-        <a href="#curriculum">Curriculum</a>
-        <a href="#projects">Projects</a>
-        <a href="#faq">FAQ</a>
+        <Link href="/#curriculum">Curriculum</Link>
+        <Link href="/#projects">Projects</Link>
+        <Link href="/#faq">FAQ</Link>
       </nav>
       <div className="lp-header-actions">
         <ThemeToggle />
-        {cta ? (
+        {hideActions ? null : cta ? (
           <>
-            <Link href="/sign-in" className="lp-link">
+            <Link href={signInHref} className="lp-link">
               Sign in
             </Link>
             <Link href={cta.href} className="lp-btn lp-btn-primary lp-btn-sm">

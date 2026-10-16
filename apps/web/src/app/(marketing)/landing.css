@@ -498,6 +498,18 @@ html:has(.lp) {
   padding: clamp(56px, 8vw, 96px) 0;
   scroll-margin-top: 68px;
 }
+/* "Enrolment opens soon" (static site only). */
+.lp-soon {
+  min-height: 100dvh;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 8px;
+}
+.lp-soon .lp-btn {
+  margin-top: 24px;
+}
+
 /* Full-bleed alternating background behind a centred section. */
 .lp-band {
   background: var(--lp-band);

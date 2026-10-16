@@ -15,8 +15,23 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
+/**
+ * STATIC_SITE=1 builds only the public landing page as plain files (apps/web/out) for a static host:
+ * only `*.site.tsx` routes exist (page.site.tsx / layout.site.tsx), so the app, API and middleware are
+ * left out. See docs/deployment.md "Static landing site".
+ */
+const staticSite = process.env.STATIC_SITE === "1";
+
 const config: NextConfig = {
-  output: "standalone",
+  ...(staticSite
+    ? {
+        output: "export",
+        pageExtensions: ["site.tsx", "site.ts"],
+        trailingSlash: true,
+        images: { unoptimized: true },
+        distDir: "out", // the export lands here; Next removes its build internals afterwards
+      }
+    : { output: "standalone" }),
   poweredByHeader: false,
   reactStrictMode: true,
   // Workspace packages ship TypeScript source; Next compiles them.
@@ -32,9 +47,8 @@ const config: NextConfig = {
   serverExternalPackages: ["bullmq", "ioredis", "googleapis", "pg", "nodemailer", "pino"],
   typedRoutes: false,
   eslint: { ignoreDuringBuilds: true }, // lint runs in CI as its own step
-  async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
-  },
+  // Static hosts set headers themselves (vercel.json); `headers()` is unsupported with output: export.
+  ...(staticSite ? {} : { headers: async () => [{ source: "/:path*", headers: securityHeaders }] }),
 };
 
 export default config;

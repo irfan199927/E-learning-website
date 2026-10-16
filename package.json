@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:site": "pnpm db:generate && pnpm --filter @elearner/web build:site",
     "typecheck": "turbo run typecheck",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",

@@ -1,6 +1,7 @@
 # Keep the build context small and secret-free. Images install and build from source.
 **/node_modules
 **/.next
+**/out
 **/dist
 **/coverage
 **/.turbo
