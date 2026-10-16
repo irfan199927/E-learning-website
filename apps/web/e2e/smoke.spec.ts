@@ -70,3 +70,33 @@ test("cross-site mutations are rejected", async ({ page }) => {
   });
   expect(res.status()).toBe(403);
 });
+
+test("student sees their learning overview and courses", async ({ page, isMobile }) => {
+  await signIn(page, "aanya@school.edu");
+  await expect(page.getByRole("heading", { name: "Monthly progress" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today's progress" })).toBeVisible();
+  await expect(page.getByText(/days? streak/i)).toBeVisible();
+
+  if (isMobile) {
+    // The drawer is closed (and out of the tab order) until the menu button opens it.
+    await expect(page.getByRole("link", { name: "My courses", exact: true })).toBeHidden();
+    await page.getByRole("button", { name: "Open menu" }).click();
+  }
+  await page.getByRole("link", { name: "My courses", exact: true }).click();
+  await expect(page).toHaveURL(/\/courses$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("My courses");
+  await expect(page.getByRole("link", { name: "Mathematics · Grade 9-A" })).toBeVisible();
+
+  await page.getByRole("link", { name: /^Completed/ }).click();
+  await expect(page).toHaveURL(/filter=completed/);
+
+  // Course pages are enrollment-gated like videos: unknown ids are a plain 404.
+  const res = await page.goto("/courses/not-a-real-course");
+  expect(res?.status()).toBe(404);
+});
+
+test("parents don't get a courses page", async ({ page }) => {
+  await signIn(page, "parent@example.com");
+  await page.goto("/courses");
+  await expect(page).toHaveURL(/\/dashboard$/);
+});

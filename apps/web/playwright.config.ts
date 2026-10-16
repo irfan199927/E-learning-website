@@ -1,4 +1,9 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+
+// Local runs read the root .env (DATABASE_URL for test fixtures); CI sets variables directly.
+const rootEnv = new URL("../../.env", import.meta.url);
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 /**
  * E2E smoke suite. Runs against a production build (`next start`) with a seeded database.
@@ -25,6 +30,8 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next start -p ${PORT}`,
     url: `http://localhost:${PORT}/api/health`,
+    // Better Auth rejects sign-ins whose Origin isn't APP_URL, so point it at the e2e port.
+    env: { NODE_ENV: "production", APP_URL: `http://localhost:${PORT}`, AUTH_SIGNIN_LIMIT_PER_MIN: "100" },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

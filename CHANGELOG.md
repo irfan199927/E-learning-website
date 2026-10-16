@@ -1,0 +1,79 @@
+# Changelog
+
+All notable changes to this project. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Dates are in IST.
+
+## [Unreleased]
+
+### Added — delivery: Docker images, CI and deploy (2026-10-16)
+
+- `apps/web/Dockerfile` (Next standalone, ~470 MB, non-root, healthcheck) and `apps/worker/Dockerfile`
+  (ffmpeg, production-only dependencies via `pnpm deploy`, non-root, healthcheck), plus `.dockerignore`.
+- CI (`.github/workflows/ci.yml`):
+  - format, lint, typecheck and unit tests;
+  - integration tests on Postgres with real ffmpeg, after migrating from an empty database;
+  - a production build, then Playwright on desktop and mobile;
+  - Docker image builds with smoke tests.
+- Deploy (`.github/workflows/deploy.yml`): CI → approval on the `production` environment → migrations →
+  Vercel (web) and GHCR → Render (worker). It stays off until `DEPLOY_ENABLED=true`.
+- Dependabot, CODEOWNERS and a PR template.
+- `docs/deployment.md`: one-time setup, secrets, releasing, rollback.
+- e2e regression test: the calendar shows a 10:30 IST class at 10:30 in a UTC browser.
+
+### Changed
+
+- `docker-compose.yml`: MinIO no longer publishes `minio/minio` / `minio/mc` images. Local S3 now uses the pinned
+  community build `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`.
+- Playwright loads the root `.env` (for test fixtures) and starts its server with `NODE_ENV=production`.
+- CI runs on pull requests. On `main` it runs once, as the first job of Deploy.
+
+### Fixed
+
+- The e2e "My courses" locator also matched the Overview's "See my courses" link on a fresh database.
+- CI integration and e2e jobs (and the quickstart) now run `pnpm db:generate` first. The seed and integration tests
+  import the gitignored Prisma client, which nothing had generated on a fresh checkout.
+
+### Added — learner experience redesign (2026-10-16)
+
+- **New app shell.**
+  - On desktop, a sidebar with icons and an active pill.
+  - On mobile, a slide-in drawer (menu button, Escape to close, closed drawer out of the tab order).
+  - A top bar with the user's initials, name and role.
+- **Learning streak** in the top bar for students: consecutive days with lesson time, on the student's own clock.
+- **Student Overview:**
+  - a Resume learning card (next lesson, X/Y lessons completed, progress ring);
+  - Today's progress (minutes watched against a 30-minute goal, lessons completed, courses in progress);
+  - a Monthly progress calendar with previous/next month;
+  - Upcoming classes alongside.
+- **Teacher Overview:** a "Your courses" panel with student and lesson counts.
+- **My courses** (`/courses`): All / In progress / Completed filters, course covers, and Start / Resume /
+  Review CTAs.
+- **Course page** (`/courses/:id`): the lesson list with completed and partly-watched states. Teachers also see
+  videos that are still processing or that failed.
+- The lesson page links back to its course.
+- `LearningDay` table and migration `20261016011408_learning_days`. Each progress beacon also adds its watch
+  time to the learner's local day.
+- `@elearner/core/learning`: `localDayKey`, `learningStreak`, `monthGrid`, `shiftMonth`, `courseProgressState`,
+  `percent`.
+- Docs: `docs/ui.md`, this changelog, an expanded README, and updates to architecture.md, CLAUDE.md and
+  NEXT_STEPS.md.
+- Tests: core unit tests for the streak and calendar rules, `learning.int.test.ts`, and e2e tests for the
+  student overview, My courses, the mobile drawer and the parent redirect.
+
+### Fixed
+
+- The calendar rendered in UTC while labelled Asia/Kolkata, which hid morning classes in week view (`8a4c37a`).
+- The Join button's "Opens 3:50 pm" now uses the school's timezone, not the browser's.
+- e2e: Playwright now passes `APP_URL` for its own port. Before, every sign-in got a 403 unless you set it by
+  hand.
+- Integration test for weekly series used fixed Google event ids, so it failed on its second run against the
+  same database.
+- `prisma.config.ts`, the seed and `next.config.ts` now load the root `.env` in local dev (`fb12e0f`).
+
+## [0.1.0] — 2026-10-15
+
+- Initial monorepo:
+  - web app: auth, dashboard, calendar with scheduling and drag-reschedule, upload, HLS player;
+  - worker: reminders, recording sync, transcode, calendar sync;
+  - shared packages, Prisma schema and migration;
+  - 89 tests.

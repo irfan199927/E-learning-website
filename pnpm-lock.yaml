@@ -92,6 +92,9 @@ importers:
       '@fullcalendar/interaction':
         specifier: 6.1.19
         version: 6.1.19(@fullcalendar/core@6.1.19)
+      '@fullcalendar/luxon3':
+        specifier: 6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)(luxon@3.7.2)
       '@fullcalendar/react':
         specifier: 6.1.19
         version: 6.1.19(@fullcalendar/core@6.1.19)(react-dom@19.1.10(react@19.1.10))(react@19.1.10)
@@ -107,6 +110,9 @@ importers:
       ioredis:
         specifier: 5.8.1
         version: 5.8.1
+      luxon:
+        specifier: 3.7.2
+        version: 3.7.2
       next:
         specifier: 15.5.27
         version: 15.5.27(@playwright/test@1.56.0)(@types/node@22.18.6)(react-dom@19.1.10(react@19.1.10))(react@19.1.10)
@@ -132,12 +138,21 @@ importers:
       '@tailwindcss/postcss':
         specifier: 4.1.14
         version: 4.1.14
+      '@types/luxon':
+        specifier: 3.7.6
+        version: 3.7.6
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
       '@types/react':
         specifier: 19.1.17
         version: 19.1.17
       '@types/react-dom':
         specifier: 19.1.11
         version: 19.1.11(@types/react@19.1.17)
+      pg:
+        specifier: 8.16.3
+        version: 8.16.3
       tailwindcss:
         specifier: 4.1.14
         version: 4.1.14
@@ -1122,6 +1137,12 @@ packages:
     peerDependencies:
       '@fullcalendar/core': ~6.1.19
 
+  '@fullcalendar/luxon3@6.1.19':
+    resolution: {integrity: sha512-hjLKOkVIn3KqUsRZqiESIMSe+y1Gwu4qlHGypkB3XCKe//YBGQN6TkLQsflApB62pqgBQNII9HSafHsGdGCI5g==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
+      luxon: ^3.0.0
+
   '@fullcalendar/react@6.1.19':
     resolution: {integrity: sha512-FP78vnyylaL/btZeHig8LQgfHgfwxLaIG6sKbNkzkPkKEACv11UyyBoTSkaavPsHtXvAkcTED1l7TOunAyPEnA==}
     peerDependencies:
@@ -2043,6 +2064,9 @@ packages:
 
   '@types/lodash@4.17.26':
     resolution: {integrity: sha512-48NWfiY6oNcKOh47Z4h+sIvwcQR91h6KPhaYKgeMIrkT2jV82Gy90SErj60vW8jQbeMSOSbhIv3bZ7JoqPPVhA==}
+
+  '@types/luxon@3.7.6':
+    resolution: {integrity: sha512-6KSjliQAXK8ZLgFQO4B7iE4Rpf/B3rItzCFuXezBY/XIAGxOdLd7vRNK9/StRPwiS/yJsVbB7HKpW46B8tcEuQ==}
 
   '@types/node@22.18.6':
     resolution: {integrity: sha512-r8uszLPpeIWbNKtvWRt/DbVi5zbqZyj1PTmhRMqBMvDnaz1QpmSKujUtJLrqGZeoM8v72MfYggDceY4K1itzWQ==}
@@ -5445,6 +5469,11 @@ snapshots:
     dependencies:
       '@fullcalendar/core': 6.1.19
 
+  '@fullcalendar/luxon3@6.1.19(@fullcalendar/core@6.1.19)(luxon@3.7.2)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+      luxon: 3.7.2
+
   '@fullcalendar/react@6.1.19(@fullcalendar/core@6.1.19)(react-dom@19.1.10(react@19.1.10))(react@19.1.10)':
     dependencies:
       '@fullcalendar/core': 6.1.19
@@ -6371,6 +6400,8 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/lodash@4.17.26': {}
+
+  '@types/luxon@3.7.6': {}
 
   '@types/node@22.18.6':
     dependencies:

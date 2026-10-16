@@ -13,11 +13,14 @@ export function JoinButton({
   startsAt,
   endsAt,
   opensMinutesBefore = 10,
+  timeZone,
 }: {
   classId: string;
   startsAt: string;
   endsAt: string;
   opensMinutesBefore?: number;
+  /** Show "Opens 3:50 pm" on the school's clock, not the browser's. */
+  timeZone?: string;
 }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -33,7 +36,7 @@ export function JoinButton({
     const mins = Math.ceil((w.opensAt.getTime() - now.getTime()) / 60_000);
     const label =
       mins > 90
-        ? `Opens ${w.opensAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+        ? `Opens ${w.opensAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone })}`
         : `Opens in ${mins} min`;
     return (
       <button type="button" disabled className={buttonClasses("secondary")}>

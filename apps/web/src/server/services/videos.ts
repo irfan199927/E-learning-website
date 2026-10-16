@@ -4,8 +4,10 @@
  */
 import {
   assertCan,
+  dayKeyToDate,
   Errors,
   isPlaylist,
+  localDayKey,
   partCount,
   resolveHlsPath,
   rewritePlaylist,
@@ -168,6 +170,7 @@ export async function getPlayerData(deps: Deps, actor: Actor, videoId: string) {
   return {
     id: video.id,
     title: video.title,
+    courseId: video.courseId,
     courseTitle: course?.title ?? "",
     status: video.status,
     durationSeconds: video.durationSeconds,
@@ -196,5 +199,14 @@ export async function saveProgress(deps: Deps, actor: Actor, videoId: string, in
       ...(completed ? { completed: true } : {}),
     },
   });
+  if (input.watchedDeltaSeconds > 0) {
+    // Daily rollup for streaks and the activity calendar, keyed on the learner's own date.
+    const day = dayKeyToDate(localDayKey(deps.now(), actor.timezone));
+    await deps.db.learningDay.upsert({
+      where: { userId_day: { userId: actor.id, day } },
+      create: { userId: actor.id, day, watchedSeconds: input.watchedDeltaSeconds },
+      update: { watchedSeconds: { increment: input.watchedDeltaSeconds } },
+    });
+  }
   return { completed };
 }

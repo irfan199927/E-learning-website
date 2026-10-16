@@ -1,0 +1,54 @@
+# Weekly dependency PRs, grouped so they arrive as a few reviewable PRs instead of dozens.
+# Pinned exact versions are deliberate (reproducible builds); Dependabot is how they move.
+version: 2
+updates:
+  - package-ecosystem: npm # pnpm workspace: reads pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 10
+    groups:
+      # Packages that must move together or break each other.
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+      next-react:
+        patterns: ["next", "@next/*", "react", "react-dom", "@types/react", "@types/react-dom"]
+      fullcalendar:
+        patterns: ["@fullcalendar/*"]
+      aws-sdk:
+        patterns: ["@aws-sdk/*"]
+      lint-test-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Node major is set by engines + Docker base image; move it on purpose, not via a bot.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories: ["/apps/web", "/apps/worker"]
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly

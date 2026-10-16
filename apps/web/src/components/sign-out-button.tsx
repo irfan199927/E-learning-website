@@ -9,7 +9,7 @@ export function SignOutButton() {
     <button
       type="button"
       aria-label="Sign out"
-      className="ml-auto grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas"
+      className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas"
       onClick={async () => {
         await authClient.signOut();
         router.replace("/sign-in");

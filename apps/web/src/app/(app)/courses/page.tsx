@@ -1,0 +1,157 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { CourseTile } from "@/components/course-tile";
+import { Icon } from "@/components/icons";
+import { ProgressRing } from "@/components/progress-ring";
+import { buttonClasses } from "@/components/ui/button";
+import { plural } from "@/lib/format";
+import { requirePageActor } from "@/lib/session";
+import { deps } from "@/server/container";
+import { listMyCourses, type CourseCard } from "@/server/services/learning";
+
+export const metadata: Metadata = { title: "Courses" };
+
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "in-progress", label: "In progress" },
+  { key: "completed", label: "Completed" },
+] as const;
+type FilterKey = (typeof FILTERS)[number]["key"];
+
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string | string[] }>;
+}) {
+  const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
+  const { filter: raw } = await searchParams;
+  const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "all";
+  const learner = actor.role === "STUDENT";
+  const all = await listMyCourses(deps(), actor);
+  const courses = learner && filter !== "all" ? all.filter((c) => c.state === filter) : all;
+
+  return (
+    <div className="flex max-w-5xl flex-col gap-6">
+      <header>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          {learner ? "My courses" : "Courses"}
+        </h1>
+        <p className="mt-1 text-muted">
+          {learner ? "Pick up where you left off." : "Courses you teach, with their lessons and students."}
+        </p>
+      </header>
+
+      {learner && (
+        <nav aria-label="Filter courses">
+          <ul className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => {
+              const active = f.key === filter;
+              const count = f.key === "all" ? all.length : all.filter((c) => c.state === f.key).length;
+              return (
+                <li key={f.key}>
+                  <Link
+                    href={f.key === "all" ? "/courses" : `/courses?filter=${f.key}`}
+                    aria-current={active ? "page" : undefined}
+                    className={`inline-flex h-11 items-center gap-2 rounded-full border px-5 text-[15px] font-medium ${
+                      active
+                        ? "border-ink bg-ink text-surface"
+                        : "border-line-strong bg-surface text-muted hover:text-ink"
+                    }`}
+                  >
+                    {f.label}
+                    <span className="text-xs opacity-70">{count}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
+
+      {courses.length === 0 ? (
+        <p className="rounded-[var(--radius-card)] border border-line bg-surface p-8 text-center text-muted">
+          {all.length === 0
+            ? learner
+              ? "You aren't enrolled in any courses yet. Your school adds you to courses."
+              : "You don't teach any courses yet."
+            : filter === "completed"
+              ? "No completed courses yet. Keep going!"
+              : "Nothing in progress. Start a course from the All tab."}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-5">
+          {courses.map((c) => (
+            <li key={c.id}>
+              <CourseRow course={c} learner={learner} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function CourseRow({ course: c, learner }: { course: CourseCard; learner: boolean }) {
+  const cta = !learner
+    ? { href: `/courses/${c.id}`, label: "Open course", variant: "secondary" as const }
+    : c.state === "completed"
+      ? { href: `/courses/${c.id}`, label: "Review course", variant: "secondary" as const }
+      : c.next
+        ? {
+            href: `/library/${c.next.videoId}`,
+            label: c.next.resume ? "Resume learning" : "Start learning",
+            variant: c.next.resume ? ("primary" as const) : ("secondary" as const),
+          }
+        : null;
+
+  return (
+    <article className="flex flex-col gap-5 rounded-[var(--radius-card)] border border-line bg-surface p-5 sm:flex-row">
+      <Link href={`/courses/${c.id}`} tabIndex={-1} aria-hidden="true" className="sm:w-56">
+        <CourseTile title={c.title} grade={c.grade} color={c.color} className="h-32 w-full" />
+      </Link>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg">
+              <Link href={`/courses/${c.id}`} className="hover:underline">
+                {c.title}
+              </Link>
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {learner ? `With ${c.teacherName}` : `${plural(c.studentCount, "student")} enrolled`}
+            </p>
+            {learner && c.next && <p className="mt-2 font-bold">Lesson: {c.next.title}</p>}
+          </div>
+          {learner && (
+            <ProgressRing
+              value={c.percent}
+              size={52}
+              stroke={5}
+              label={`${c.completedCount} of ${c.lessonCount} lessons completed`}
+            >
+              {c.state === "completed" ? (
+                <Icon name="check" size={18} className="text-success" />
+              ) : (
+                <span className="text-[11px] font-bold">{c.percent}%</span>
+              )}
+            </ProgressRing>
+          )}
+        </div>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
+          <p className="text-sm text-muted">
+            {learner
+              ? `${c.completedCount}/${c.lessonCount} lessons completed`
+              : `${plural(c.lessonCount, "lesson")} ready`}
+          </p>
+          {cta ? (
+            <Link href={cta.href} className={buttonClasses(cta.variant, "min-w-44")}>
+              {cta.label}
+            </Link>
+          ) : (
+            <span className="text-sm text-muted">Lessons appear after the first class.</span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
