@@ -35,6 +35,7 @@ pnpm typecheck | pnpm lint | pnpm test          # unit tests (all packages)
 pnpm --filter @elearner/web test:int            # integration: real Postgres (DATABASE_URL)
 pnpm --filter @elearner/worker test:int         # integration incl. real ffmpeg transcode
 pnpm --filter @elearner/web build && pnpm test:e2e   # Playwright smoke vs production build
+pnpm build:site                                 # static landing page only → apps/web/out (Vercel)
 docker build -f apps/web/Dockerfile -t elearner-web .       # images build from the repo root (docs/deployment.md)
 docker build -f apps/worker/Dockerfile -t elearner-worker .
 ```
@@ -82,6 +83,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
 - Theme: `<html data-theme>` comes from the `theme` cookie (root layout); none = follow the OS. Dark tokens exist twice
   (explicit + media query); change both. Brand blue as text = `text-primary-fg`, never `text-primary`.
+- Static landing export: `STATIC_SITE=1` builds ONLY `*.site.tsx` routes (pageExtensions) into `apps/web/out`. Keep
+  page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
+  headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 

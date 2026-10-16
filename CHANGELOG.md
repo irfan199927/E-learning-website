@@ -5,6 +5,17 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — static landing site for Vercel (2026-10-16)
+
+- `pnpm build:site` exports just the public landing page as static files (`apps/web/out`, about 1.2 MB). It shares
+  its source with the app's `/` route through `*.site.tsx` route files and `STATIC_SITE=1` in `next.config.ts`.
+- The root `vercel.json` holds the build, output, security and cache-header settings, so a Vercel project only needs
+  the repository imported.
+- Without a deployed app, Enroll and Sign in go to a new "Online enrolment opens soon" page. Setting
+  `SITE_APP_URL` points them at the real sign-in instead.
+- The theme switch re-applies a saved choice on the static site, where no server can read the cookie.
+- New CI job **Static landing site** builds and checks the export on every PR.
+
 ### Added — light/dark theme switch and a light landing page (2026-10-16)
 
 - **Theme switch** on every page: the landing header, the app top bar and the sign-in pages.

@@ -19,6 +19,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Dependabot (npm, actions, docker, compose; grouped), CODEOWNERS, PR template.
 - [x] e2e: calendar shows a class at its school-timezone time in a UTC browser (fails if the 8a4c37a fix regresses).
 - [x] `docker-compose.yml`: MinIO stopped publishing images; switched to pinned `pgsty/minio` (server + `mc`).
+- [x] Static landing site: `pnpm build:site` + root `vercel.json` (docs/deployment.md "Static landing site")
+- [ ] Import the repo in Vercel to publish the static landing site; set `SITE_APP_URL` once the full app is live
 - [ ] Do the one-time setup in `docs/deployment.md` (accounts, secrets, branch protection), then first deploy.
 - [ ] Pin GitHub Actions to commit SHAs (Dependabot keeps them current) once the workflows have run green on GitHub.
 - [ ] Worker image size: ~190 MB of `node_modules` is `googleapis`; switch to the per-API packages
