@@ -9,6 +9,7 @@ export async function listManageableCourses(deps: Deps, actor: Actor) {
       id: true,
       title: true,
       color: true,
+      modules: { orderBy: [{ position: "asc" }, { id: "asc" }], select: { id: true, title: true } },
       _count: { select: { enrollments: { where: { revokedAt: null } } } },
     },
     orderBy: { title: "asc" },

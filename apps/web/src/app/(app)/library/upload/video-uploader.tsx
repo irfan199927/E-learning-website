@@ -13,8 +13,27 @@ type Phase =
   | { name: "done" }
   | { name: "error"; message: string };
 
-export function VideoUploader({ courses }: { courses: { id: string; title: string }[] }) {
+interface UploadCourse {
+  id: string;
+  title: string;
+  modules: { id: string; title: string }[];
+}
+
+export function VideoUploader({
+  courses,
+  initialCourseId,
+  initialModuleId,
+}: {
+  courses: UploadCourse[];
+  initialCourseId?: string;
+  initialModuleId?: string;
+}) {
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
+  const [courseId, setCourseId] = useState(initialCourseId ?? courses[0]?.id ?? "");
+  const modules = courses.find((c) => c.id === courseId)?.modules ?? [];
+  const [moduleId, setModuleId] = useState(
+    modules.some((m) => m.id === initialModuleId) ? initialModuleId! : "",
+  );
   const abort = useRef<AbortController | null>(null);
   const videoId = useRef<string | null>(null);
 
@@ -35,8 +54,9 @@ export function VideoUploader({ courses }: { courses: { id: string; title: strin
         {
           method: "POST",
           json: {
-            courseId: f.get("courseId"),
+            courseId,
             title: f.get("title"),
+            moduleId: moduleId || undefined,
             fileName: file.name,
             mimeType: file.type,
             sizeBytes: file.size,
@@ -80,7 +100,7 @@ export function VideoUploader({ courses }: { courses: { id: string; title: strin
   if (phase.name === "done") {
     return (
       <FormAlert tone="success">
-        Uploaded. We&apos;re preparing the video for streaming — it appears in the course library in a few
+        Uploaded. We&apos;re preparing the video for streaming. It appears as a lesson in the course in a few
         minutes.
       </FormAlert>
     );
@@ -100,6 +120,11 @@ export function VideoUploader({ courses }: { courses: { id: string; title: strin
         <select
           id="courseId"
           name="courseId"
+          value={courseId}
+          onChange={(e) => {
+            setCourseId(e.target.value);
+            setModuleId("");
+          }}
           className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
         >
           {courses.map((c) => (
@@ -108,6 +133,30 @@ export function VideoUploader({ courses }: { courses: { id: string; title: strin
             </option>
           ))}
         </select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="moduleId" className="text-sm font-semibold">
+          Module
+        </label>
+        <select
+          id="moduleId"
+          value={moduleId}
+          onChange={(e) => setModuleId(e.target.value)}
+          aria-describedby="moduleId-hint"
+          className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
+        >
+          <option value="">Videos (added automatically)</option>
+          {modules
+            .filter((m) => m.title !== "Videos")
+            .map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+        </select>
+        <p id="moduleId-hint" className="text-[13px] text-muted">
+          The video becomes a lesson at the end of this module.
+        </p>
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="file" className="text-sm font-semibold">

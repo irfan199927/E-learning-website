@@ -146,7 +146,10 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
               <p className="text-sm text-muted">
                 {course.completedCount}/{course.lessonCount} lessons completed
               </p>
-              <Link href={`/library/${course.next.videoId}`} className={buttonClasses("primary", "min-w-48")}>
+              <Link
+                href={`/courses/${course.id}/lessons/${course.next.lessonId}`}
+                className={buttonClasses("primary", "min-w-48")}
+              >
                 {course.next.resume ? "Continue learning" : "Start learning"}
                 <Icon name="arrowRight" size={18} />
               </Link>

@@ -5,6 +5,32 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — course editing: modules, lessons and files (2026-10-16)
+
+- **Edit course** (`/courses/:id/edit`, the course teacher and admins):
+  - modules: add, rename, reorder, delete (empty ones only);
+  - lessons: Reading (text), Link, Files and Video; reorder, hide/show, move between modules, delete (a video
+    lesson's video is kept and listed under "Videos not in a lesson");
+  - course details: title, grade, description, card colour, and whether it's listed in Find a course.
+- **Edit lesson** with file attachments (PDF, Office, images, zip…, up to 50 MB each, 20 per lesson), uploaded
+  straight to storage and downloaded through an access-checked redirect.
+- **Lesson page** `/courses/:id/lessons/:lessonId`: video, text, link or files, **Mark as done** for non-video
+  lessons, and Previous / Next.
+- Course pages, course cards, the resume card and progress now follow modules and lessons in the teacher's order
+  instead of videos in upload order. Hidden lessons and their videos and files are staff-only.
+- Uploads become a lesson at once: in the module picked on the upload page, or a "Videos" module. Cancelling an
+  upload removes it.
+- New `LessonProgress` table (migration `lesson_progress`, additive). The migration also gives every existing
+  video without a lesson a published lesson in a "Videos" module, so nothing students could see disappears.
+- API: `PATCH /courses/:id`, `POST /courses/:id/modules`, `PATCH|DELETE /modules/:id`,
+  `POST /modules/:id/lessons`, `PATCH|DELETE /lessons/:id`, `PUT|DELETE /lessons/:id/progress`,
+  `POST /lessons/:id/attachments/uploads`, `POST /lessons/:id/attachments`, `GET|DELETE /attachments/:id`.
+- Disabled buttons use theme tokens, so they no longer glow white in dark mode.
+- CI's e2e job runs MinIO for the attachment tests.
+- Tests: 4 integration tests (course building and order, hidden lessons, prev/next and ticks, moving and deleting;
+  video lessons kept as loose videos; edit permissions; attachments end to end); an e2e test from an empty
+  course to a student downloading a file.
+
 ### Added — parental consent for under-18s (DPDP) (2026-10-16)
 
 - **Date of birth at first sign-in.** Every student is sent to `/welcome` once.

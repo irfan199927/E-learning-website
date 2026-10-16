@@ -6,7 +6,12 @@ import { VideoUploader } from "./video-uploader";
 
 export const metadata: Metadata = { title: "Upload video" };
 
-export default async function UploadPage() {
+export default async function UploadPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ course?: string; module?: string }>;
+}) {
+  const { course, module } = await searchParams;
   const actor = await requirePageActor(["TEACHER", "ADMIN"]);
   const courses = await listManageableCourses(deps(), actor);
   const maxGb = Math.round(deps().config.maxUploadBytes / 1024 ** 3);
@@ -18,7 +23,11 @@ export default async function UploadPage() {
           MP4, WebM or MOV up to {maxGb} GB. Uploads resume if your connection drops.
         </p>
       </header>
-      <VideoUploader courses={courses.map((c) => ({ id: c.id, title: c.title }))} />
+      <VideoUploader
+        courses={courses.map((c) => ({ id: c.id, title: c.title, modules: c.modules }))}
+        initialCourseId={courses.some((c) => c.id === course) ? course : undefined}
+        initialModuleId={module}
+      />
     </div>
   );
 }

@@ -20,7 +20,8 @@ import { VideoSource, VideoStatus } from "@elearner/db";
 import { extensionFor, keys } from "@elearner/storage";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
-import { assertCourseAccess } from "../policies";
+import { assertCourseAccess, hasCourseAccess } from "../policies";
+import { addUploadLesson } from "./course-content";
 
 export interface InitUploadResult {
   videoId: string;
@@ -51,6 +52,7 @@ export async function initUpload(
       sizeBytes: BigInt(input.sizeBytes),
     },
   });
+  await addUploadLesson(deps, actor, input.courseId, video.id, input.title, input.moduleId);
   const rawKey = keys.videoRaw(video.id, extensionFor(input.mimeType));
   const uploadId = await deps.storage.createMultipart(rawKey, input.mimeType);
   await deps.db.video.update({ where: { id: video.id }, data: { rawKey, uploadId } });
@@ -94,17 +96,29 @@ export async function completeUpload(deps: Deps, actor: Actor, videoId: string, 
 export async function abortUpload(deps: Deps, actor: Actor, videoId: string) {
   const video = await loadPendingUpload(deps, actor, videoId);
   await deps.storage.abortMultipart(video.rawKey, video.uploadId).catch(() => undefined);
-  await deps.db.video.update({
-    where: { id: videoId },
-    data: { status: VideoStatus.FAILED, uploadId: null, error: "Upload cancelled" },
-  });
+  await deps.db.$transaction([
+    deps.db.lesson.deleteMany({ where: { videoId } }), // the lesson initUpload added
+    deps.db.video.update({
+      where: { id: videoId },
+      data: { status: VideoStatus.FAILED, uploadId: null, error: "Upload cancelled" },
+    }),
+  ]);
 }
 
 async function loadWatchable(deps: Deps, actor: Actor, videoId: string) {
   assertCan(actor.role, "video:watch");
-  const video = await deps.db.video.findUnique({ where: { id: videoId } });
+  const video = await deps.db.video.findUnique({
+    where: { id: videoId },
+    include: { lesson: { select: { id: true, publishedAt: true } } },
+  });
   if (!video) throw Errors.notFound("Video");
   await assertCourseAccess(deps.db, actor, video.courseId, "watch");
+  // Students only see videos that are in a lesson the teacher hasn't hidden.
+  if (
+    (!video.lesson || !video.lesson.publishedAt) &&
+    !(await hasCourseAccess(deps.db, actor, video.courseId, "manage"))
+  )
+    throw Errors.notFound("Video");
   return video;
 }
 
@@ -172,6 +186,7 @@ export async function getPlayerData(deps: Deps, actor: Actor, videoId: string) {
     title: video.title,
     courseId: video.courseId,
     courseTitle: course?.title ?? "",
+    lessonId: video.lesson?.id ?? null,
     status: video.status,
     durationSeconds: video.durationSeconds,
     resumeAtSeconds: progress && !progress.completed ? progress.positionSeconds : 0,

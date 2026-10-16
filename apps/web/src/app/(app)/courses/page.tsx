@@ -179,7 +179,7 @@ function CourseRow({
       ? { href: `/courses/${c.id}`, label: "Review course", variant: "secondary" as const }
       : c.next
         ? {
-            href: `/library/${c.next.videoId}`,
+            href: `/courses/${c.id}/lessons/${c.next.lessonId}`,
             label: c.next.resume ? "Resume learning" : "Start learning",
             variant: c.next.resume ? ("primary" as const) : ("secondary" as const),
           }

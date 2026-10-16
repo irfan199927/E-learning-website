@@ -1,12 +1,12 @@
 import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Icon } from "@/components/icons";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getPlayerData } from "@/server/services/videos";
-import { VideoPlayer } from "./video-player";
+import { VideoPlayer } from "@/components/video-player";
 
 export const metadata: Metadata = { title: "Lesson" };
 
@@ -17,6 +17,8 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
+  // Videos in a lesson open on the lesson page (old links, recordings). Staff keep this page for loose videos.
+  if (video.lessonId) redirect(`/courses/${video.courseId}/lessons/${video.lessonId}`);
 
   return (
     <div className="flex max-w-5xl flex-col gap-5">

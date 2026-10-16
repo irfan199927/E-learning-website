@@ -104,8 +104,8 @@ jobs:
       TOKEN_ENC_ACTIVE_KEY_ID: v1
       S3_ENDPOINT: http://localhost:9000
       S3_BUCKET: elearner-media
-      S3_ACCESS_KEY_ID: ci
-      S3_SECRET_ACCESS_KEY: ci-only
+      S3_ACCESS_KEY_ID: ci-minio
+      S3_SECRET_ACCESS_KEY: ci-only-secret
       S3_FORCE_PATH_STYLE: "true"
       SMTP_URL: smtp://localhost:1025
       MAIL_FROM: E-learner CI <ci@example.com>
@@ -117,6 +117,18 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Lesson attachments upload to and download from real storage. MinIO needs a command (`server /data`),
+      # which service containers can't set, so it runs here. Same image as docker-compose.yml. MinIO refuses to
+      # start with a root user under 3 or a password under 8 characters.
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 -e MINIO_ROOT_USER=ci-minio -e MINIO_ROOT_PASSWORD=ci-only-secret \
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
+          for i in $(seq 1 30); do
+            docker exec minio mc alias set local http://localhost:9000 ci-minio ci-only-secret && break
+            sleep 1
+          done
+          docker exec minio mc mb --ignore-existing local/elearner-media
       # The Prisma client is gitignored and only turbo tasks generate it; seed and test:int bypass turbo.
       - run: pnpm db:generate
       - run: pnpm db:deploy
