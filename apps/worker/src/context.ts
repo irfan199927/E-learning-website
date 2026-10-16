@@ -13,7 +13,10 @@ export type WorkerJobs = Pick<
   Jobs,
   "scheduleReminders" | "cancelReminders" | "enqueueTranscode" | "enqueueRecordingSync"
 >;
-export type WorkerStorage = Pick<Storage, "putStream" | "presignGet" | "abortMultipart" | "deletePrefix">;
+export type WorkerStorage = Pick<
+  Storage,
+  "putStream" | "presignGet" | "abortMultipart" | "deleteObject" | "deletePrefix"
+>;
 
 export interface WorkerConfig {
   appUrl: string;

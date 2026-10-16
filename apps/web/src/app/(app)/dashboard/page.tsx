@@ -156,7 +156,7 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
       ) : (
         <div className={`p-6 text-muted ${card}`}>
           {course === null
-            ? "No lessons yet. Recordings appear here after each class."
+            ? "No lessons yet. Join a course, or check back after your first class."
             : "You've finished every lesson so far. New recordings will show up here."}
           <Link href="/courses" className="ml-1 font-semibold text-primary-fg">
             See my courses

@@ -3,10 +3,7 @@
  * Sign-in asks only for openid/email/profile. When a teacher first schedules a class we
  * send them through this flow with incremental authorization for the API scopes below.
  */
-import { google, type Auth } from "googleapis";
-
-// Use the auth library instance bundled with googleapis so client types line up.
-type OAuth2Client = Auth.OAuth2Client;
+import { OAuth2Client } from "google-auth-library";
 
 export const TEACHER_SCOPES = [
   "openid",
@@ -26,7 +23,7 @@ export interface GoogleOAuthConfig {
 }
 
 export function createOAuthClient(cfg: GoogleOAuthConfig): OAuth2Client {
-  return new google.auth.OAuth2({
+  return new OAuth2Client({
     clientId: cfg.clientId,
     clientSecret: cfg.clientSecret,
     redirectUri: cfg.redirectUri,

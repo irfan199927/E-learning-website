@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
+import { JoinRequestList } from "@/components/join-request-list";
 import { buttonClasses } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
+import { listJoinRequests } from "@/server/services/join-requests";
 import { getCourseDetail, type CourseLesson } from "@/server/services/learning";
 
 export const metadata: Metadata = { title: "Course" };
@@ -32,6 +34,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     throw err;
   });
   const learner = !course.canManage;
+  const requests = course.canManage ? await listJoinRequests(deps(), actor, courseId) : [];
+  const day = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
@@ -76,6 +80,30 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           )}
         </div>
       </header>
+
+      {course.canManage && (
+        <section
+          id="join-requests"
+          aria-labelledby="join-h"
+          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <h2 id="join-h" className="mb-1 font-display text-xl font-bold">
+            Join requests{requests.length > 0 && ` (${requests.length})`}
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Students who signed up and asked to join. Approving gives them the lessons and class invites.
+          </p>
+          <JoinRequestList
+            requests={requests.map((r) => ({
+              id: r.id,
+              name: r.student.name,
+              email: r.student.email,
+              message: r.message,
+              requestedOn: day.format(r.createdAt),
+            }))}
+          />
+        </section>
+      )}
 
       <section
         aria-labelledby="lessons-h"

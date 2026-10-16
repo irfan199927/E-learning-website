@@ -14,7 +14,8 @@
     "seed": "tsx --env-file-if-exists=../../.env prisma/seed.ts",
     "studio": "prisma studio",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "echo \"db: no unit tests (covered by integration tests in apps)\""
+    "test": "echo \"db: no unit tests (covered by integration tests in apps)\"",
+    "set-role": "tsx --env-file-if-exists=../../.env prisma/set-role.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

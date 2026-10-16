@@ -270,15 +270,15 @@ Logs are structured JSON (pino) with `requestId`/`jobId`. Errors go to Sentry wh
 
 ## 7. Known gaps (found during this design review)
 
-| ID  | Gap                                                                                          | Risk   | Fix                                                                                                           |
-| --- | -------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| G1  | ~~Rate limiter failed closed: Redis outage → sign-in and APIs 500~~                          | Fixed  | `consume()` now fails open and logs `rate limiter unavailable` (alert on it); covered by `rate-limit.test.ts` |
-| G2  | Presigned R2 URLs hit `*.r2.cloudflarestorage.com` directly — **no CDN caching** of segments | Medium | Fine at 435 Mbps peak. At larger scale: R2 custom domain + Cloudflare token auth (WAF/Worker), cache segments |
-| G3  | Progress beacons write to Postgres on every beacon                                           | Low    | At > ~100 writes/s: buffer in Redis, flush every minute                                                       |
-| G4  | Reminders live only as delayed jobs in Redis; a lost Redis loses future reminders            | Medium | Daily reconciliation job: re-`scheduleReminders` for classes in the next 48 h (jobIds make it idempotent)     |
-| G5  | Attendance assumes Meet `users/{id}` equals the OpenID `sub` stored in `Account.accountId`   | Medium | Verify in the pilot with real accounts; fallback is manual marking                                            |
-| G6  | Raw uploads are kept forever after transcoding (~2 TB/yr)                                    | Cost   | Lifecycle rule: delete `videos/*/raw.*` 30 days after READY                                                   |
-| G7  | Region placement not pinned (latency + DPDP data location)                                   | Low    | Choose India/nearby regions for Vercel functions, Postgres and R2 location hint; record in an ADR             |
+| ID  | Gap                                                                                          | Risk   | Fix                                                                                                                                 |
+| --- | -------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| G1  | ~~Rate limiter failed closed: Redis outage → sign-in and APIs 500~~                          | Fixed  | `consume()` now fails open and logs `rate limiter unavailable` (alert on it); covered by `rate-limit.test.ts`                       |
+| G2  | Presigned R2 URLs hit `*.r2.cloudflarestorage.com` directly — **no CDN caching** of segments | Medium | Fine at 435 Mbps peak. At larger scale: R2 custom domain + Cloudflare token auth (WAF/Worker), cache segments                       |
+| G3  | Progress beacons write to Postgres on every beacon                                           | Low    | At > ~100 writes/s: buffer in Redis, flush every minute                                                                             |
+| G4  | ~~Reminders live only as delayed jobs in Redis; a lost Redis loses future reminders~~        | Fixed  | Maintenance task `reconcile-reminders` (every 15 min) re-adds reminders for classes in the next 48 h; covered by `jobs.int.test.ts` |
+| G5  | Attendance assumes Meet `users/{id}` equals the OpenID `sub` stored in `Account.accountId`   | Medium | Verify in the pilot with real accounts; fallback is manual marking                                                                  |
+| G6  | ~~Raw uploads are kept forever after transcoding (~2 TB/yr)~~                                | Fixed  | Maintenance task `delete-transcoded-raw` (daily 03:30 IST) deletes the original 30 days after READY                                 |
+| G7  | Region placement not pinned (latency + DPDP data location)                                   | Low    | Choose India/nearby regions for Vercel functions, Postgres and R2 location hint; record in an ADR                                   |
 
 ## 8. What to revisit as it grows
 

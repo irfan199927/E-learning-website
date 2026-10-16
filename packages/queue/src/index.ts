@@ -39,7 +39,14 @@ export const calendarSyncJob = z.object({ userId: z.string() });
 export type CalendarSyncJob = z.infer<typeof calendarSyncJob>;
 
 export const maintenanceJob = z.object({
-  task: z.enum(["sweep-ended-classes", "renew-watch-channels", "purge-deleted-users", "abort-stale-uploads"]),
+  task: z.enum([
+    "sweep-ended-classes",
+    "renew-watch-channels",
+    "purge-deleted-users",
+    "abort-stale-uploads",
+    "reconcile-reminders",
+    "delete-transcoded-raw",
+  ]),
 });
 export type MaintenanceJob = z.infer<typeof maintenanceJob>;
 

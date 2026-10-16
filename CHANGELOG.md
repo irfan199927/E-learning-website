@@ -5,6 +5,60 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — open Google sign-up with teacher-approved course access (2026-10-16)
+
+- **Anyone can sign up with Google.** A new account is an active student with **no courses**. Password accounts
+  are still created by admins only. Setting `GOOGLE_WORKSPACE_DOMAIN` still limits sign-in to one domain.
+- **Find a course** on `/courses`: students see published courses and **Ask to join**. Content stays closed until
+  the teacher approves.
+- **Join requests** on each course page for its teacher (and admins), with **Approve** and **Decline**.
+  - Approving enrols the student and sends an in-app notification.
+  - A badge on the course list shows how many students are waiting.
+  - New `JoinRequest` table (migration `join_requests`) and API: `POST /api/v1/courses/:id/join-requests`,
+    `GET` for teachers, and `PATCH /api/v1/join-requests/:id`.
+- **New course** (`/courses/new`, `POST /api/v1/courses`): teachers create a course, published at once.
+- **Roles:** `pnpm db:set-role -- <email> <ROLE>`, and the GitHub workflow "Admin: set user role" for production.
+- **Free-tier deployment (web only):** docs/deployment.md "Free-tier setup".
+  - The app gets its own Vercel project (`apps/web/vercel.json`: Mumbai region, build from the monorepo root, Git
+    auto-deploys off).
+  - The worker deploy is skipped unless `WORKER_ENABLED=true`.
+  - Builds on Vercel skip `output: "standalone"`.
+- Tests: 5 new integration tests (join flow, declines, access rules, unpublished courses, course creation) and an
+  e2e test of the whole flow on desktop and mobile. The seed adds `kabir@school.edu`, a student with no courses.
+
+### Fixed — lost reminders and ever-growing storage (2026-10-16)
+
+- **Reminders survive a Redis flush or failover.** Every 15 minutes the worker re-adds the 24 h and 15 min
+  reminders for classes in the next 48 hours (`reconcile-reminders`). Existing jobs are left alone and the
+  reminder job dedupes per user, so nobody is reminded twice. Closes design gap G4.
+- **Original video files are deleted 30 days after transcoding** (`delete-transcoded-raw`, daily at 03:30 IST).
+  Students only stream the HLS renditions, so this saves about 2 TB a year at pilot scale. After that a video can't
+  be re-transcoded; Meet recordings stay in the teacher's Drive. Closes design gap G6.
+- `Storage.deleteObject(key)` in `@elearner/storage`.
+
+### Added — contributor, environment, security and Google setup docs (2026-10-16)
+
+- `CONTRIBUTING.md`: branches, Conventional Commits (enforced by the commit hook), the checks to run before a PR,
+  the required CI checks and a definition of done.
+- `docs/environment.md`: every variable the web app, worker and static site read, with defaults, plus how to
+  rotate the token encryption key and fix common configuration errors.
+- `SECURITY.md` (private vulnerability reporting) and `docs/security.md`: threat model, the controls in the code,
+  audit logging, DPDP handling and known security gaps. Each item is marked built or planned.
+- `docs/adr/0001`–`0007`: architecture decision records for the choices code comments already cite (monorepo,
+  route handlers + worker, Better Auth sessions, Prisma 7, gated HLS on R2, the separate Google grant, recurring
+  classes as Google instances).
+- `docs/google-setup.md`: the one-time Google Cloud and Workspace setup (APIs, Internal consent screen, scopes,
+  redirect URIs, Meet recording policy) with a troubleshooting table.
+
+### Changed — CI hardening and a smaller worker image (2026-10-16)
+
+- Every third-party GitHub Action is pinned to a full commit SHA, with the release in a trailing comment
+  (`actions/checkout@fbc6f39… # v5.1.0`). A moved or hijacked tag can no longer change what CI runs. Dependabot's
+  weekly `actions` group bumps the SHA and the comment together.
+- `packages/google` uses the per-API clients `@googleapis/calendar`, `@googleapis/drive` and `@googleapis/meet` instead
+  of the full `googleapis` bundle. The worker's production `node_modules` drops from 354 MB to 174 MB. Requests are
+  unchanged.
+
 ### Added — static landing site for Vercel (2026-10-16)
 
 - `pnpm build:site` exports just the public landing page as static files (`apps/web/out`, about 1.2 MB). It shares

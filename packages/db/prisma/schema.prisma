@@ -22,6 +22,12 @@ enum Role {
   PARENT
 }
 
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 enum ConsentType {
   PARENTAL_VERIFIABLE // DPDP s.9 — required before processing a minor's data
   TERMS
@@ -114,28 +120,30 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
-  accounts          Account[]
-  sessions          Session[]
-  googleCredential  GoogleCredential?
-  consents          Consent[]
-  parentLinks       ParentLink[]        @relation("ParentOf")
-  childLinks        ParentLink[]        @relation("ChildOf")
-  coursesTaught     Course[]            @relation("CourseTeacher")
-  enrollments       Enrollment[]
-  classesHosted     ClassSession[]      @relation("ClassHost")
-  attendances       Attendance[]
-  videosUploaded    Video[]             @relation("VideoUploader")
-  videoProgress     VideoProgress[]
-  learningDays      LearningDay[]
-  videoNotes        VideoNote[]
-  submissions       Submission[]
-  quizAttempts      QuizAttempt[]
-  notifications     Notification[]
-  posts             Post[]
-  subscriptions     Subscription[]
-  payments          Payment[]
-  certificates      Certificate[]
-  auditLogs         AuditLog[]
+  accounts         Account[]
+  sessions         Session[]
+  googleCredential GoogleCredential?
+  consents         Consent[]
+  parentLinks      ParentLink[]      @relation("ParentOf")
+  childLinks       ParentLink[]      @relation("ChildOf")
+  coursesTaught    Course[]          @relation("CourseTeacher")
+  enrollments      Enrollment[]
+  joinRequests     JoinRequest[]     @relation("JoinRequester")
+  joinDecisions    JoinRequest[]     @relation("JoinDecider")
+  classesHosted    ClassSession[]    @relation("ClassHost")
+  attendances      Attendance[]
+  videosUploaded   Video[]           @relation("VideoUploader")
+  videoProgress    VideoProgress[]
+  learningDays     LearningDay[]
+  videoNotes       VideoNote[]
+  submissions      Submission[]
+  quizAttempts     QuizAttempt[]
+  notifications    Notification[]
+  posts            Post[]
+  subscriptions    Subscription[]
+  payments         Payment[]
+  certificates     Certificate[]
+  auditLogs        AuditLog[]
 
   @@index([role])
 }
@@ -190,17 +198,17 @@ model Verification {
 
 // Teacher's Google API grant (incremental auth). Tokens AES-256-GCM encrypted.
 model GoogleCredential {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  googleSub          String   @unique
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  googleSub          String    @unique
   email              String
   scopes             String[]
-  refreshTokenEnc    String   @db.Text
-  accessTokenEnc     String?  @db.Text
+  refreshTokenEnc    String    @db.Text
+  accessTokenEnc     String?   @db.Text
   accessTokenExpires DateTime?
   revokedAt          DateTime?
-  updatedAt          DateTime @updatedAt
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Consent {
@@ -233,24 +241,25 @@ model ParentLink {
 // ─────────────────────────── Courses & content ───────────────────────────
 
 model Course {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  title       String
-  description String?   @db.Text
-  color       String    @default("#2340D9") // calendar color
-  grade       String? // e.g. "9-A"
-  teacherId   String
-  isPaid      Boolean   @default(false)
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  title        String
+  description  String?   @db.Text
+  color        String    @default("#2340D9") // calendar color
+  grade        String? // e.g. "9-A"
+  teacherId    String
+  isPaid       Boolean   @default(false)
   priceInPaise Int?
-  planId      String? // if access comes via a subscription plan
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  planId       String? // if access comes via a subscription plan
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   teacher      User           @relation("CourseTeacher", fields: [teacherId], references: [id])
   plan         Plan?          @relation(fields: [planId], references: [id])
   modules      Module[]
   enrollments  Enrollment[]
+  joinRequests JoinRequest[]
   classes      ClassSession[]
   assignments  Assignment[]
   quizzes      Quiz[]
@@ -275,6 +284,25 @@ model Enrollment {
   @@index([courseId])
 }
 
+// A student's request to join a course. The course teacher (or an admin) approves it, which creates the
+// Enrollment. One row per student per course; asking again after a decline reopens the same row.
+model JoinRequest {
+  id          String            @id @default(cuid())
+  userId      String
+  courseId    String
+  status      JoinRequestStatus @default(PENDING)
+  message     String?           @db.Text // optional note from the student to the teacher
+  createdAt   DateTime          @default(now())
+  decidedAt   DateTime?
+  decidedById String?
+  user        User              @relation("JoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  course      Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  decidedBy   User?             @relation("JoinDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@index([courseId, status])
+}
+
 model Module {
   id       String   @id @default(cuid())
   courseId String
@@ -287,17 +315,17 @@ model Module {
 }
 
 model Lesson {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   moduleId    String
   title       String
   type        LessonType
   position    Int
-  body        String?    @db.Text // markdown notes
+  body        String?      @db.Text // markdown notes
   url         String? // external link / slides
-  videoId     String?    @unique
+  videoId     String?      @unique
   publishedAt DateTime?
-  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  video       Video?     @relation(fields: [videoId], references: [id])
+  module      Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  video       Video?       @relation(fields: [videoId], references: [id])
   attachments Attachment[]
   threads     Thread[]
 
@@ -305,14 +333,14 @@ model Lesson {
 }
 
 model Attachment {
-  id        String   @id @default(cuid())
-  lessonId  String
-  fileName  String
-  mimeType  String
-  sizeBytes Int
+  id         String   @id @default(cuid())
+  lessonId   String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
   storageKey String // R2 object key
-  createdAt DateTime @default(now())
-  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
 
 // ─────────────────────────── Live classes ───────────────────────────
@@ -510,14 +538,14 @@ model Quiz {
 }
 
 model QuizQuestion {
-  id        String   @id @default(cuid())
-  quizId    String
-  prompt    String   @db.Text
-  options   String[]
-  correct   Int[] // indexes into options; >1 = multi-select
-  points    Int      @default(1)
-  position  Int
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  quizId   String
+  prompt   String   @db.Text
+  options  String[]
+  correct  Int[] // indexes into options; >1 = multi-select
+  points   Int      @default(1)
+  position Int
+  quiz     Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model QuizAttempt {
@@ -584,15 +612,15 @@ model Notification {
 // ─────────────────────────── Payments (Razorpay) ───────────────────────────
 
 model Plan {
-  id               String         @id @default(cuid())
-  name             String
-  razorpayPlanId   String?        @unique
-  amountInPaise    Int
-  interval         String // monthly | yearly
-  trialDays        Int            @default(0)
-  active           Boolean        @default(true)
-  courses          Course[]
-  subscriptions    Subscription[]
+  id             String         @id @default(cuid())
+  name           String
+  razorpayPlanId String?        @unique
+  amountInPaise  Int
+  interval       String // monthly | yearly
+  trialDays      Int            @default(0)
+  active         Boolean        @default(true)
+  courses        Course[]
+  subscriptions  Subscription[]
 }
 
 model Subscription {
@@ -625,12 +653,12 @@ model Payment {
 }
 
 model Coupon {
-  code        String    @id
-  percentOff  Int?
-  amountOff   Int? // paise
-  maxRedeems  Int?
-  redeemed    Int       @default(0)
-  expiresAt   DateTime?
+  code       String    @id
+  percentOff Int?
+  amountOff  Int? // paise
+  maxRedeems Int?
+  redeemed   Int       @default(0)
+  expiresAt  DateTime?
 }
 
 model WebhookEvent {
@@ -643,14 +671,14 @@ model WebhookEvent {
 // ─────────────────────────── Certificates & audit ───────────────────────────
 
 model Certificate {
-  id         String   @id @default(cuid())
-  userId     String
-  courseId   String
-  serial     String   @unique
-  pdfKey     String
-  issuedAt   DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  serial   String   @unique
+  pdfKey   String
+  issuedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
 }

@@ -3,7 +3,9 @@
  * - Email + password with mandatory email verification and password reset
  * - Google sign-in (login scopes only; API scopes are a separate teacher grant — ADR-0006)
  * - Database sessions: revoking a session or deactivating a user takes effect immediately
- * - No self sign-up: accounts are provisioned by admins (K-12; DPDP parental consent first)
+ * - Self sign-up only with Google (Google verifies the email). New accounts are students with NO course
+ *   access: they ask to join a course and its teacher approves (server/services/join-requests.ts).
+ *   Email + password accounts are still created by admins only.
  */
 import "server-only";
 import { getDb } from "@elearner/db";
@@ -51,7 +53,7 @@ function createAuth() {
       google: {
         clientId: e.GOOGLE_CLIENT_ID,
         clientSecret: e.GOOGLE_CLIENT_SECRET,
-        disableSignUp: true, // only admin-provisioned users can sign in
+        // Anyone with a Google account may create an account; course access still needs a teacher's approval.
         prompt: "select_account",
       },
     },
@@ -67,7 +69,7 @@ function createAuth() {
     },
 
     user: {
-      // Google identities must belong to the school's Workspace (checked on every Google sign-in).
+      // With GOOGLE_WORKSPACE_DOMAIN set, Google identities must belong to that Workspace (every Google sign-in).
       validateUserInfo: ({ user, source }) => {
         if (source.oauth?.providerId !== "google" || !e.GOOGLE_WORKSPACE_DOMAIN) return;
         const hd = source.oauth.profile?.hd;
@@ -101,6 +103,13 @@ function createAuth() {
     },
 
     databaseHooks: {
+      user: {
+        create: {
+          // Only Google can create users here (email sign-up is disabled), and Google has verified the
+          // address, so the account is usable at once. It starts as a student with no enrolments.
+          before: async (user) => ({ data: { ...user, role: "STUDENT", isActive: true } }),
+        },
+      },
       session: {
         create: {
           // Block sign-in for deactivated users and for minors without parental consent (isActive=false).

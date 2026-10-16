@@ -9,6 +9,7 @@ const PATHS = {
   upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
   menu: "M4 6h16M4 12h16M4 18h10",
   close: "M6 6l12 12M18 6L6 18",
+  plus: "M12 5v14M5 12h14",
   play: "M8 5v14l11-7z",
   check: "M5 12.5l4.5 4.5L19 7.5",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2",

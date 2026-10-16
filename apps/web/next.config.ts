@@ -31,7 +31,10 @@ const config: NextConfig = {
         images: { unoptimized: true },
         distDir: "out", // the export lands here; Next removes its build internals afterwards
       }
-    : { output: "standalone" }),
+    : // Docker images run the standalone server; Vercel (VERCEL=1 at build) uses its own Next.js output.
+      process.env.VERCEL
+      ? {}
+      : { output: "standalone" }),
   poweredByHeader: false,
   reactStrictMode: true,
   // Workspace packages ship TypeScript source; Next compiles them.
@@ -44,7 +47,17 @@ const config: NextConfig = {
     "@elearner/storage",
   ],
   // Node-only libraries with native/dynamic requires stay external to the server bundle.
-  serverExternalPackages: ["bullmq", "ioredis", "googleapis", "pg", "nodemailer", "pino"],
+  serverExternalPackages: [
+    "bullmq",
+    "ioredis",
+    "@googleapis/calendar",
+    "@googleapis/drive",
+    "@googleapis/meet",
+    "google-auth-library",
+    "pg",
+    "nodemailer",
+    "pino",
+  ],
   typedRoutes: false,
   eslint: { ignoreDuringBuilds: true }, // lint runs in CI as its own step
   // Static hosts set headers themselves (vercel.json); `headers()` is unsupported with output: export.

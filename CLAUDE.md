@@ -58,7 +58,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Nonce CSP (middleware.ts) requires dynamic rendering → root layout has `dynamic = "force-dynamic"`. Static pages would hydrate-fail.
 - FullCalendar's icon font is a data: URI → CSP `font-src 'self' data:`.
 - Fonts are self-hosted via `@fontsource-variable/*` + `next/font/local` (builds must not need Google Fonts).
-- `google-auth-library` is pinned via pnpm override so googleapis + our code share one instance (type clash otherwise).
+- Google APIs use the per-API packages (`@googleapis/calendar`, `/drive`, `/meet`), not the 190 MB `googleapis`.
+  `google-auth-library` is pinned via pnpm override so they and our code share one instance (type clash otherwise);
+  bump them together (the newer majors need auth library 11).
 - Better Auth 1.7 rate-limit custom storage needs atomic `consume()` (Redis Lua in `lib/rate-limit.ts`), not get/set.
 - Better Auth core tables (User/Session/Account/Verification) must keep its field names; `emailVerified` is Boolean.
 - Worker bundles workspace packages with tsup but keeps npm deps external — runtime deps of bundled packages are
@@ -78,6 +80,7 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - `pnpm install` under `NODE_ENV=production` skips devDependencies: never set it job-wide in CI before installing.
 - e2e locators: use `exact: true` for nav links. Empty-state copy ("See my courses") also matches substrings.
 - MinIO no longer publishes `minio/minio` images; compose uses pinned `pgsty/minio` (also ships `mc`).
+- Workflow actions are pinned to commit SHAs with a `# vX.Y.Z` comment; add new ones the same way (`git ls-remote --tags`).
 - CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
 - `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
@@ -86,6 +89,11 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Static landing export: `STATIC_SITE=1` builds ONLY `*.site.tsx` routes (pageExtensions) into `apps/web/out`. Keep
   page logic in shared modules (`landing-view.tsx`, `root-html.tsx`); a `*.site.tsx` file must not use cookies,
   headers, the DB or anything server-only. Root `vercel.json` is for this static project only.
+- Access model: anyone may sign up with Google (auth.ts `databaseHooks.user.create` makes them an active STUDENT);
+  course content still needs an Enrollment, created only when the teacher approves a `JoinRequest`. Roles change
+  only via `pnpm db:set-role` / the "Admin: set user role" workflow.
+- The full app on Vercel is a separate project rooted at `apps/web` (`apps/web/vercel.json`); the repo-root
+  `vercel.json` is the static landing project. Vercel builds skip `output: "standalone"` (`VERCEL=1`).
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 

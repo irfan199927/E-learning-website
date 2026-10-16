@@ -7,6 +7,7 @@ import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
+  DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -136,6 +137,11 @@ export class Storage {
       leavePartsOnError: false,
     });
     await upload.done();
+  }
+
+  /** Delete one object. Deleting a key that doesn't exist succeeds (S3 semantics). */
+  async deleteObject(key: string): Promise<void> {
+    await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
   async deletePrefix(prefix: string): Promise<number> {

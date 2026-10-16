@@ -62,6 +62,7 @@ docs/             Spec, system design, UI guide, next steps
 | `pnpm --filter @elearner/web build && pnpm test:e2e` | Playwright smoke tests (desktop + mobile) on a production build                                        |
 | `pnpm build:site`                                    | Static export of the public landing page → `apps/web/out` (what Vercel serves, see docs/deployment.md) |
 | `pnpm db:migrate` · `pnpm db:seed`                   | Apply migrations and seed demo users (never in production)                                             |
+| `pnpm db:set-role -- <email> <ROLE>`                 | Give an existing user a role (production: Actions → "Admin: set user role")                            |
 
 ## Documentation
 
@@ -70,6 +71,12 @@ docs/             Spec, system design, UI guide, next steps
 - [`docs/architecture.md`](docs/architecture.md): system design, flows, data model, failure modes, trade-offs.
 - [`docs/ui.md`](docs/ui.md): app shell, screens per role, UI rules.
 - [`docs/deployment.md`](docs/deployment.md): CI, Docker images, deploy pipeline, one-time setup, rollback.
+- [`docs/adr/`](docs/adr/README.md): architecture decision records (monorepo, backend shape, auth, Prisma, video, Google, recurring classes).
+- [`docs/environment.md`](docs/environment.md): every environment variable, key rotation, common config errors.
+- [`docs/google-setup.md`](docs/google-setup.md): Google Cloud project, consent screen, OAuth client, Meet recording policy.
+- [`docs/security.md`](docs/security.md): threat model, controls, audit logging, DPDP handling, known gaps.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): branches, commits, PR checks, definition of done.
+- [`SECURITY.md`](SECURITY.md): how to report a vulnerability.
 - [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md): what's left, in priority order.
 - [`CHANGELOG.md`](CHANGELOG.md): what changed, and when.
 
