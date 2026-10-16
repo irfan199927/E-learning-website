@@ -4,7 +4,9 @@
  */
 import { type Readable } from "node:stream";
 import { Errors } from "@elearner/core";
-import { google, type calendar_v3 } from "googleapis";
+import { calendar as calendarApi, type calendar_v3 } from "@googleapis/calendar";
+import { drive as driveApi } from "@googleapis/drive";
+import { meet as meetApi } from "@googleapis/meet";
 import { createOAuthClient, type GoogleOAuthConfig } from "./oauth";
 import type { CredentialStore } from "./credential-store";
 import { withRetry } from "./retry";
@@ -123,9 +125,9 @@ export async function createTeacherGoogle(
     if (t.refresh_token) void store.saveRefreshToken(userId, t.refresh_token);
   });
 
-  const calendar = google.calendar({ version: "v3", auth });
-  const meet = google.meet({ version: "v2", auth });
-  const drive = google.drive({ version: "v3", auth });
+  const calendar = calendarApi({ version: "v3", auth });
+  const meet = meetApi({ version: "v2", auth });
+  const drive = driveApi({ version: "v3", auth });
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const call = <T>(fn: () => Promise<T>) =>
     withRetry(fn, { sleep, onRevoked: () => store.markRevoked(userId) });

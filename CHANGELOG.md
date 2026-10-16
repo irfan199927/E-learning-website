@@ -5,11 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
-### Changed — CI hardening (2026-10-16)
+### Changed — CI hardening and a smaller worker image (2026-10-16)
 
 - Every third-party GitHub Action is pinned to a full commit SHA, with the release in a trailing comment
   (`actions/checkout@fbc6f39… # v5.1.0`). A moved or hijacked tag can no longer change what CI runs. Dependabot's
   weekly `actions` group bumps the SHA and the comment together.
+- `packages/google` uses the per-API clients `@googleapis/calendar`, `@googleapis/drive` and `@googleapis/meet` instead
+  of the full `googleapis` bundle. The worker's production `node_modules` drops from 354 MB to 174 MB. Requests are
+  unchanged.
 
 ### Added — static landing site for Vercel (2026-10-16)
 

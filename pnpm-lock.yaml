@@ -189,6 +189,15 @@ importers:
       '@elearner/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@googleapis/calendar':
+        specifier: 16.0.0
+        version: 16.0.0
+      '@googleapis/drive':
+        specifier: 22.0.0
+        version: 22.0.0
+      '@googleapis/meet':
+        specifier: 5.0.0
+        version: 5.0.0
       '@prisma/adapter-pg':
         specifier: 7.10.0
         version: 7.10.0
@@ -198,9 +207,9 @@ importers:
       bullmq:
         specifier: 5.61.0
         version: 5.61.0
-      googleapis:
-        specifier: 161.0.0
-        version: 161.0.0
+      google-auth-library:
+        specifier: 10.5.0
+        version: 10.5.0
       ioredis:
         specifier: 5.8.1
         version: 5.8.1
@@ -273,9 +282,18 @@ importers:
       '@elearner/db':
         specifier: workspace:*
         version: link:../db
-      googleapis:
-        specifier: 161.0.0
-        version: 161.0.0
+      '@googleapis/calendar':
+        specifier: 16.0.0
+        version: 16.0.0
+      '@googleapis/drive':
+        specifier: 22.0.0
+        version: 22.0.0
+      '@googleapis/meet':
+        specifier: 5.0.0
+        version: 5.0.0
+      google-auth-library:
+        specifier: 10.5.0
+        version: 10.5.0
     devDependencies:
       vitest:
         specifier: 3.2.4
@@ -1154,6 +1172,18 @@ packages:
     resolution: {integrity: sha512-OuzpUueyO9wB5OZ8rs7TWIoqvu4v3yEqdDxZ2VcsMldCpYJRiOe7yHWKr4ap5Tb0fs7Rjbserc/b6Nt7ol6BRg==}
     peerDependencies:
       '@fullcalendar/core': ~6.1.19
+
+  '@googleapis/calendar@16.0.0':
+    resolution: {integrity: sha512-Z/8Jdf4hMvmMlBMhP0whZNPSixEpYv4mC5RJfrlvrnqpf/rV68MJ+8M9MmyqUt7/SQp2zRfVmEqkk+csB2Cgmg==}
+    engines: {node: '>=12.0.0'}
+
+  '@googleapis/drive@22.0.0':
+    resolution: {integrity: sha512-u21JQPR5mGKt8OqjsDndb+l5b44IXCKTum+P1Q1rlWmi2pUNZqcNeq7csx06xlwj+UeZv5/ZhhhAjziVZu86Dg==}
+    engines: {node: '>=12.0.0'}
+
+  '@googleapis/meet@5.0.0':
+    resolution: {integrity: sha512-kvQ/3DSsCh91zB2WW1BpzvOnqQWGKW8INlizvh/UItmDG1T1F1dTuXYK343WF4xA+F8eBuepjLjdorF7HWwlFg==}
+    engines: {node: '>=12.0.0'}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3006,10 +3036,6 @@ packages:
 
   googleapis-common@8.0.3:
     resolution: {integrity: sha512-7g1yzQKx0mmNTjiK0H9dJ8eqKqDBveES9vLHeg5neb3BMQy/d1oQefIMhIpOVT8a+f+LOcixMEdRbFIW/cQUJw==}
-    engines: {node: '>=18'}
-
-  googleapis@161.0.0:
-    resolution: {integrity: sha512-JZy2cWMxgUF8E09KHzplI+z+FVG8NWDB/bsf4xevt9Um4bInb0X1qaG9qpDn49DHT5HsU0mOp3EOBGb8+AdE3Q==}
     engines: {node: '>=18'}
 
   gopd@1.2.0:
@@ -5485,6 +5511,24 @@ snapshots:
       '@fullcalendar/core': 6.1.19
       '@fullcalendar/daygrid': 6.1.19(@fullcalendar/core@6.1.19)
 
+  '@googleapis/calendar@16.0.0':
+    dependencies:
+      googleapis-common: 8.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@googleapis/drive@22.0.0':
+    dependencies:
+      googleapis-common: 8.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@googleapis/meet@5.0.0':
+    dependencies:
+      googleapis-common: 8.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -7550,13 +7594,6 @@ snapshots:
       google-logging-utils: 1.1.3
       qs: 6.16.1
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@161.0.0:
-    dependencies:
-      google-auth-library: 10.5.0
-      googleapis-common: 8.0.3
     transitivePeerDependencies:
       - supports-color
 

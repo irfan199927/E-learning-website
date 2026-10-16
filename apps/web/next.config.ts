@@ -44,7 +44,17 @@ const config: NextConfig = {
     "@elearner/storage",
   ],
   // Node-only libraries with native/dynamic requires stay external to the server bundle.
-  serverExternalPackages: ["bullmq", "ioredis", "googleapis", "pg", "nodemailer", "pino"],
+  serverExternalPackages: [
+    "bullmq",
+    "ioredis",
+    "@googleapis/calendar",
+    "@googleapis/drive",
+    "@googleapis/meet",
+    "google-auth-library",
+    "pg",
+    "nodemailer",
+    "pino",
+  ],
   typedRoutes: false,
   eslint: { ignoreDuringBuilds: true }, // lint runs in CI as its own step
   // Static hosts set headers themselves (vercel.json); `headers()` is unsupported with output: export.

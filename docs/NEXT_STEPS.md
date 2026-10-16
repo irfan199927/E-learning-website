@@ -23,8 +23,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Import the repo in Vercel to publish the static landing site; set `SITE_APP_URL` once the full app is live
 - [ ] Do the one-time setup in `docs/deployment.md` (accounts, secrets, branch protection), then first deploy.
 - [x] GitHub Actions pinned to commit SHAs (`# vX.Y.Z` comment; Dependabot updates both), at the versions that ran green.
-- [ ] Worker image size: ~190 MB of `node_modules` is `googleapis`; switch to the per-API packages
-      (`@googleapis/calendar`, `/drive`, `/meet`) in `packages/google`.
+- [x] Worker image size: `googleapis` replaced by `@googleapis/calendar`, `/drive`, `/meet` (production
+      `node_modules` 354 MB → 174 MB).
 
 ## 3. Documentation set (user asked for proper docs)
 

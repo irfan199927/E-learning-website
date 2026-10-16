@@ -58,7 +58,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Nonce CSP (middleware.ts) requires dynamic rendering → root layout has `dynamic = "force-dynamic"`. Static pages would hydrate-fail.
 - FullCalendar's icon font is a data: URI → CSP `font-src 'self' data:`.
 - Fonts are self-hosted via `@fontsource-variable/*` + `next/font/local` (builds must not need Google Fonts).
-- `google-auth-library` is pinned via pnpm override so googleapis + our code share one instance (type clash otherwise).
+- Google APIs use the per-API packages (`@googleapis/calendar`, `/drive`, `/meet`), not the 190 MB `googleapis`.
+  `google-auth-library` is pinned via pnpm override so they and our code share one instance (type clash otherwise);
+  bump them together (the newer majors need auth library 11).
 - Better Auth 1.7 rate-limit custom storage needs atomic `consume()` (Redis Lua in `lib/rate-limit.ts`), not get/set.
 - Better Auth core tables (User/Session/Account/Verification) must keep its field names; `emailVerified` is Boolean.
 - Worker bundles workspace packages with tsup but keeps npm deps external — runtime deps of bundled packages are

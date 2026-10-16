@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Google Workspace integration: OAuth (teacher API grant), Calendar, Meet REST, Drive. Wraps googleapis with retries and typed results.",
+  "description": "Google Workspace integration: OAuth (teacher API grant), Calendar, Meet REST, Drive. Wraps the per-API googleapis clients with retries and typed results.",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -14,7 +14,10 @@
   "dependencies": {
     "@elearner/core": "workspace:*",
     "@elearner/db": "workspace:*",
-    "googleapis": "161.0.0"
+    "@googleapis/calendar": "16.0.0",
+    "@googleapis/drive": "22.0.0",
+    "@googleapis/meet": "5.0.0",
+    "google-auth-library": "10.5.0"
   },
   "devDependencies": {
     "vitest": "3.2.4"
