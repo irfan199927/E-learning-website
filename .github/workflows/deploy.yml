@@ -2,7 +2,8 @@
 #   CI → [approval] migrate DB → deploy web (Vercel) + worker (image on GHCR → Render)
 # Setup (once) and rollback: docs/deployment.md. Until the repo variable DEPLOY_ENABLED is "true",
 # the deploy jobs are skipped, so main stays green before the hosting accounts exist.
-# The worker job also needs WORKER_ENABLED="true" (skipped on the free-tier setup, which has no worker).
+# These Vercel/Render jobs are the earlier hosting plan and stay off; production moves to AWS (docs/deployment.md).
+# UAT doesn't use this workflow: the UAT VM pulls green commits itself (deploy/uat/auto-update.sh).
 name: Deploy
 
 on:
@@ -80,7 +81,7 @@ jobs:
   worker:
     name: Deploy worker (GHCR → Render)
     needs: migrate
-    # Off until a worker host exists (free-tier setup runs web only). Set the repo variable WORKER_ENABLED=true.
+    # Off unless WORKER_ENABLED=true (earlier Render plan).
     if: vars.WORKER_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30

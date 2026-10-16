@@ -24,6 +24,7 @@
     "db:deploy": "pnpm --filter @elearner/db migrate:deploy",
     "db:seed": "pnpm --filter @elearner/db seed",
     "db:set-role": "pnpm --filter @elearner/db set-role",
+    "db:create-user": "pnpm --filter @elearner/db create-user",
     "db:studio": "pnpm --filter @elearner/db studio",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",

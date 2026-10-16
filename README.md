@@ -72,6 +72,7 @@ docs/             Spec, system design, UI guide, next steps
 - [`docs/ui.md`](docs/ui.md): app shell, screens per role, UI rules.
 - [`docs/deployment.md`](docs/deployment.md): CI, Docker images, deploy pipeline, one-time setup, rollback.
 - [`docs/adr/`](docs/adr/README.md): architecture decision records (monorepo, backend shape, auth, Prisma, video, Google, recurring classes).
+- [`docs/uat.md`](docs/uat.md): run the full app on a home-lab VM for UAT (Docker Compose, auto-deploy).
 - [`docs/environment.md`](docs/environment.md): every environment variable, key rotation, common config errors.
 - [`docs/google-setup.md`](docs/google-setup.md): Google Cloud project, consent screen, OAuth client, Meet recording policy.
 - [`docs/security.md`](docs/security.md): threat model, controls, audit logging, DPDP handling, known gaps.

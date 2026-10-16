@@ -15,7 +15,7 @@ problem and points here.
 
 Locally, copy `.env.example` to `.env` at the repository root. Everything in it works with `pnpm infra:up` except
 the Google credentials (see [google-setup.md](google-setup.md)). In production, set the variables on each service
-(Vercel for web, Render for the worker; [deployment.md](deployment.md)).
+([uat.md](uat.md) for the UAT VM; AWS later, see [deployment.md](deployment.md)).
 
 **Never commit `.env`.** It is gitignored, and only `.env.example` (no real secrets) is tracked.
 
@@ -31,8 +31,8 @@ Where a variable is used by both, set the **same value** on both services. Pay s
 | `APP_URL`                 | yes      |               | Public origin of the web app, e.g. `https://learn.school.edu`. Better Auth's base URL and only trusted origin, the same-origin check on API writes, the Google OAuth redirect (`/api/v1/google/callback`) and links in emails. Must match the browser's origin exactly (see below).                                        |
 | `DATABASE_URL`            | yes      |               | Postgres connection string. In production, the **pooled** Neon URL. Migrations use a separate direct URL (`DATABASE_DIRECT_URL` secret in deploy.yml).                                                                                                                                                                     |
 | `REDIS_URL`               | yes      |               | Redis for BullMQ queues and rate limiting. The server must use `maxmemory-policy noeviction`, or queued jobs can be dropped.                                                                                                                                                                                               |
-| `GOOGLE_CLIENT_ID`        | yes      |               | OAuth client of the Google Cloud project (Internal app).                                                                                                                                                                                                                                                                   |
-| `GOOGLE_CLIENT_SECRET`    | yes      |               | Its secret.                                                                                                                                                                                                                                                                                                                |
+| `GOOGLE_CLIENT_ID`        | no       | empty         | OAuth client of the Google Cloud project. **Leave it and the secret empty to run without Google** (e.g. the LAN-only UAT): the Google button is hidden and teachers can't connect Meet.                                                                                                                                    |
+| `GOOGLE_CLIENT_SECRET`    | no       | empty         | Its secret.                                                                                                                                                                                                                                                                                                                |
 | `GOOGLE_WORKSPACE_DOMAIN` | no       |               | Set it to the school's Workspace domain (e.g. `school.edu`) to accept only that domain: Google sign-in checks the `hd` claim and the email, and the teacher API grant asks for that domain. **Leave it unset for open sign-up**, where any Google account can create a student account and teachers approve course access. |
 | `TOKEN_ENC_KEYS`          | yes      |               | Keyring for encrypting stored Google tokens (AES-256-GCM): `<id>:<base64 32-byte key>`, comma-separated, e.g. `v1:…=,v2:…=`. Ids must not contain `.`.                                                                                                                                                                     |
 | `TOKEN_ENC_ACTIVE_KEY_ID` | yes      |               | Which key in the ring encrypts new values, e.g. `v2`. Must be present in `TOKEN_ENC_KEYS`.                                                                                                                                                                                                                                 |
@@ -84,15 +84,15 @@ Not read at runtime. Set them in the environment of the build.
 These are set in the repository settings for `deploy.yml`, not on the services. See
 [deployment.md](deployment.md) → One-time setup.
 
-| Name                                 | Kind                              | Purpose                                                                                           |
-| ------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `DEPLOY_ENABLED`                     | repository variable               | `true` turns the deploy jobs on. Until then, merges to `main` only run CI.                        |
-| `WORKER_ENABLED`                     | repository variable               | `true` also deploys the worker (Render). Leave unset on the free-tier setup, which has no worker. |
-| `APP_URL`                            | `production` environment variable | URL shown on the GitHub deployment.                                                               |
-| `DATABASE_DIRECT_URL`                | `production` environment secret   | Direct (non-pooled) Postgres URL for `prisma migrate deploy`.                                     |
-| `VERCEL_TOKEN`                       | `production` environment secret   | Deploys the web app.                                                                              |
-| `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `production` environment secrets  | Which Vercel project to deploy.                                                                   |
-| `RENDER_WORKER_DEPLOY_HOOK_URL`      | `production` environment secret   | Render deploy hook for the worker.                                                                |
+| Name                                 | Kind                              | Purpose                                                                                                            |
+| ------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `DEPLOY_ENABLED`                     | repository variable               | `true` turns the deploy jobs on. Until then, merges to `main` only run CI.                                         |
+| `WORKER_ENABLED`                     | repository variable               | Part of the earlier Vercel/Render jobs in deploy.yml, which stay off (`DEPLOY_ENABLED` unset). UAT doesn't use it. |
+| `APP_URL`                            | `production` environment variable | URL shown on the GitHub deployment.                                                                                |
+| `DATABASE_DIRECT_URL`                | `production` environment secret   | Direct (non-pooled) Postgres URL for `prisma migrate deploy`.                                                      |
+| `VERCEL_TOKEN`                       | `production` environment secret   | Deploys the web app.                                                                                               |
+| `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `production` environment secrets  | Which Vercel project to deploy.                                                                                    |
+| `RENDER_WORKER_DEPLOY_HOOK_URL`      | `production` environment secret   | Render deploy hook for the worker.                                                                                 |
 
 CI itself (`ci.yml`) uses fixed throwaway values for every runtime variable and needs no secrets.
 

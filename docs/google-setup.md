@@ -10,7 +10,7 @@ Background and design decisions: [SPEC.md](SPEC.md) §3 Google integration.
 
 There are two ways to set it up:
 
-- **Open sign-up** (what the free-tier deployment uses). Anyone with a Google account, including a personal
+- **Open sign-up** (the default for this project). Anyone with a Google account, including a personal
   Gmail, can create an account. Teachers approve who joins each course. You don't need Workspace admin rights.
 - **School Workspace only** (sections 1–5). Only accounts in the school's domain can sign in, and Meet recording
   is set up for teachers.
@@ -28,7 +28,7 @@ There are two ways to set it up:
 4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, and **leave `GOOGLE_WORKSPACE_DOMAIN` unset**.
 
 New sign-ups are students with no courses. Make the first admin and the teachers with **Actions → "Admin: set
-user role"** (deployment.md, free-tier step 10).
+user role"** (or `deploy/uat/manage.sh set-role` on UAT).
 
 **Teachers scheduling on Google Meet:** when a teacher first schedules a class, the app asks for the Calendar, Meet
 and Drive scopes listed in section 2. Until those scopes pass Google's verification:
