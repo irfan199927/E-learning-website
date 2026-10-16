@@ -142,7 +142,7 @@ export function ShellFrame({
                   aria-current={active ? "page" : undefined}
                   className={`flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] transition-colors ${
                     active
-                      ? "bg-primary-soft font-semibold text-primary-strong"
+                      ? "bg-primary-soft font-semibold text-primary-fg-strong"
                       : "font-medium text-muted hover:bg-canvas hover:text-ink"
                   }`}
                 >

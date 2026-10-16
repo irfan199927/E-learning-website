@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
+import { parseTheme, THEME_COOKIE } from "@/lib/theme";
 import { bricolage, figtree, mono } from "./fonts";
 import "./globals.css";
 
@@ -14,9 +16,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#2340D9" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // No cookie → no attribute → the OS preference applies (see globals.css).
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en" className={`${figtree.variable} ${bricolage.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      data-theme={theme ?? undefined}
+      className={`${figtree.variable} ${bricolage.variable} ${mono.variable}`}
+    >
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

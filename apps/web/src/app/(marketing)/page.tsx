@@ -124,7 +124,7 @@ export default async function LandingPage() {
           <TypingTerminal file="streak.py" code={PROGRAM} output={OUTPUT} />
         </section>
 
-        <section id="curriculum" className="lp-section" aria-labelledby="curriculum-h">
+        <section id="curriculum" className="lp-section lp-band" aria-labelledby="curriculum-h">
           <Reveal className="lp-section-head">
             <p className="lp-kicker">Curriculum</p>
             <h2 id="curriculum-h" className="lp-h2">

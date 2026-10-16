@@ -1,6 +1,7 @@
 import type { Role } from "@elearner/core";
 import { Icon } from "./icons";
 import { ShellFrame } from "./shell-frame";
+import { ThemeToggle } from "./theme-toggle";
 import { SignOutButton } from "./sign-out-button";
 
 export function AppShell({
@@ -34,6 +35,7 @@ export function AppShell({
             </p>
           )}
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle className="text-muted hover:text-ink" />
             <span className="hidden min-w-0 flex-col text-right sm:flex">
               <span className="truncate text-sm font-semibold">{user.name}</span>
               <span className="text-xs capitalize text-muted">{user.role.toLowerCase()}</span>

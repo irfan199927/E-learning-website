@@ -122,7 +122,7 @@ export function VideoPlayer({
             type="button"
             aria-pressed={speed === s}
             onClick={() => setSpeed(s)}
-            className={`h-11 min-w-11 rounded-[var(--radius-control)] border px-3 text-sm font-semibold ${speed === s ? "border-primary bg-primary-soft text-primary-strong" : "border-line-strong bg-surface"}`}
+            className={`h-11 min-w-11 rounded-[var(--radius-control)] border px-3 text-sm font-semibold ${speed === s ? "border-primary bg-primary-soft text-primary-fg-strong" : "border-line-strong bg-surface"}`}
           >
             {s}×
           </button>

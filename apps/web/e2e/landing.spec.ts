@@ -40,3 +40,25 @@ test.describe("reduced motion", () => {
     await expect(page.getByRole("heading", { name: course.projects[0].title })).toBeVisible();
   });
 });
+
+test("the theme switch flips light/dark and the choice survives a reload", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  const html = page.locator("html");
+  await expect(html).not.toHaveAttribute("data-theme"); // no choice yet: follows the OS
+  const toggle = page.locator(".lp-header").getByRole("button", { name: "Dark mode" });
+  await toggle.click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+  // Rendered on the server from the cookie: no flash of the light theme.
+  const res = await page.request.get("/sign-in");
+  expect(await res.text()).toContain('data-theme="dark"');
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".lp")).toHaveCSS("background-color", "rgb(2, 6, 23)");
+
+  await page.locator(".lp-header").getByRole("button", { name: "Dark mode" }).click();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(page.locator(".lp")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+});

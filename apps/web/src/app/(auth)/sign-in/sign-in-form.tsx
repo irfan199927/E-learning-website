@@ -102,7 +102,7 @@ export function SignInForm() {
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <Link href="/forgot-password" className="text-sm font-semibold text-primary">
+      <Link href="/forgot-password" className="text-sm font-semibold text-primary-fg">
         Forgot your password?
       </Link>
     </div>

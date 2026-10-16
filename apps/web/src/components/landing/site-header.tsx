@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /** Fixed header: transparent over the hero, solid once the page scrolls. Always offers the CTA. */
 export function SiteHeader({ cta }: { cta: { href: string; label: string } | null }) {
@@ -43,6 +44,7 @@ export function SiteHeader({ cta }: { cta: { href: string; label: string } | nul
         <a href="#faq">FAQ</a>
       </nav>
       <div className="lp-header-actions">
+        <ThemeToggle />
         {cta ? (
           <>
             <Link href="/sign-in" className="lp-link">

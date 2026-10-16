@@ -119,7 +119,7 @@ export function VideoUploader({ courses }: { courses: { id: string; title: strin
           type="file"
           accept={VIDEO_MIME_TYPES.join(",")}
           required
-          className="text-sm file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-primary-strong"
+          className="text-sm file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-primary-fg-strong"
         />
       </div>
       {phase.name === "uploading" ? (

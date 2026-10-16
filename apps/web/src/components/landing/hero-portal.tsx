@@ -4,13 +4,24 @@ import { useEffect, useState, type ReactNode } from "react";
 import GlyphPortal from "@/components/ui/glyph-portal";
 
 const WORD = "CODE";
-const WEIGHT = 800;
 const FALLBACK = '"Arial Black", Arial, sans-serif';
+/** Light: heavy sans (product-launch style). Dark: the mono "terminal" face. Both self-hosted. */
+const FACES = {
+  light: { variable: "--font-figtree", weight: 900 },
+  dark: { variable: "--font-jetbrains", weight: 800 },
+} as const;
+type Mode = keyof typeof FACES;
+
+function currentMode(): Mode {
+  const set = document.documentElement.dataset.theme;
+  if (set === "light" || set === "dark") return set;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 /**
  * Landing hero: scrolling flies the camera through the word CODE into the course.
- * GlyphPortal measures the letters once at mount, so we wait for our self-hosted mono face
- * (next/font, no third-party font request) before mounting, with a short fallback timeout.
+ * GlyphPortal measures the letters once at mount, so we wait for the theme's self-hosted face
+ * (next/font, no third-party font request) before mounting, and re-mount when the theme changes.
  */
 export function HeroPortal({
   eyebrow,
@@ -23,23 +34,40 @@ export function HeroPortal({
   actions: ReactNode;
   children: ReactNode;
 }) {
-  const [face, setFace] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode | null>(null);
+  const [face, setFace] = useState<{ family: string; weight: number } | null>(null);
+
+  // Follow the theme: the toggle sets <html data-theme>; without it, the OS setting.
+  useEffect(() => {
+    const update = () => setMode(currentMode());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", update);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", update);
+    };
+  }, []);
 
   useEffect(() => {
+    if (!mode) return;
+    const { variable, weight } = FACES[mode];
     let settled = false;
-    const finish = (value: string) => {
+    const finish = (family: string) => {
       if (!settled) {
         settled = true;
-        setFace(value);
+        setFace({ family, weight });
       }
     };
-    const family = getComputedStyle(document.documentElement).getPropertyValue("--font-jetbrains").trim();
+    const family = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
     if (!family) {
       finish(FALLBACK);
       return;
     }
     const timeout = window.setTimeout(() => finish(FALLBACK), 1600);
-    document.fonts.load(`${WEIGHT} 100px ${family}`, WORD).then(
+    document.fonts.load(`${weight} 100px ${family}`, WORD).then(
       () => finish(`${family}, ${FALLBACK}`),
       () => finish(FALLBACK),
     );
@@ -47,7 +75,7 @@ export function HeroPortal({
       settled = true;
       window.clearTimeout(timeout);
     };
-  }, []);
+  }, [mode]);
 
   if (!face) {
     // Same height as the portal's first frame, so nothing jumps when it mounts.
@@ -60,9 +88,10 @@ export function HeroPortal({
 
   return (
     <GlyphPortal
+      key={face.family}
       word={WORD}
-      fontFamily={face}
-      fontWeight={WEIGHT}
+      fontFamily={face.family}
+      fontWeight={face.weight}
       scrollLength={2.2}
       interactive
       enterLabel="Step inside the course"

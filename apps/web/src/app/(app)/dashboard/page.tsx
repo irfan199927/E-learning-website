@@ -158,7 +158,7 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
           {course === null
             ? "No lessons yet. Recordings appear here after each class."
             : "You've finished every lesson so far. New recordings will show up here."}
-          <Link href="/courses" className="ml-1 font-semibold text-primary">
+          <Link href="/courses" className="ml-1 font-semibold text-primary-fg">
             See my courses
           </Link>
         </div>
@@ -302,7 +302,7 @@ function UpcomingClasses({
         <h2 id="upcoming-h" className="font-display text-xl font-bold">
           Upcoming classes
         </h2>
-        <Link href="/calendar" className="text-sm font-semibold text-primary">
+        <Link href="/calendar" className="text-sm font-semibold text-primary-fg">
           Calendar
         </Link>
       </div>
@@ -350,7 +350,7 @@ function TeachingCourses({ courses }: { courses: CourseCard[] }) {
         <h2 id="teaching-h" className="font-display text-xl font-bold">
           Your courses
         </h2>
-        <Link href="/courses" className="text-sm font-semibold text-primary">
+        <Link href="/courses" className="text-sm font-semibold text-primary-fg">
           All courses
         </Link>
       </div>

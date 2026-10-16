@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="grid min-h-dvh place-items-center px-4 py-10">
+    <main className="relative grid min-h-dvh place-items-center px-4 py-10">
+      <ThemeToggle className="absolute right-4 top-4 text-muted hover:text-ink" />
       <div className="w-full max-w-[420px] rounded-[var(--radius-card)] border border-line bg-surface p-8 shadow-sm">
         <Link href="/" className="mb-6 flex w-fit items-center gap-2.5" aria-label="E-learner home">
           <span className="grid size-9 place-items-center rounded-[9px] bg-primary" aria-hidden="true">

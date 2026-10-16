@@ -35,7 +35,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <Link href="/courses" className="flex w-fit items-center gap-1 text-sm font-semibold text-primary">
+      <Link href="/courses" className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg">
         <Icon name="chevronLeft" size={16} />
         {learner ? "My courses" : "Courses"}
       </Link>
@@ -100,7 +100,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                       l.completed
                         ? "bg-success text-white"
                         : l.percent > 0
-                          ? "bg-primary-soft text-primary-strong"
+                          ? "bg-primary-soft text-primary-fg-strong"
                           : "bg-canvas text-muted"
                     }`}
                     aria-hidden="true"
@@ -115,7 +115,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                         (l.completed ? " · Completed" : l.percent > 0 ? ` · ${l.percent}% watched` : "")}
                     </span>
                   </span>
-                  {ready && <Icon name="play" size={18} className="text-primary" />}
+                  {ready && <Icon name="play" size={18} className="text-primary-fg" />}
                 </>
               );
               return (
