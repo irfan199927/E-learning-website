@@ -102,6 +102,34 @@ export const templates = {
       ),
     };
   },
+  /** Once a day: unread in-app notifications the person hasn't been emailed about. */
+  notificationDigest(p: {
+    name: string;
+    items: { title: string; body: string; url: string }[];
+    /** Unread ones not listed (the email shows the newest few). */
+    more: number;
+    inboxUrl: string;
+    settingsUrl: string;
+  }): Message {
+    const total = p.items.length + p.more;
+    const subject = total === 1 ? "1 new update on E-learner" : `${total} new updates on E-learner`;
+    const list = p.items.map((i) => `- ${i.title}${i.body ? ` — ${i.body}` : ""}\n  ${i.url}`).join("\n");
+    const moreText = p.more > 0 ? `\n…and ${p.more} more.` : "";
+    const items = p.items
+      .map(
+        (i) =>
+          `<li style="margin-bottom:8px"><a href="${esc(i.url)}" style="color:#2340D9;font-weight:700">${esc(i.title)}</a>${i.body ? `<br><span style="color:#4B5162">${esc(i.body)}</span>` : ""}</li>`,
+      )
+      .join("");
+    return {
+      subject,
+      text: `Hi ${p.name},\n\nHere's what you haven't seen yet:\n\n${list}${moreText}\n\nSee everything: ${p.inboxUrl}\n\nDon't want these emails? Switch them off on your Account page: ${p.settingsUrl}`,
+      html: layout(
+        subject,
+        `<p>Hi ${esc(p.name)},</p><p>Here's what you haven't seen yet:</p><ul style="padding-left:20px">${items}</ul>${p.more > 0 ? `<p>…and ${p.more} more.</p>` : ""}${button(p.inboxUrl, "See all notifications")}<p style="color:#4B5162;font-size:13px">Don't want these emails? <a href="${esc(p.settingsUrl)}" style="color:#4B5162">Switch them off on your Account page</a>.</p>`,
+      ),
+    };
+  },
 };
 
 export function createSmtpMailer(smtpUrl: string, from: string): Mailer {

@@ -3,7 +3,7 @@ import { erasureDate } from "@elearner/core";
 import type { createMemoryMailer } from "@elearner/notify";
 import { describe, expect, it } from "vitest";
 import { makeDeps, world } from "@/test/fakes";
-import { cancelAccountDeletion, getAccount, requestAccountDeletion } from "./account";
+import { cancelAccountDeletion, getAccount, requestAccountDeletion, setEmailDigest } from "./account";
 import { listUsers } from "./admin-users";
 
 describe("account deletion (integration)", () => {
@@ -57,5 +57,16 @@ describe("account deletion (integration)", () => {
         { action: "user.restore", actorId: w.admin.id },
       ]),
     );
+  });
+
+  it("lets anyone switch the daily notification email off and on", async () => {
+    const w = await world();
+    const deps = makeDeps();
+    expect((await getAccount(deps, w.teacher)).emailDigest).toBe(true); // on by default
+    expect(await setEmailDigest(deps, w.teacher, { enabled: false })).toEqual({ emailDigest: false });
+    expect((await getAccount(deps, w.teacher)).emailDigest).toBe(false);
+    expect((await getAccount(deps, w.student)).emailDigest).toBe(true); // only their own
+    await setEmailDigest(deps, w.teacher, { enabled: true });
+    expect((await getAccount(deps, w.teacher)).emailDigest).toBe(true);
   });
 });

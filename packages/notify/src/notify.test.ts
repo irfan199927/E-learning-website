@@ -24,6 +24,27 @@ describe("templates", () => {
     expect(templates.resetPassword("A", "https://x").subject).toMatch(/Reset/);
     expect(templates.invite("A <b>", "https://x").html).toContain("A &lt;b&gt;");
   });
+  it("lists unread notifications in a digest, escaped, with a way to switch it off", () => {
+    const m = templates.notificationDigest({
+      name: "Aanya",
+      items: [
+        { title: "Graded: <Essay>", body: "8/10", url: "https://app/assignments/a1" },
+        { title: "Payment confirmed", body: "", url: "https://app/courses/c1" },
+      ],
+      more: 3,
+      inboxUrl: "https://app/notifications",
+      settingsUrl: "https://app/account",
+    });
+    expect(m.subject).toBe("5 new updates on E-learner");
+    expect(m.html).toContain("Graded: &lt;Essay&gt;");
+    expect(m.text).toContain("- Graded: <Essay> — 8/10\n  https://app/assignments/a1");
+    expect(m.text).toContain("…and 3 more.");
+    expect(m.html).toContain('href="https://app/account"');
+    expect(
+      templates.notificationDigest({ ...{ name: "A", inboxUrl: "x", settingsUrl: "y" }, items: [], more: 1 })
+        .subject,
+    ).toBe("1 new update on E-learner");
+  });
   it("memory mailer records messages", async () => {
     const mailer = createMemoryMailer();
     await mailer.send("a@b.c", templates.resetPassword("A", "https://x"));

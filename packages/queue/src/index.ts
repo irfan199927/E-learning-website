@@ -48,6 +48,7 @@ export const maintenanceJob = z.object({
     "delete-transcoded-raw",
     "prune-notifications",
     "sweep-orphan-uploads",
+    "send-notification-digest",
   ]),
 });
 export type MaintenanceJob = z.infer<typeof maintenanceJob>;

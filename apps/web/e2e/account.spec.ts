@@ -76,3 +76,20 @@ test("teachers can't delete their own account", async ({ page }) => {
   const res = await page.request.post("/api/v1/me/deletion-request", { data: { confirm: "DELETE" } });
   expect(res.status()).toBe(403);
 });
+
+test("anyone can switch the daily notification email off and back on", async ({ page }) => {
+  await signIn(page, "parent@example.com");
+  await page.goto("/account");
+  const box = page.getByRole("checkbox", { name: /Daily summary of unread notifications/ });
+  // Start from "on" whatever an earlier run left behind.
+  if (!(await box.isChecked())) {
+    await box.check();
+    await expect(page.getByText("Daily summary on.")).toBeVisible();
+  }
+  await box.uncheck();
+  await expect(page.getByText("Daily summary off.")).toBeVisible();
+  await page.reload();
+  await expect(box).not.toBeChecked();
+  await box.check();
+  await expect(page.getByText("Daily summary on.")).toBeVisible();
+});

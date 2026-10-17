@@ -11,6 +11,7 @@ import {
   pruneNotifications,
   purgeDeletedUsers,
   reconcileReminders,
+  sendNotificationDigests,
   sweepClasses,
   sweepOrphanUploads,
 } from "./maintenance";
@@ -285,6 +286,58 @@ describe("maintenance", () => {
     await pruneNotifications(makeCtx());
     const left = await db.notification.findMany({ where: { userId: w.student.id }, select: { title: true } });
     expect(left.map((n) => n.title).sort()).toEqual(["old unread", "recent read"]);
+  });
+
+  it("emails a daily digest of new unread notifications, once, to people who want it", async () => {
+    const w = await classWorld();
+    const db = testDb();
+    const now = new Date();
+    const ago = (h: number) => new Date(now.getTime() - h * 3600_000);
+    const note = (userId: string, title: string, extra: Record<string, unknown> = {}) => ({
+      userId,
+      channel: "IN_APP" as const,
+      type: "test",
+      title,
+      body: "",
+      createdAt: ago(1),
+      ...extra,
+    });
+    await db.notification.createMany({
+      data: [
+        ...Array.from({ length: 6 }, (_, i) => note(w.student.id, `new ${i}`, { createdAt: ago(2 + i) })),
+        note(w.student.id, "newest", { link: "/assignments/a1", body: "8/10" }),
+        note(w.student.id, "read already", { readAt: ago(1) }),
+        note(w.student.id, "two days old", { createdAt: ago(48) }),
+        note(w.student.id, "reminder emailed", { sentAt: ago(1) }),
+        note(w.parent.id, "for a parent who opted out"),
+      ],
+    });
+    await db.user.update({ where: { id: w.parent.id }, data: { emailDigest: false } });
+
+    // A failed send releases the notifications for the next run.
+    const broken = makeCtx();
+    broken.mailer.send = async (to) => {
+      if (to === w.student.email) throw new Error("smtp down");
+    };
+    await sendNotificationDigests(broken);
+    expect(await db.notification.count({ where: { userId: w.student.id, sentAt: null, readAt: null } })).toBe(
+      8,
+    );
+
+    const ctx = makeCtx();
+    await sendNotificationDigests(ctx);
+    const mine = ctx.mailer.sent.filter((m) => [w.student.email, w.parent.email].includes(m.to));
+    expect(mine.map((m) => m.to)).toEqual([w.student.email]);
+    const mail = mine[0]!.message;
+    expect(mail.subject).toBe("7 new updates on E-learner");
+    expect(mail.text).toContain("- newest — 8/10\n  http://localhost:3000/assignments/a1");
+    expect(mail.text).toContain("…and 2 more.");
+    expect(mail.text).not.toContain("read already");
+    expect(mail.text).not.toContain("two days old");
+
+    const again = makeCtx();
+    await sendNotificationDigests(again);
+    expect(again.mailer.sent.filter((m) => m.to === w.student.email)).toHaveLength(0);
   });
 
   it("deletes uploads nothing points at, once they're 2 days old", async () => {

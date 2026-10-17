@@ -4,6 +4,7 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import { ERASURE_GRACE_DAYS, sha256Hex } from "@elearner/core";
+import { templates } from "@elearner/notify";
 import type { MaintenanceJob } from "@elearner/queue";
 import type { JobContext } from "../context";
 import { RECORDING_GIVE_UP_MS } from "./recording-sync";
@@ -34,6 +35,8 @@ export async function runMaintenance(ctx: JobContext, job: MaintenanceJob): Prom
       return pruneNotifications(ctx);
     case "sweep-orphan-uploads":
       return sweepOrphanUploads(ctx);
+    case "send-notification-digest":
+      return sendNotificationDigests(ctx);
   }
 }
 
@@ -212,6 +215,74 @@ export async function pruneNotifications(ctx: JobContext) {
     },
   });
   return { deleted: count };
+}
+
+/** The digest covers notifications from the last day only, so switching it on never mails an old backlog. */
+export const DIGEST_WINDOW_MS = 24 * 3600_000;
+/** Notifications listed in one email; the rest are counted ("…and 3 more"). */
+export const DIGEST_ITEMS = 5;
+const DIGEST_USERS_PER_RUN = 5000;
+
+/**
+ * Once a day: email each person who wants it (`User.emailDigest`) a summary of unread in-app notifications from
+ * the last day that weren't emailed already (class reminders send their own). `sentAt` marks a notification as
+ * emailed: it is claimed before sending (so a retried job doesn't mail twice) and released if the send fails.
+ */
+export async function sendNotificationDigests(ctx: JobContext) {
+  const now = ctx.now();
+  const pending = {
+    channel: "IN_APP" as const,
+    readAt: null,
+    sentAt: null,
+    createdAt: { gte: new Date(now.getTime() - DIGEST_WINDOW_MS) },
+  };
+  const users = await ctx.db.user.findMany({
+    where: { emailDigest: true, isActive: true, deletedAt: null, notifications: { some: pending } },
+    select: { id: true, name: true, email: true },
+    orderBy: { id: "asc" },
+    take: DIGEST_USERS_PER_RUN,
+  });
+  let sent = 0;
+  let failed = 0;
+  for (const user of users) {
+    const items = await ctx.db.notification.findMany({
+      where: { userId: user.id, ...pending },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, body: true, link: true },
+      take: 200,
+    });
+    const ids = items.map((n) => n.id);
+    const claimed = await ctx.db.notification.updateMany({
+      where: { id: { in: ids }, sentAt: null },
+      data: { sentAt: now },
+    });
+    if (claimed.count === 0) continue; // another run got there first
+    try {
+      await ctx.mailer.send(
+        user.email,
+        templates.notificationDigest({
+          name: user.name,
+          items: items.slice(0, DIGEST_ITEMS).map((n) => ({
+            title: n.title,
+            body: n.body,
+            url: `${ctx.config.appUrl}${n.link ?? "/notifications"}`,
+          })),
+          more: Math.max(0, items.length - DIGEST_ITEMS),
+          inboxUrl: `${ctx.config.appUrl}/notifications`,
+          settingsUrl: `${ctx.config.appUrl}/account`,
+        }),
+      );
+      sent++;
+    } catch (err) {
+      await ctx.db.notification.updateMany({
+        where: { id: { in: ids }, sentAt: now },
+        data: { sentAt: null },
+      });
+      ctx.log.warn({ err, userId: user.id }, "notification digest not sent");
+      failed++;
+    }
+  }
+  return { sent, failed };
 }
 
 /** Files browsers upload straight to storage are only recorded when the app's "complete" call arrives. */

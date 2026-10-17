@@ -6,6 +6,7 @@
  * - A request soft-deletes the account (`deletedAt`) and signs the person out everywhere at once; the session
  *   hook in lib/auth.ts keeps them out. The worker purges the user and their data after ERASURE_GRACE_DAYS.
  * - Until the purge, an admin can cancel it from the Users page (`cancelAccountDeletion`).
+ * - Anyone can switch the daily email of unread notifications off or on (`setEmailDigest`).
  * - Requests and cancellations are audited (`user.delete_request`, `user.restore`); the person gets an email.
  */
 import {
@@ -15,6 +16,7 @@ import {
   formatInZone,
   SELF_DELETE_ROLES,
   type DeleteAccountInput,
+  type EmailDigestInput,
   type Role,
 } from "@elearner/core";
 import { templates } from "@elearner/notify";
@@ -29,6 +31,8 @@ export interface AccountView {
   signIn: { google: boolean; password: boolean };
   /** Whether they can delete the account themselves. */
   canDelete: boolean;
+  /** Daily email of unread notifications. */
+  emailDigest: boolean;
 }
 
 const canSelfDelete = (role: Role) => (SELF_DELETE_ROLES as readonly Role[]).includes(role);
@@ -41,6 +45,7 @@ export async function getAccount(deps: Deps, actor: Actor): Promise<AccountView>
       email: true,
       role: true,
       createdAt: true,
+      emailDigest: true,
       accounts: { select: { providerId: true } },
     },
   });
@@ -55,7 +60,18 @@ export async function getAccount(deps: Deps, actor: Actor): Promise<AccountView>
       password: user.accounts.some((a) => a.providerId === "credential"),
     },
     canDelete: canSelfDelete(user.role),
+    emailDigest: user.emailDigest,
   };
+}
+
+/** Switch the daily email of unread notifications on or off (worker `send-notification-digest`). */
+export async function setEmailDigest(
+  deps: Deps,
+  actor: Actor,
+  input: EmailDigestInput,
+): Promise<{ emailDigest: boolean }> {
+  await deps.db.user.update({ where: { id: actor.id }, data: { emailDigest: input.enabled } });
+  return { emailDigest: input.enabled };
 }
 
 /** Delete my account: sign-in stops now, the data goes after the grace period. Returns the purge date. */
