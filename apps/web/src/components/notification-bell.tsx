@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./icons";
 
@@ -12,6 +13,7 @@ const POLL_MS = 60_000;
  * the tab comes back, and on navigation, so new notifications show up without a reload.
  */
 export function NotificationBell({ initial }: { initial: number }) {
+  const t = useTranslations("Shell");
   const [unread, setUnread] = useState(initial);
   const pathname = usePathname();
   const firstPath = useRef(pathname);
@@ -46,7 +48,7 @@ export function NotificationBell({ initial }: { initial: number }) {
     <Link
       href="/notifications"
       className="relative grid size-11 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
-      aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+      aria-label={unread ? t("notificationsUnread", { count: unread }) : t("notifications")}
     >
       <Icon name="bell" size={22} />
       {unread > 0 && (

@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 
 export function SignOutButton() {
+  const t = useTranslations("Shell");
   const router = useRouter();
   return (
     <button
       type="button"
-      aria-label="Sign out"
+      aria-label={t("signOut")}
       className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas"
       onClick={async () => {
         await authClient.signOut();

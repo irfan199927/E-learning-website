@@ -329,6 +329,23 @@ The projects students build serve as the proof instead.
 - **No JavaScript.** `Reveal` hides content only under `@media (scripting: enabled)`, so it never disappears for
   visitors without JavaScript.
 
+## Languages (English, हिन्दी, मराठी)
+
+- next-intl without locale URLs: `src/i18n/request.ts` picks the language from the `locale` cookie, else the
+  browser's Accept-Language, else English. `<html lang>` follows it. Pickers: Account page, and the corner of the
+  sign-in screens.
+- Messages: `apps/web/messages/{en,hi,mr}.json`, grouped by screen. English is the source: a key missing (or
+  empty) in Hindi or Marathi shows in English (`withFallback`). Keys are type-checked from `en.json`.
+  `src/i18n/messages.test.ts` fails on keys English doesn't have and on arguments English doesn't pass.
+- Translated so far: the app shell (nav, top bar), sign-in, Account. Other screens are still English.
+- To translate a screen: add its strings to `en.json` under a namespace, use `getTranslations` (server) or
+  `useTranslations` (client), then add `hi`/`mr`. Use ICU for counts (`{n, plural, one {…} other {…}}`) and
+  role-specific text (`{role, select, …}`), not string concatenation. Dates: `Intl` with `intlLocale(locale)`.
+- Not translated on purpose: teacher-written content, the static landing page (no cookies there; it uses
+  `ThemeToggle`'s English default labels), the offline page (cached once by the service worker), emails.
+- Devanagari text uses self-hosted Noto Sans Devanagari, limited by `unicode-range`, so English pages never
+  download it.
+
 ## Themes (light / dark)
 
 Every page has a theme switch: the landing page header, the app's top bar, and the sign-in pages.

@@ -85,6 +85,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - CI = `.github/workflows/ci.yml` (PRs; called by deploy.yml on main). Deploy needs one-time setup: `docs/deployment.md`.
 - `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
+- i18n (next-intl, no locale URLs): `locale` cookie, else Accept-Language (`src/i18n/request.ts`). New UI text goes in
+  `apps/web/messages/en.json` (hi/mr fall back to English per key). The static landing export skips next-intl,
+  so components it shares (`ThemeToggle`) take labels as props instead of calling `useTranslations`.
 - Theme: `<html data-theme>` comes from the `theme` cookie (root layout); none = follow the OS. Dark tokens exist twice
   (explicit + media query); change both. Brand blue as text = `text-primary-fg`, never `text-primary`.
 - Static landing export: `STATIC_SITE=1` builds ONLY `*.site.tsx` routes (pageExtensions) into `apps/web/out`. Keep

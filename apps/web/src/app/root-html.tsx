@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { Theme } from "@/lib/theme";
-import { bricolage, figtree, mono } from "./fonts";
+import { bricolage, devanagari, figtree, mono } from "./fonts";
 import "./globals.css";
 
 /** Shared by the app root layout (layout.tsx) and the static-export root layout (layout.site.tsx). */
@@ -16,12 +16,21 @@ export const rootMetadata: Metadata = {
 
 export const rootViewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#2340D9" };
 
-export function RootHtml({ theme, children }: { theme: Theme | null; children: React.ReactNode }) {
+export function RootHtml({
+  theme,
+  lang = "en",
+  children,
+}: {
+  theme: Theme | null;
+  /** The interface language (src/i18n); the static landing page is English only. */
+  lang?: string;
+  children: React.ReactNode;
+}) {
   return (
     <html
-      lang="en"
+      lang={lang}
       data-theme={theme ?? undefined}
-      className={`${figtree.variable} ${bricolage.variable} ${mono.variable}`}
+      className={`${figtree.variable} ${bricolage.variable} ${mono.variable} ${devanagari.variable}`}
     >
       <body className="min-h-dvh antialiased">{children}</body>
     </html>

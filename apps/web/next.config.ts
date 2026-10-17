@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // Local dev keeps one .env at the repo root; real environments set variables directly.
 const rootEnv = new URL("../../.env", import.meta.url);
@@ -71,4 +72,5 @@ const config: NextConfig = {
       }),
 };
 
-export default config;
+// The static landing export has no translated screens (and can't read the language cookie), so it skips next-intl.
+export default staticSite ? config : createNextIntlPlugin("./src/i18n/request.ts")(config);

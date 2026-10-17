@@ -88,4 +88,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
 - [ ] Export payments as CSV for the school's accounts
 - [x] PWA: installable, offline page (2026-10-17)
-- [ ] i18n (next-intl: en/hi/mr)
+- [x] i18n plumbing (next-intl: en/hi/mr, 2026-10-17): language picker, cookie + Accept-Language, Devanagari font;
+      translated: app shell, sign-in, account
+- [ ] Translate the remaining screens (move strings into `apps/web/messages/*.json`, see docs/ui.md "Languages")
+- [ ] Native-speaker review of the Hindi and Marathi text (needs the school)
+- [ ] Translated emails (needs a stored language per user)

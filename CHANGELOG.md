@@ -5,6 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — Hindi and Marathi interface (first screens) (2026-10-17)
+
+- next-intl (no locale in URLs): the language comes from a `locale` cookie, else the browser's Accept-Language.
+  Language picker on the Account page and on the sign-in screens; `<html lang>` follows it.
+- Translated: the app shell (navigation, top bar), sign-in and Account. Other screens fall back to English for
+  now. Messages live in `apps/web/messages/{en,hi,mr}.json`; tests check translations against English.
+- Self-hosted Noto Sans Devanagari, downloaded only when a page shows Devanagari text.
+
 ### Added — API reference, testing guide and runbooks (2026-10-17)
 
 - `docs/api.md`: conventions (auth, 404 for hidden resources, problem+json error codes) and every `/api/v1`
