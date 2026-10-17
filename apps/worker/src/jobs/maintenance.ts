@@ -162,7 +162,7 @@ export async function deleteTranscodedRaw(ctx: JobContext) {
 }
 
 /**
- * Hard-delete users soft-deleted > 30 days ago (DPDP erasure), with their submission files. Teachers who own
+ * Hard-delete users soft-deleted > 30 days ago (DPDP erasure), with their submission files and payment screenshots. Teachers who own
  * content are skipped and logged for an admin to reassign first — we never orphan a course.
  */
 export async function purgeDeletedUsers(ctx: JobContext) {
@@ -183,6 +183,7 @@ export async function purgeDeletedUsers(ctx: JobContext) {
     // Submission files live in storage, not the database: delete them before the rows that point at them.
     const subs = await ctx.db.submission.findMany({ where: { userId: u.id }, select: { fileKeys: true } });
     for (const key of subs.flatMap((s) => s.fileKeys)) await ctx.storage.deleteObject(key);
+    await ctx.storage.deletePrefix(`payments/proofs/${u.id}/`); // payment screenshots (keys.paymentProofPrefix)
     await ctx.db.$transaction([
       ctx.db.auditLog.create({ data: { action: "user.purge", targetType: "User", targetId: u.id } }),
       ctx.db.user.delete({ where: { id: u.id } }),

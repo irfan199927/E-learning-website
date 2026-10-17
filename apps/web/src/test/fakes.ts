@@ -9,10 +9,17 @@ import type { CreatedEvent, CredentialStore, TeacherGoogle } from "@elearner/goo
 import { createMemoryMailer } from "@elearner/notify";
 import type { Actor, Deps, JobsPort, StoragePort } from "@/server/deps";
 
-let sharedDb: Db | undefined;
+/**
+ * One client for the whole test run. Vitest re-imports this module for every test file (module isolation), so a
+ * module-level cache would open a new 10-connection pool per file and exhaust Postgres's 100 connections once
+ * there are enough files; globalThis survives across files in the single test process.
+ */
+const shared = globalThis as unknown as { __elearnerTestDb?: Db };
 export function testDb(): Db {
-  sharedDb ??= createDb(process.env.DATABASE_URL ?? "postgresql://elearner:elearner@127.0.0.1:5432/elearner");
-  return sharedDb;
+  shared.__elearnerTestDb ??= createDb(
+    process.env.DATABASE_URL ?? "postgresql://elearner:elearner@127.0.0.1:5432/elearner",
+  );
+  return shared.__elearnerTestDb;
 }
 
 export function fakeGoogle(
@@ -88,7 +95,10 @@ export function fakeStorage(
     abortMultipart: async () => undefined,
     presignGet: async (key, ttl) => `https://storage.test/${key}?ttl=${ttl}`,
     head: async (key) =>
-      key.startsWith("attachments/") || key.startsWith("submissions/") || key.startsWith("courses/")
+      key.startsWith("attachments/") ||
+      key.startsWith("submissions/") ||
+      key.startsWith("courses/") ||
+      key.startsWith("payments/")
         ? sizes.has(key)
           ? { size: sizes.get(key)!, contentType: undefined }
           : null

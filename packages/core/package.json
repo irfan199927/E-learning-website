@@ -10,7 +10,8 @@
     "./schemas": "./src/schemas.ts",
     "./grading": "./src/grading.ts",
     "./rrule": "./src/rrule.ts",
-    "./learning": "./src/learning.ts"
+    "./learning": "./src/learning.ts",
+    "./payments": "./src/payments.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

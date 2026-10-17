@@ -39,6 +39,11 @@ export const keys = {
   /** A course's cover image; the id changes with every upload, so cached copies never go stale. */
   courseCoverPrefix: (courseId: string) => `courses/${courseId}/cover/`,
   courseCover: (courseId: string, id: string, ext: string) => `courses/${courseId}/cover/${id}.${ext}`,
+  /** The school's UPI QR code image (admin upload). */
+  paymentQr: (id: string, ext: string) => `payments/qr/${id}.${ext}`,
+  /** A student's payment screenshots. The prefix (student) is what the submit check relies on. */
+  paymentProofPrefix: (userId: string) => `payments/proofs/${userId}/`,
+  paymentProof: (userId: string, id: string, ext: string) => `payments/proofs/${userId}/${id}.${ext}`,
   /** A student's files for an assignment. The prefix (assignment + student) is what access checks rely on. */
   submissionPrefix: (assignmentId: string, userId: string) => `submissions/${assignmentId}/${userId}/`,
   submission: (assignmentId: string, userId: string, id: string, fileName: string) =>

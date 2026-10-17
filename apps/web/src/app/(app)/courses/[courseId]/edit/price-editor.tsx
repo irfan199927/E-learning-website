@@ -1,0 +1,62 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Field, FormAlert } from "@/components/form";
+import { Button } from "@/components/ui/button";
+import { api, ApiError } from "@/lib/api-client";
+
+/** Admin: set a course's price in whole rupees (0 = free). */
+export function PriceEditor({ courseId, priceInPaise }: { courseId: string; priceInPaise: number | null }) {
+  const router = useRouter();
+  const [rupees, setRupees] = useState(priceInPaise ? String(priceInPaise / 100) : "0");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setNote(null);
+    try {
+      const res = await api<{ priceInPaise: number | null }>(`/api/v1/courses/${courseId}/price`, {
+        method: "PUT",
+        json: { priceRupees: rupees.trim() === "" ? 0 : rupees },
+      });
+      setNote({
+        tone: "success",
+        text: res.priceInPaise
+          ? "Saved. Students now pay to join this course."
+          : "Saved. This course is free.",
+      });
+      router.refresh();
+    } catch (err) {
+      setNote({
+        tone: "error",
+        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={(e) => void save(e)} aria-label="Course price" className="flex flex-wrap items-end gap-3">
+      <div className="w-48">
+        <Field
+          label="Price in rupees (0 = free)"
+          id="price-rupees"
+          value={rupees}
+          onChange={(e) => setRupees(e.target.value)}
+          inputMode="numeric"
+          pattern="[0-9]*"
+        />
+      </div>
+      <Button type="submit" disabled={busy}>
+        {busy ? "Saving…" : "Save price"}
+      </Button>
+      <div className="basis-full" aria-live="polite">
+        {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
+      </div>
+    </form>
+  );
+}

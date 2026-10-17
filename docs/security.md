@@ -198,6 +198,7 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
   previous and new score), `quiz.create`, `quiz.update`, `quiz.delete`
 - `grade.export` (a teacher or admin downloads a course gradebook as CSV: names, emails and marks)
 - `consent.grant`, `consent.withdraw` (a student agrees to or withdraws from the class-recording notice)
+- `payment.settings`, `payment.submit`, `payment.approve`, `payment.reject`, `course.price` (manual UPI payments)
 - `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)
 - `course.update`, `course.cover`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
   `attachment.create`, `attachment.delete` (course editing)
@@ -252,6 +253,10 @@ The security-relevant gaps, most important first:
 - **The recording-consent gate only covers joining from E-learner.** Students are Google Calendar guests of the
   class event, so the Meet link is also in their Google invite. Teachers see "Not agreed to recording" on the
   attendance sheet. Closing this needs classes without per-student Google invites (a product decision).
+- **Manual UPI payments are checked by a person.** The app can't see your bank account: an admin must match each
+  UTR against the bank statement before approving. A UTR can be used once. Payment records are deleted with the
+  student's account on erasure; if you need them for your accounts (tax rules usually ask for years), export them
+  first (a decision for the school).
 - **Age is not checked.** Students are adults by school policy; the app takes that on trust.
 - **Audit coverage is partial.** See [Audit logging](#audit-logging).
 - **The general API rate limit (120/min/user in the spec) isn't applied to every route.** Only the routes in the

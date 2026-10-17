@@ -5,6 +5,26 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — paid courses with manual UPI payments (2026-10-17)
+
+- No payment gateway needed. Admins publish the school's **UPI ID and/or UPI number** (plus payee name,
+  instructions and an optional **QR code** image) on **Admin → Payments**, and set a course's **price** on Edit
+  course.
+- Paid courses show their price and **Pay and join** in the catalog (asking to join is refused). The pay page
+  shows where to pay, a QR code and an **Open my UPI app** link (`upi://pay`, amount filled in); the student then
+  reports the **UTR** (and optionally a screenshot and note).
+- Admins are notified, check the bank statement and **Approve** (enrols the student, who is notified) or
+  **Reject** with a reason (the student can report again). A UTR can be used once; one report at a time per
+  course. Audited.
+- Migration `manual_upi_payments`: `PaymentSettings` (one row), `ManualPayment`. The erasure purge also deletes
+  the student's payment screenshots.
+- API: `GET|PUT /api/v1/admin/payment-settings`, `POST /api/v1/admin/payment-settings/qr/uploads`,
+  `PUT|DELETE /api/v1/admin/payment-settings/qr`, `GET /api/v1/payment-qr`, `PUT /api/v1/courses/:id/price`,
+  `GET|POST /api/v1/courses/:id/payments`, `POST /api/v1/payments/proofs`, `GET /api/v1/admin/payments`,
+  `PATCH /api/v1/admin/payments/:id`, `GET /api/v1/admin/payments/:id/proof`.
+- Tests: integration tests now share one database pool per run (17 files had started to exhaust Postgres's
+  100 connections).
+
 ### Added — catalog search and course covers (2026-10-17)
 
 - **Search courses** on Find a course (title, description or teacher). The catalog now lists only courses the

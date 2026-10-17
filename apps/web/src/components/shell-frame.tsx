@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
   },
   { href: "/library/upload", label: "Upload video", icon: "upload", roles: ["ADMIN", "TEACHER"] },
   { href: "/admin/users", label: "Users", icon: "users", roles: ["ADMIN"] },
+  { href: "/admin/payments", label: "Payments", icon: "rupee", roles: ["ADMIN"] },
 ];
 
 function labelFor(item: NavItem, role: Role): string {

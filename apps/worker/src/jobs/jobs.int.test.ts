@@ -280,6 +280,7 @@ describe("maintenance", () => {
     expect(await db.user.findUnique({ where: { id: w.student.id } })).toBeNull();
     expect(await db.submission.count({ where: { userId: w.student.id } })).toBe(0);
     expect(storage.deleted).toContain(fileKey);
+    expect(storage.prefixes).toContain(`payments/proofs/${w.student.id}/`);
     expect(await db.user.findUnique({ where: { id: w.teacher.id } })).not.toBeNull(); // owns the course
     expect(await db.user.findUnique({ where: { id: w.parent.id } })).not.toBeNull();
     expect(await db.auditLog.count({ where: { action: "user.purge", targetId: w.student.id } })).toBe(1);

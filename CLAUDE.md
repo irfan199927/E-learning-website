@@ -120,6 +120,10 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Course covers (`services/course-cover.ts`): optional `Course.coverKey` under `keys.courseCover`; pass
   `cover={{ courseId, version }}` to `CourseTile` (version = upload id, busts caches). Catalog = `listCatalog(q)`,
   courses the student isn't in, max `CATALOG_LIMIT`; tests must search for their own course (shared dev DB).
+- Payments (`services/payments.ts`): manual UPI, no gateway. `PaymentSettings` is one row (id 1); a price
+  (`Course.isPaid`/`priceInPaise`, admin-set) blocks join requests; `ManualPayment` PENDING → admin approves
+  (enrols) or rejects; `(method, reference)` unique. Images under `keys.paymentQr` / `keys.paymentProof`.
+- Integration tests share one Prisma pool via `globalThis` in `test/fakes.ts` (per-file pools exhaust Postgres).
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

@@ -11,12 +11,18 @@ let db: Db | undefined;
 export const testDb = () =>
   (db ??= createDb(process.env.DATABASE_URL ?? "postgresql://elearner:elearner@127.0.0.1:5432/elearner"));
 
-export function fakeStorage(): WorkerStorage & { puts: Map<string, number>; deleted: string[] } {
+export function fakeStorage(): WorkerStorage & {
+  puts: Map<string, number>;
+  deleted: string[];
+  prefixes: string[];
+} {
   const puts = new Map<string, number>();
   const deleted: string[] = [];
+  const prefixes: string[] = [];
   return {
     puts,
     deleted,
+    prefixes,
     putStream: async (key, body) => {
       let bytes = 0;
       if (Buffer.isBuffer(body)) bytes = body.length;
@@ -26,7 +32,7 @@ export function fakeStorage(): WorkerStorage & { puts: Map<string, number>; dele
     presignGet: async (key) => `https://storage.test/${key}`,
     abortMultipart: async () => undefined,
     deleteObject: async (key) => void deleted.push(key),
-    deletePrefix: async () => 0,
+    deletePrefix: async (prefix) => (prefixes.push(prefix), 0),
   };
 }
 

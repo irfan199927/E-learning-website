@@ -515,3 +515,89 @@ export const deleteAccountSchema = z.object({
   confirm: z.literal("DELETE", { errorMap: () => ({ message: "Type DELETE to confirm." }) }),
 });
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+
+// ─────────────────────────── Manual UPI payments ───────────────────────────
+
+const maybeText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => (v ? v : undefined));
+
+/** What an admin publishes for students to pay to. At least a UPI ID or a phone number. */
+export const paymentSettingsSchema = z
+  .object({
+    upiId: z
+      .string()
+      .trim()
+      .max(100)
+      .refine(
+        (v) => v === "" || /^[\w.-]{2,64}@[a-zA-Z][\w.-]{1,63}$/.test(v),
+        "Enter a UPI ID like school@okaxis.",
+      )
+      .optional()
+      .transform((v) => (v ? v : undefined)),
+    payeeName: maybeText(100),
+    phone: z
+      .string()
+      .trim()
+      .refine(
+        (v) => v === "" || /^(\+91[\s-]?)?[6-9]\d{9}$/.test(v.replace(/\s/g, "")),
+        "Enter a 10-digit Indian mobile number.",
+      )
+      .optional()
+      .transform((v) => (v ? v.replace(/[\s-]/g, "") : undefined)),
+    instructions: maybeText(1000),
+  })
+  .refine((s) => s.upiId || s.phone, { message: "Add a UPI ID or a phone number.", path: ["upiId"] });
+export type PaymentSettingsInput = z.infer<typeof paymentSettingsSchema>;
+
+const paymentImageMime = z.enum(["image/jpeg", "image/png", "image/webp"], {
+  errorMap: () => ({ message: "Use a JPEG, PNG or WebP image." }),
+});
+
+/** Start an image upload (QR code or payment screenshot); the size limit is checked by the service. */
+export const initPaymentImageSchema = z.object({
+  mimeType: paymentImageMime,
+  sizeBytes: z.number().int().positive(),
+});
+export type InitPaymentImageInput = z.infer<typeof initPaymentImageSchema>;
+
+export const completeQrSchema = z.object({ qrId: z.string().uuid(), mimeType: paymentImageMime });
+export type CompleteQrInput = z.infer<typeof completeQrSchema>;
+
+export const submitPaymentSchema = z.object({
+  reference: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\s/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9]{6,35}$/, "Enter the UPI reference (UTR) from your payment app.")),
+  note: maybeText(500),
+  proof: z.object({ proofId: z.string().uuid(), mimeType: paymentImageMime }).optional(),
+});
+export type SubmitPaymentInput = z.infer<typeof submitPaymentSchema>;
+
+export const decidePaymentSchema = z
+  .object({ decision: z.enum(["approve", "reject"]), note: maybeText(500) })
+  .refine((d) => d.decision === "approve" || d.note, {
+    message: "Say why, so the student knows what to fix.",
+    path: ["note"],
+  });
+export type DecidePaymentInput = z.infer<typeof decidePaymentSchema>;
+
+/** Admin: a course's price in whole rupees; 0 (or empty) makes it free again. */
+export const coursePriceSchema = z.object({
+  priceRupees: z.coerce
+    .number({ invalid_type_error: "Enter a price in rupees." })
+    .int("Use whole rupees.")
+    .min(0)
+    .max(1_000_000, "That's more than ₹10,00,000."),
+});
+export type CoursePriceInput = z.infer<typeof coursePriceSchema>;
+
+export const listPaymentsQuerySchema = z.object({
+  status: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
+});
+export type ListPaymentsQuery = z.infer<typeof listPaymentsQuerySchema>;

@@ -1,3 +1,4 @@
+import { formatRupees } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CourseTile } from "@/components/course-tile";
@@ -171,9 +172,23 @@ function CatalogCard({ course: c }: { course: CatalogCourse }) {
         <p className="text-sm text-muted">With {c.teacherName}</p>
       </div>
       {c.description && <p className="line-clamp-3 text-sm">{c.description}</p>}
-      <div className="mt-auto flex justify-end pt-1">
-        <JoinCourseButton courseId={c.id} title={c.title} state={c.state} />
-      </div>
+      {c.priceInPaise ? (
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+          <span className="font-display text-xl font-bold">{formatRupees(c.priceInPaise)}</span>
+          {c.payment === "PENDING" ? (
+            <span className="text-sm text-muted">Payment sent. Waiting for the school to confirm.</span>
+          ) : (
+            <Link href={`/courses/${c.id}/pay`} className={buttonClasses("primary")}>
+              {c.payment === "REJECTED" ? "Payment not confirmed: try again" : "Pay and join"}
+              <span className="sr-only">: {c.title}</span>
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="mt-auto flex justify-end pt-1">
+          <JoinCourseButton courseId={c.id} title={c.title} state={c.state} />
+        </div>
+      )}
     </article>
   );
 }
