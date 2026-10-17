@@ -7,9 +7,18 @@ import { LOCALE_COOKIE, LOCALE_NAMES, LOCALES, parseLocale, type Locale } from "
 
 /**
  * Interface language. Saved in a cookie that src/i18n/request.ts reads, then the page re-renders on the server
- * in the new language. `compact` hides the visible label (the sign-in page's corner).
+ * in the new language. `compact` hides the visible label (the sign-in page's corner). Signed in (`saveToAccount`),
+ * the choice is also stored on the account so emails use it.
  */
-export function LanguagePicker({ current, compact = false }: { current: Locale; compact?: boolean }) {
+export function LanguagePicker({
+  current,
+  compact = false,
+  saveToAccount = false,
+}: {
+  current: Locale;
+  compact?: boolean;
+  saveToAccount?: boolean;
+}) {
   const t = useTranslations("Language");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -19,7 +28,17 @@ export function LanguagePicker({ current, compact = false }: { current: Locale; 
     const locale = parseLocale(value);
     if (!locale) return;
     document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
-    startTransition(() => router.refresh());
+    startTransition(async () => {
+      // Best effort: the page language already follows the cookie.
+      if (saveToAccount)
+        await fetch("/api/v1/me/locale", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ locale }),
+          credentials: "same-origin",
+        }).catch(() => undefined);
+      router.refresh();
+    });
   }
 
   return (

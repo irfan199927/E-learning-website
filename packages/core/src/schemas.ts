@@ -522,6 +522,10 @@ export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 export const emailDigestSchema = z.object({ enabled: z.boolean() });
 export type EmailDigestInput = z.infer<typeof emailDigestSchema>;
 
+/** Interface and email language. */
+export const localeSchema = z.object({ locale: z.enum(["en", "hi", "mr"]) });
+export type LocaleInput = z.infer<typeof localeSchema>;
+
 // ─────────────────────────── Manual UPI payments ───────────────────────────
 
 const maybeText = (max: number) =>

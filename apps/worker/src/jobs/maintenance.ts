@@ -4,7 +4,7 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import { ERASURE_GRACE_DAYS, sha256Hex } from "@elearner/core";
-import { templates } from "@elearner/notify";
+import { mailLocale, templates } from "@elearner/notify";
 import type { MaintenanceJob } from "@elearner/queue";
 import type { JobContext } from "../context";
 import { RECORDING_GIVE_UP_MS } from "./recording-sync";
@@ -238,7 +238,7 @@ export async function sendNotificationDigests(ctx: JobContext) {
   };
   const users = await ctx.db.user.findMany({
     where: { emailDigest: true, isActive: true, deletedAt: null, notifications: { some: pending } },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, locale: true },
     orderBy: { id: "asc" },
     take: DIGEST_USERS_PER_RUN,
   });
@@ -270,6 +270,7 @@ export async function sendNotificationDigests(ctx: JobContext) {
           more: Math.max(0, items.length - DIGEST_ITEMS),
           inboxUrl: `${ctx.config.appUrl}/notifications`,
           settingsUrl: `${ctx.config.appUrl}/account`,
+          locale: mailLocale(user.locale),
         }),
       );
       sent++;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMemoryMailer, esc, templates } from "./index";
+import { createMemoryMailer, esc, mailLocale, templates } from "./index";
 
 describe("templates", () => {
   it("escapes user-supplied text in HTML", () => {
@@ -44,6 +44,25 @@ describe("templates", () => {
       templates.notificationDigest({ ...{ name: "A", inboxUrl: "x", settingsUrl: "y" }, items: [], more: 1 })
         .subject,
     ).toBe("1 new update on E-learner");
+  });
+  it("writes in the recipient's language", () => {
+    const m = templates.classReminder({
+      name: "आन्या",
+      classTitle: "द्विघात समीकरण",
+      courseTitle: "गणित",
+      startsAt: new Date("2026-10-14T09:30:00Z"),
+      timeZone: "Asia/Kolkata",
+      kind: "24h",
+      url: "https://app/dashboard",
+      locale: "hi",
+    });
+    expect(m.subject).toBe("द्विघात समीकरण कल है");
+    expect(m.text).toMatch(/^नमस्ते आन्या,/);
+    expect(m.html).toContain('<html lang="hi">');
+    expect(templates.invite("A", "https://x", "mr").subject).toBe("तुम्हाला E-learner मध्ये जोडले आहे");
+    expect(mailLocale("mr")).toBe("mr");
+    expect(mailLocale("fr")).toBe("en");
+    expect(mailLocale(null)).toBe("en");
   });
   it("memory mailer records messages", async () => {
     const mailer = createMemoryMailer();

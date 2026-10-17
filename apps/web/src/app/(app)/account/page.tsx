@@ -59,7 +59,7 @@ export default async function AccountPage() {
       </section>
 
       <section className={card}>
-        <LanguagePicker current={locale} />
+        <LanguagePicker current={locale} saveToAccount />
         <p className="mt-2 text-sm text-muted">{language("help")}</p>
       </section>
 

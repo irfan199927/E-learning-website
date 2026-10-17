@@ -31,6 +31,19 @@ describe("reminder job", () => {
 
     const ctx15 = makeCtx();
     expect((await sendReminder(ctx15, { ...job, kind: "15m" })).sent).toBe(1); // parents skip 15m
+
+    // Each person gets it in their own language.
+    const w2 = await classWorld();
+    await testDb().user.update({ where: { id: w2.student.id }, data: { locale: "mr" } });
+    const ctxMr = makeCtx();
+    await sendReminder(ctxMr, {
+      classSessionId: w2.cls.id,
+      kind: "15m",
+      startsAtMs: w2.cls.startsAt.getTime(),
+    });
+    expect(ctxMr.mailer.sent.find((m) => m.to === w2.student.email)?.message.subject).toBe(
+      `${w2.cls.title} 15 मिनिटांत सुरू होईल`,
+    );
   });
 
   it("skips stale reminders after a reschedule or cancellation", async () => {
