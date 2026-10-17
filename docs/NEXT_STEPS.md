@@ -82,5 +82,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Rich text in assignment instructions; weighted grade categories; excusing a student from one piece of work
 - [x] In-app notifications UI (2026-10-16): bell + `/notifications`
 - [ ] Live notification count (SSE or polling), email digests, and deleting old read notifications
-- [ ] Razorpay checkout + webhooks
+- [x] Paid courses with manual UPI payments (2026-10-17): Admin → Payments, course price, pay page
+- [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
+- [ ] Export payments as CSV for the school's accounts
 - [ ] i18n (next-intl: en/hi/mr), PWA

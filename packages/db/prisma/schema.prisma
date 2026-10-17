@@ -22,6 +22,12 @@ enum Role {
   PARENT
 }
 
+enum ManualPaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum JoinRequestStatus {
   PENDING
   APPROVED
@@ -141,6 +147,8 @@ model User {
   posts            Post[]
   subscriptions    Subscription[]
   payments         Payment[]
+  manualPayments   ManualPayment[]   @relation("ManualPayer")
+  paymentsDecided  ManualPayment[]   @relation("ManualPaymentDecider")
   certificates     Certificate[]
   auditLogs        AuditLog[]
 
@@ -256,17 +264,18 @@ model Course {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  teacher      User           @relation("CourseTeacher", fields: [teacherId], references: [id])
-  plan         Plan?          @relation(fields: [planId], references: [id])
-  modules      Module[]
-  enrollments  Enrollment[]
-  joinRequests JoinRequest[]
-  classes      ClassSession[]
-  assignments  Assignment[]
-  quizzes      Quiz[]
-  threads      Thread[]
-  certificates Certificate[]
-  videos       Video[]
+  teacher        User            @relation("CourseTeacher", fields: [teacherId], references: [id])
+  plan           Plan?           @relation(fields: [planId], references: [id])
+  modules        Module[]
+  enrollments    Enrollment[]
+  joinRequests   JoinRequest[]
+  classes        ClassSession[]
+  manualPayments ManualPayment[]
+  assignments    Assignment[]
+  quizzes        Quiz[]
+  threads        Thread[]
+  certificates   Certificate[]
+  videos         Video[]
 
   @@index([teacherId])
 }
@@ -667,6 +676,45 @@ model Payment {
   status            PaymentStatus @default(CREATED)
   createdAt         DateTime      @default(now())
   user              User          @relation(fields: [userId], references: [id])
+}
+
+// ── Manual UPI payments (no gateway): the school's own UPI details, and payments students report ──
+
+/// One row (id 1): where students send money. Set by an admin on /admin/payments.
+model PaymentSettings {
+  id           Int      @id @default(1)
+  upiId        String? // e.g. school@okaxis
+  payeeName    String?
+  phone        String? // UPI-linked number, shown as an alternative
+  qrKey        String? // storage key of an uploaded QR code image
+  instructions String?  @db.Text
+  updatedAt    DateTime @updatedAt
+  updatedById  String?
+}
+
+/// A student says they paid for a course by UPI; an admin checks their bank statement and approves (enrols) or
+/// rejects. A UPI reference (UTR) can only be used once.
+model ManualPayment {
+  id            String              @id @default(cuid())
+  userId        String
+  courseId      String
+  amountInPaise Int // the course price when submitted
+  method        String              @default("UPI")
+  reference     String // UTR / transaction id from the payer's UPI app
+  note          String?             @db.Text
+  proofKey      String? // optional screenshot (storage key)
+  status        ManualPaymentStatus @default(PENDING)
+  createdAt     DateTime            @default(now())
+  decidedAt     DateTime?
+  decidedById   String?
+  decisionNote  String?             @db.Text
+  user          User                @relation("ManualPayer", fields: [userId], references: [id], onDelete: Cascade)
+  course        Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  decidedBy     User?               @relation("ManualPaymentDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([method, reference])
+  @@index([status, createdAt])
+  @@index([userId, courseId])
 }
 
 model Coupon {

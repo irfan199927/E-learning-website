@@ -31,6 +31,9 @@ export interface CatalogCourse {
   description: string | null;
   teacherName: string;
   state: CatalogState;
+  /** Paid courses: the price, and the student's latest payment report (services/payments.ts). */
+  priceInPaise: number | null;
+  payment: "PENDING" | "APPROVED" | "REJECTED" | null;
   /** Uploaded cover image (a cache-busting version for /api/v1/courses/:id/cover), or null for the generated tile. */
   coverVersion: string | null;
 }
@@ -62,8 +65,16 @@ export async function listCatalog(
       color: true,
       description: true,
       coverKey: true,
+      isPaid: true,
+      priceInPaise: true,
       teacher: { select: { name: true } },
       joinRequests: { where: { userId: actor.id }, select: { status: true } },
+      manualPayments: {
+        where: { userId: actor.id },
+        select: { status: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
     orderBy: { title: "asc" },
     take: CATALOG_LIMIT,
@@ -85,6 +96,8 @@ export async function listCatalog(
       teacherName: c.teacher.name,
       state,
       coverVersion: coverVersion(c.coverKey),
+      priceInPaise: c.isPaid ? c.priceInPaise : null,
+      payment: c.manualPayments[0]?.status ?? null,
     };
   });
 }
@@ -99,9 +112,10 @@ export async function requestToJoin(
   assertCan(actor.role, "course:join");
   const course = await deps.db.course.findFirst({
     where: { id: courseId, publishedAt: { not: null } },
-    select: { id: true, title: true, teacherId: true },
+    select: { id: true, title: true, teacherId: true, isPaid: true },
   });
   if (!course) throw Errors.notFound("Course");
+  if (course.isPaid) throw Errors.conflict("This is a paid course: pay for it to join.");
   const enrolled = await deps.db.enrollment.count({ where: { courseId, userId: actor.id, revokedAt: null } });
   if (enrolled) throw Errors.conflict("You're already in this course.");
 

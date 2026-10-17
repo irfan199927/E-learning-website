@@ -140,6 +140,8 @@ export interface CourseOutline {
     color: string;
     listed: boolean;
     coverVersion: string | null;
+    /** Paid courses: the price (set by an admin, services/payments.ts). */
+    priceInPaise: number | null;
   };
   modules: { id: string; title: string; lessons: OutlineLesson[] }[];
   /** Course videos that aren't in any lesson (their lesson was deleted, or they predate lessons). */
@@ -158,6 +160,8 @@ export async function getCourseOutline(deps: Deps, actor: Actor, courseId: strin
       color: true,
       publishedAt: true,
       coverKey: true,
+      isPaid: true,
+      priceInPaise: true,
       modules: {
         orderBy: [{ position: "asc" }, { id: "asc" }],
         select: {
@@ -195,6 +199,7 @@ export async function getCourseOutline(deps: Deps, actor: Actor, courseId: strin
       color: course.color,
       listed: course.publishedAt !== null,
       coverVersion: coverVersion(course.coverKey),
+      priceInPaise: course.isPaid ? course.priceInPaise : null,
     },
     modules: course.modules.map((m) => ({
       id: m.id,

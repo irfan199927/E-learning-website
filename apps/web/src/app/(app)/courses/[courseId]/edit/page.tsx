@@ -8,6 +8,7 @@ import { deps } from "@/server/container";
 import { getCourseOutline } from "@/server/services/course-content";
 import { CourseDetailsForm } from "./course-details-form";
 import { CoverEditor } from "./cover-editor";
+import { PriceEditor } from "./price-editor";
 import { OutlineEditor } from "./outline-editor";
 
 export const metadata: Metadata = { title: "Edit course" };
@@ -68,6 +69,22 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
         </h2>
         <CourseDetailsForm course={outline.course} />
       </section>
+
+      {actor.role === "ADMIN" && (
+        <section
+          aria-labelledby="price-h"
+          className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        >
+          <h2 id="price-h" className="mb-1 font-display text-xl font-bold">
+            Price
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Free courses: students ask to join and the teacher approves. Paid courses: students pay by UPI and
+            you approve the payment on the Payments page.
+          </p>
+          <PriceEditor courseId={courseId} priceInPaise={outline.course.priceInPaise} />
+        </section>
+      )}
 
       <section
         aria-labelledby="cover-h"
