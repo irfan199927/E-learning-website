@@ -127,7 +127,7 @@ export const COPY: Record<MailLocale, MailCopy> = {
       where: "जगह",
       join: "अपने डैशबोर्ड से जुड़ें",
       button: "डैशबोर्ड खोलें",
-      joinHint: "कक्षा शुरू होने से 10 मिनट पहले जुड़ें बटन दिखेगा।",
+      joinHint: "क्लास शुरू होने से 10 मिनट पहले जुड़ें बटन दिखेगा।",
     },
     digest: {
       subject: (total) => `E-learner पर ${total} नई सूचनाएँ`,
