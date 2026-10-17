@@ -25,6 +25,8 @@ export interface UserRowData {
   isSelf: boolean;
   /** Parents only. */
   children: ChildLink[] | null;
+  /** They asked to delete their account: the date it's purged. Only "Cancel deletion" is offered until then. */
+  deletesOn: string | null;
   meta: string;
 }
 
@@ -71,6 +73,11 @@ export function UserRow({ user }: { user: UserRowData }) {
       },
       active ? `${user.name} can't sign in now.` : `${user.name} can sign in again.`,
     );
+  const cancelDeletion = () =>
+    void run(
+      () => api(`/api/v1/admin/users/${user.id}/restore`, { method: "POST" }),
+      `Cancelled. ${user.name} can sign in again.`,
+    );
   const resend = () =>
     void run(
       () => api(`/api/v1/admin/users/${user.id}/invite`, { method: "POST" }),
@@ -83,6 +90,11 @@ export function UserRow({ user }: { user: UserRowData }) {
         <p className="font-semibold">
           {user.name}
           {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">(you)</span>}
+          {user.deletesOn && (
+            <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
+              Deleting on {user.deletesOn}
+            </span>
+          )}
           {!active && (
             <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
               Switched off
@@ -100,44 +112,55 @@ export function UserRow({ user }: { user: UserRowData }) {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="sr-only" htmlFor={`role-${user.id}`}>
-          Role for {user.name}
-        </label>
-        <select
-          id={`role-${user.id}`}
-          value={role}
-          disabled={busy || user.isSelf}
-          onChange={(e) => changeRole(e.target.value as Role)}
-          className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] disabled:opacity-60"
+      {user.deletesOn ? (
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={cancelDeletion}
+          aria-label={`Cancel deletion of ${user.name}`}
         >
-          {ROLE_OPTIONS.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-        {user.needsInvite && (
-          <Button
-            variant="ghost"
-            disabled={busy}
-            onClick={resend}
-            aria-label={`Resend invite to ${user.name}`}
+          Cancel deletion
+        </Button>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor={`role-${user.id}`}>
+            Role for {user.name}
+          </label>
+          <select
+            id={`role-${user.id}`}
+            value={role}
+            disabled={busy || user.isSelf}
+            onChange={(e) => changeRole(e.target.value as Role)}
+            className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] disabled:opacity-60"
           >
-            Resend invite
-          </Button>
-        )}
-        {!user.isSelf && (
-          <Button
-            variant="secondary"
-            disabled={busy}
-            onClick={toggleActive}
-            aria-label={`${active ? "Switch off" : "Switch on"} ${user.name}`}
-          >
-            {active ? "Switch off" : "Switch on"}
-          </Button>
-        )}
-      </div>
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          {user.needsInvite && (
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={resend}
+              aria-label={`Resend invite to ${user.name}`}
+            >
+              Resend invite
+            </Button>
+          )}
+          {!user.isSelf && (
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={toggleActive}
+              aria-label={`${active ? "Switch off" : "Switch on"} ${user.name}`}
+            >
+              {active ? "Switch off" : "Switch on"}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

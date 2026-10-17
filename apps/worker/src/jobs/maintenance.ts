@@ -3,14 +3,14 @@
  * with user traffic. Schedules are registered in src/index.ts.
  */
 import { randomBytes, randomUUID } from "node:crypto";
-import { sha256Hex } from "@elearner/core";
+import { ERASURE_GRACE_DAYS, sha256Hex } from "@elearner/core";
 import type { MaintenanceJob } from "@elearner/queue";
 import type { JobContext } from "../context";
 import { RECORDING_GIVE_UP_MS } from "./recording-sync";
 
 const SYNC_GRACE_MS = 10 * 60_000; // Meet needs a few minutes to produce the file
 const STALE_UPLOAD_MS = 24 * 3600_000;
-const ERASURE_GRACE_MS = 30 * 24 * 3600_000; // DPDP: soft-delete, then purge after 30 days
+const ERASURE_GRACE_MS = ERASURE_GRACE_DAYS * 24 * 3600_000; // DPDP: soft-delete, then purge after 30 days
 /** Reminders are delayed jobs in Redis; re-add any for classes this far ahead (covers the 24 h reminder). */
 const REMINDER_HORIZON_MS = 48 * 3600_000;
 /** Originals are kept this long after transcoding, in case a rendition must be redone. */
@@ -162,8 +162,8 @@ export async function deleteTranscodedRaw(ctx: JobContext) {
 }
 
 /**
- * Hard-delete users soft-deleted > 30 days ago (DPDP erasure). Teachers who own content
- * are skipped and logged for an admin to reassign first — we never orphan a course.
+ * Hard-delete users soft-deleted > 30 days ago (DPDP erasure), with their submission files. Teachers who own
+ * content are skipped and logged for an admin to reassign first — we never orphan a course.
  */
 export async function purgeDeletedUsers(ctx: JobContext) {
   const cutoff = new Date(ctx.now().getTime() - ERASURE_GRACE_MS);
@@ -180,6 +180,9 @@ export async function purgeDeletedUsers(ctx: JobContext) {
       ctx.log.warn({ userId: u.id }, "erasure blocked: user still owns content; reassign it first");
       continue;
     }
+    // Submission files live in storage, not the database: delete them before the rows that point at them.
+    const subs = await ctx.db.submission.findMany({ where: { userId: u.id }, select: { fileKeys: true } });
+    for (const key of subs.flatMap((s) => s.fileKeys)) await ctx.storage.deleteObject(key);
     await ctx.db.$transaction([
       ctx.db.auditLog.create({ data: { action: "user.purge", targetType: "User", targetId: u.id } }),
       ctx.db.user.delete({ where: { id: u.id } }),

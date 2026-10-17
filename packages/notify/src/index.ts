@@ -68,6 +68,17 @@ export const templates = {
       ),
     };
   },
+  /** Confirms a self-service deletion request. The account can't sign in any more, so cancelling goes via the school. */
+  accountDeletion(name: string, purgeOn: string): Message {
+    return {
+      subject: "Your E-learner account will be deleted",
+      text: `Hi ${name},\n\nYou asked us to delete your E-learner account. You've been signed out and can't sign in any more.\n\nYour account and its data will be deleted for good on ${purgeOn}. If this was a mistake, contact your school before then and an admin can cancel it.`,
+      html: layout(
+        "Your account will be deleted",
+        `<p>Hi ${esc(name)},</p><p>You asked us to delete your E-learner account. You've been signed out and can't sign in any more.</p><p>Your account and its data will be deleted for good on <b>${esc(purgeOn)}</b>.</p><p style="color:#4B5162;font-size:13px">If this was a mistake, contact your school before then and an admin can cancel it.</p>`,
+      ),
+    };
+  },
   classReminder(p: {
     name: string;
     classTitle: string;

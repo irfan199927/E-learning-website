@@ -5,6 +5,7 @@
  */
 import {
   assertCan,
+  erasureDate,
   Errors,
   type CreateUsersInput,
   type ListUsersQuery,
@@ -23,6 +24,8 @@ export interface AdminUserRow {
   email: string;
   role: Role;
   isActive: boolean;
+  /** Deletion requested: when the account is purged (an admin can cancel until then). */
+  purgeOn: Date | null;
   hasPassword: boolean;
   hasGoogle: boolean;
   createdAt: Date;
@@ -37,8 +40,8 @@ export async function listUsers(
   query: ListUsersQuery,
 ): Promise<{ users: AdminUserRow[]; total: number; page: number; pages: number }> {
   assertCan(actor.role, "user:manage");
+  // Includes accounts waiting to be purged after a deletion request, so an admin can cancel it.
   const where = {
-    deletedAt: null,
     ...(query.role ? { role: query.role } : {}),
     ...(query.q
       ? {
@@ -60,6 +63,7 @@ export async function listUsers(
         role: true,
         isActive: true,
         createdAt: true,
+        deletedAt: true,
         accounts: { select: { providerId: true } },
         _count: { select: { enrollments: { where: { revokedAt: null } }, coursesTaught: true } },
         parentLinks: {
@@ -84,6 +88,7 @@ export async function listUsers(
       role: u.role,
       isActive: u.isActive,
       createdAt: u.createdAt,
+      purgeOn: u.deletedAt ? erasureDate(u.deletedAt) : null,
       hasPassword: u.accounts.some((a) => a.providerId === "credential"),
       hasGoogle: u.accounts.some((a) => a.providerId === "google"),
       courseCount: u.role === Role.TEACHER ? u._count.coursesTaught : u._count.enrollments,

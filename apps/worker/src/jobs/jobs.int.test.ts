@@ -5,7 +5,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { classWorld, fakeJobs, fakeStorage, makeCtx, stubGoogle, testDb } from "../test/ctx";
 import { syncCalendar } from "./calendar-sync";
-import { abortStaleUploads, deleteTranscodedRaw, reconcileReminders, sweepClasses } from "./maintenance";
+import {
+  abortStaleUploads,
+  deleteTranscodedRaw,
+  purgeDeletedUsers,
+  reconcileReminders,
+  sweepClasses,
+} from "./maintenance";
 import { RECORDINGS_MODULE_TITLE, syncRecording } from "./recording-sync";
 import { sendReminder } from "./reminder";
 import { transcodeVideo } from "./transcode";
@@ -250,6 +256,35 @@ describe("maintenance", () => {
     expect(after.rawKey).toBeNull();
     expect(after.hlsPrefix).toBe(old.hlsPrefix);
     expect((await testDb().video.findUniqueOrThrow({ where: { id: recent.id } })).rawKey).toBe(recent.rawKey);
+  });
+
+  it("purges accounts 30 days after a deletion request, with their files; skips content owners", async () => {
+    const w = await classWorld();
+    const db = testDb();
+    const assignment = await db.assignment.create({
+      data: { courseId: w.course.id, title: "Essay", instructions: "-", dueAt: new Date() },
+    });
+    const fileKey = `submissions/${assignment.id}/${w.student.id}/essay.pdf`;
+    await db.submission.create({
+      data: { assignmentId: assignment.id, userId: w.student.id, status: "SUBMITTED", fileKeys: [fileKey] },
+    });
+    const longAgo = new Date(Date.now() - 31 * 86_400_000);
+    await db.user.updateMany({
+      where: { id: { in: [w.student.id, w.teacher.id] } },
+      data: { deletedAt: longAgo },
+    });
+    await db.user.update({ where: { id: w.parent.id }, data: { deletedAt: new Date() } }); // still in grace
+
+    const storage = fakeStorage();
+    await purgeDeletedUsers(makeCtx({ storage }));
+    expect(await db.user.findUnique({ where: { id: w.student.id } })).toBeNull();
+    expect(await db.submission.count({ where: { userId: w.student.id } })).toBe(0);
+    expect(storage.deleted).toContain(fileKey);
+    expect(await db.user.findUnique({ where: { id: w.teacher.id } })).not.toBeNull(); // owns the course
+    expect(await db.user.findUnique({ where: { id: w.parent.id } })).not.toBeNull();
+    expect(await db.auditLog.count({ where: { action: "user.purge", targetId: w.student.id } })).toBe(1);
+    // Don't leave a soft-deleted teacher behind for other runs to trip over.
+    await db.user.update({ where: { id: w.teacher.id }, data: { deletedAt: null } });
   });
 });
 

@@ -72,7 +72,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
 - [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
       parents on the Users page
-- [ ] Self-service account deletion requests (the purge job exists; there's no request UI)
+- [x] Self-service account deletion (2026-10-17): `/account`, admin cancel, purge deletes submission files
 - [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
 - [ ] Course cover images (optional upload; `CourseTile` is the fallback)

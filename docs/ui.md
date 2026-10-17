@@ -238,6 +238,17 @@ published at once. A badge on each course, such as "2 students waiting to join",
 - **Files:** pick one or more files; each uploads straight to storage, with progress in a `role="status"` line.
   PDF, Office, OpenDocument, text, CSV, images or zip, up to 50 MB, 20 per lesson.
 
+### Account (`/account`, everyone; the name and avatar in the top bar link here)
+
+- Your details (name, email, role, how you sign in, joined date). Name and email changes go through an admin.
+- Students: a link to **Class recordings**.
+- **Delete my account** (students and parents): what happens is listed first (signed out at once, data deleted
+  for good after 30 days, an admin can cancel until then, recordings may still show you). The button stays
+  disabled until the person types `DELETE`. Afterwards they land on the sign-in page with a notice, and get an
+  email with the date. Teachers and admins see that an admin deletes their accounts.
+- Admins see "Deleting on …" and **Cancel deletion** for such accounts on the Users page (nothing else can be
+  changed until it's cancelled).
+
 ## Landing page (`/`)
 
 The public front page advertises a course. Visitors who click **Enroll now** go to
