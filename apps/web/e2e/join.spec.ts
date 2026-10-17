@@ -29,6 +29,10 @@ test("a teacher creates a course, a new student asks to join, and the course ope
   // Kabir starts outside every course here (like a fresh Google sign-up).
   await signIn(page, "kabir@school.edu");
   await page.goto("/courses");
+  // The catalog search finds it (long catalogs show only the first courses alphabetically).
+  await page.getByRole("searchbox", { name: "Search courses" }).fill(title);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/[?&]q=/);
   await page.getByRole("button", { name: `Ask to join ${title}` }).click();
   // Scoped to this course: Kabir may have other pending requests (other runs, the other device project).
   await expect(

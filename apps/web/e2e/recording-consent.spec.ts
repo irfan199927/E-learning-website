@@ -14,11 +14,14 @@ test("a student reads the recording notice, agrees, and can withdraw", async ({ 
   const banner = page.getByRole("complementary", { name: "Class recordings" });
   await page.goto("/recording-consent");
   await expect(page.getByRole("heading", { level: 1, name: "Live classes are recorded" })).toBeVisible();
-  // A fresh seed leaves this student unanswered; a retry may find them agreed from the last attempt.
+  // A fresh seed leaves this student unanswered (the banner shows); an earlier run or retry may have left them
+  // agreed or withdrawn, so start from "not agreed" either way.
   const withdraw = page.getByRole("button", { name: "Withdraw my agreement" });
-  if (await withdraw.isVisible()) await withdraw.click();
-  else {
-    await expect(page.getByText("You haven't answered yet.")).toBeVisible();
+  if (await withdraw.isVisible()) {
+    await withdraw.click();
+    await expect(page.getByRole("button", { name: "I agree" })).toBeVisible();
+  }
+  if (await page.getByText("You haven't answered yet.").isVisible()) {
     await page.goto("/dashboard");
     await expect(banner).toBeVisible();
     await banner.getByRole("link", { name: "Read the notice" }).click();

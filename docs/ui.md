@@ -166,7 +166,8 @@ student count and an **Open course** CTA. Parents are redirected to the Overview
 
 **Find a course** (students only, below their own courses):
 
-- It lists published courses the student isn't in yet, each with **Ask to join**.
+- It lists published courses the student isn't in yet (alphabetical, the first 60), each with **Ask to join**.
+- **Search courses** (`?q=`) matches the title, description or teacher's name; **Clear** resets it.
 - After asking, the card shows "Request sent. Waiting for your teacher." If the request was declined, it shows
   **Ask again**.
 - Course content stays closed (404) until the teacher approves.
@@ -229,6 +230,8 @@ published at once. A badge on each course, such as "2 students waiting to join",
 - **Videos not in a lesson** lists course videos without a lesson, with **Add as lesson** into a chosen module.
 - **Course details:** title, grade, description, card colour (six presets that pass contrast with white text) and
   **Listed in Find a course**.
+- **Cover image:** upload a JPEG, PNG or WebP (≤ 2 MB) to replace the colour tile everywhere the course appears
+  (catalog, My courses, course page, Resume card); **Remove cover** goes back to the tile.
 - Every control is a labelled button (icon buttons have names like "Move Worksheet up"), 44 px square.
 
 ### Edit lesson (`/courses/:courseId/lessons/:lessonId/edit`)

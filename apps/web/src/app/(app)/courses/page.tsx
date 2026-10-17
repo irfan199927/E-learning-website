@@ -23,18 +23,18 @@ type FilterKey = (typeof FILTERS)[number]["key"];
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string | string[] }>;
+  searchParams: Promise<{ filter?: string | string[]; q?: string | string[] }>;
 }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
-  const { filter: raw } = await searchParams;
+  const { filter: raw, q: rawQ } = await searchParams;
+  const q = typeof rawQ === "string" ? rawQ.trim().slice(0, 100) : "";
   const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "all";
   const learner = actor.role === "STUDENT";
   const [all, catalog, pending] = await Promise.all([
     listMyCourses(deps(), actor),
-    listCatalog(deps(), actor),
+    listCatalog(deps(), actor, { q }),
     pendingJoinCounts(deps(), actor),
   ]);
-  const joinable = catalog.filter((c) => c.state !== "enrolled");
   const courses = learner && filter !== "all" ? all.filter((c) => c.state === filter) : all;
 
   return (
@@ -111,15 +111,39 @@ export default async function CoursesPage({
             </h2>
             <p className="mt-1 text-muted">Ask to join. The course opens once your teacher approves.</p>
           </div>
-          {joinable.length === 0 ? (
+          <form role="search" action="/courses#find-h" className="flex flex-wrap items-end gap-2">
+            {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
+            <label className="flex min-w-60 flex-1 flex-col gap-1.5 text-sm font-semibold">
+              Search courses
+              <input
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder="Subject, topic or teacher"
+                className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] font-normal"
+              />
+            </label>
+            <button type="submit" className={buttonClasses("secondary")}>
+              Search
+            </button>
+            {q && (
+              <Link
+                href={filter === "all" ? "/courses#find-h" : `/courses?filter=${filter}#find-h`}
+                className={buttonClasses("ghost")}
+              >
+                Clear
+              </Link>
+            )}
+          </form>
+          {catalog.length === 0 ? (
             <p className="rounded-[var(--radius-card)] border border-line bg-surface p-6 text-center text-muted">
-              {catalog.length === 0
-                ? "No courses are open yet. Check back soon."
-                : "You're in every open course."}
+              {q
+                ? `No open courses match “${q}”.`
+                : "No courses are open for you to join right now. Check back soon."}
             </p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2">
-              {joinable.map((c) => (
+              {catalog.map((c) => (
                 <li key={c.id}>
                   <CatalogCard course={c} />
                 </li>
@@ -135,14 +159,20 @@ export default async function CoursesPage({
 function CatalogCard({ course: c }: { course: CatalogCourse }) {
   return (
     <article className="flex h-full flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-5">
-      <CourseTile title={c.title} grade={c.grade} color={c.color} className="h-24 w-full" />
+      <CourseTile
+        title={c.title}
+        grade={c.grade}
+        color={c.color}
+        cover={{ courseId: c.id, version: c.coverVersion }}
+        className="h-24 w-full"
+      />
       <div>
         <h3 className="text-lg font-semibold">{c.title}</h3>
         <p className="text-sm text-muted">With {c.teacherName}</p>
       </div>
       {c.description && <p className="line-clamp-3 text-sm">{c.description}</p>}
       <div className="mt-auto flex justify-end pt-1">
-        <JoinCourseButton courseId={c.id} title={c.title} state={c.state === "enrolled" ? "none" : c.state} />
+        <JoinCourseButton courseId={c.id} title={c.title} state={c.state} />
       </div>
     </article>
   );
@@ -172,7 +202,13 @@ function CourseRow({
   return (
     <article className="flex flex-col gap-5 rounded-[var(--radius-card)] border border-line bg-surface p-5 sm:flex-row">
       <Link href={`/courses/${c.id}`} tabIndex={-1} aria-hidden="true" className="sm:w-56">
-        <CourseTile title={c.title} grade={c.grade} color={c.color} className="h-32 w-full" />
+        <CourseTile
+          title={c.title}
+          grade={c.grade}
+          color={c.color}
+          cover={{ courseId: c.id, version: c.coverVersion }}
+          className="h-32 w-full"
+        />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-4">

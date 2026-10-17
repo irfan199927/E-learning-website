@@ -22,10 +22,14 @@ describe("join requests (integration)", () => {
     const db = testDb();
 
     expect(await hasCourseAccess(db, w.outsider, w.course.id, "watch")).toBe(false);
-    expect((await listCatalog(deps, w.outsider)).find((c) => c.id === w.course.id)?.state).toBe("none");
+    expect(
+      (await listCatalog(deps, w.outsider, { q: w.course.title })).find((c) => c.id === w.course.id)?.state,
+    ).toBe("none");
 
     await requestToJoin(deps, w.outsider, w.course.id, { message: "I'm in class 9-A" });
-    expect((await listCatalog(deps, w.outsider)).find((c) => c.id === w.course.id)?.state).toBe("pending");
+    expect(
+      (await listCatalog(deps, w.outsider, { q: w.course.title })).find((c) => c.id === w.course.id)?.state,
+    ).toBe("pending");
     // Still no access while pending.
     expect(await hasCourseAccess(db, w.outsider, w.course.id, "watch")).toBe(false);
 
@@ -36,7 +40,9 @@ describe("join requests (integration)", () => {
 
     await decideJoinRequest(deps, w.teacher, pending[0]!.id, { decision: "approve" });
     expect(await hasCourseAccess(db, w.outsider, w.course.id, "watch")).toBe(true);
-    expect((await listCatalog(deps, w.outsider)).find((c) => c.id === w.course.id)?.state).toBe("enrolled");
+    expect(
+      (await listCatalog(deps, w.outsider, { q: w.course.title })).some((c) => c.id === w.course.id),
+    ).toBe(false); // in it now
     expect(await listJoinRequests(deps, w.teacher, w.course.id)).toHaveLength(0);
     const note = await db.notification.findFirst({
       where: { userId: w.outsider.id, type: "course.join.approved" },
@@ -62,7 +68,9 @@ describe("join requests (integration)", () => {
     const [req] = await listJoinRequests(deps, w.teacher, w.course.id);
     await decideJoinRequest(deps, w.teacher, req!.id, { decision: "decline" });
     expect(await hasCourseAccess(testDb(), w.outsider, w.course.id, "watch")).toBe(false);
-    expect((await listCatalog(deps, w.outsider)).find((c) => c.id === w.course.id)?.state).toBe("declined");
+    expect(
+      (await listCatalog(deps, w.outsider, { q: w.course.title })).find((c) => c.id === w.course.id)?.state,
+    ).toBe("declined");
 
     await requestToJoin(deps, w.outsider, w.course.id, {});
     expect(await listJoinRequests(deps, w.teacher, w.course.id)).toHaveLength(1);
@@ -95,7 +103,9 @@ describe("join requests (integration)", () => {
   it("unpublished courses can't be requested and don't appear in the catalog", async () => {
     const w = await world();
     const deps = makeDeps();
-    expect((await listCatalog(deps, w.outsider)).some((c) => c.id === w.course.id)).toBe(false);
+    expect(
+      (await listCatalog(deps, w.outsider, { q: w.course.title })).some((c) => c.id === w.course.id),
+    ).toBe(false);
     await expect(requestToJoin(deps, w.outsider, w.course.id, {})).rejects.toMatchObject({
       code: "NOT_FOUND",
     });

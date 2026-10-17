@@ -36,6 +36,9 @@ export const keys = {
   videoThumb: (videoId: string) => `videos/${videoId}/thumb.jpg`,
   attachment: (lessonId: string, id: string, fileName: string) =>
     `attachments/${lessonId}/${id}/${fileName.replace(/[^\w.-]+/g, "_").slice(0, 120)}`,
+  /** A course's cover image; the id changes with every upload, so cached copies never go stale. */
+  courseCoverPrefix: (courseId: string) => `courses/${courseId}/cover/`,
+  courseCover: (courseId: string, id: string, ext: string) => `courses/${courseId}/cover/${id}.${ext}`,
   /** A student's files for an assignment. The prefix (assignment + student) is what access checks rely on. */
   submissionPrefix: (assignmentId: string, userId: string) => `submissions/${assignmentId}/${userId}/`,
   submission: (assignmentId: string, userId: string, id: string, fileName: string) =>

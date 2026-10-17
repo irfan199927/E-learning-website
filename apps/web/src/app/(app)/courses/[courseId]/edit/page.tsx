@@ -7,6 +7,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getCourseOutline } from "@/server/services/course-content";
 import { CourseDetailsForm } from "./course-details-form";
+import { CoverEditor } from "./cover-editor";
 import { OutlineEditor } from "./outline-editor";
 
 export const metadata: Metadata = { title: "Edit course" };
@@ -66,6 +67,16 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
           Course details
         </h2>
         <CourseDetailsForm course={outline.course} />
+      </section>
+
+      <section
+        aria-labelledby="cover-h"
+        className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
+      >
+        <h2 id="cover-h" className="mb-3 font-display text-xl font-bold">
+          Cover image
+        </h2>
+        <CoverEditor course={outline.course} />
       </section>
     </div>
   );

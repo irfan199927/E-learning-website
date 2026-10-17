@@ -62,7 +62,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
       </Link>
 
       <header className="flex flex-col gap-5 rounded-[var(--radius-card)] border border-line bg-surface p-5 sm:flex-row">
-        <CourseTile title={course.title} grade={course.grade} color={course.color} className="h-36 sm:w-64" />
+        <CourseTile
+          title={course.title}
+          grade={course.grade}
+          color={course.color}
+          cover={{ courseId: course.id, version: course.coverVersion }}
+          className="h-36 sm:w-64"
+        />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <h1 className="font-display text-3xl font-bold tracking-tight">{course.title}</h1>
           <p className="text-muted">

@@ -29,6 +29,7 @@ import { keys } from "@elearner/storage";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess } from "../policies";
+import { coverVersion } from "./course-cover";
 
 /** Name of the module new uploads go into when the teacher didn't pick one. */
 export const VIDEOS_MODULE_TITLE = "Videos";
@@ -138,6 +139,7 @@ export interface CourseOutline {
     description: string | null;
     color: string;
     listed: boolean;
+    coverVersion: string | null;
   };
   modules: { id: string; title: string; lessons: OutlineLesson[] }[];
   /** Course videos that aren't in any lesson (their lesson was deleted, or they predate lessons). */
@@ -155,6 +157,7 @@ export async function getCourseOutline(deps: Deps, actor: Actor, courseId: strin
       description: true,
       color: true,
       publishedAt: true,
+      coverKey: true,
       modules: {
         orderBy: [{ position: "asc" }, { id: "asc" }],
         select: {
@@ -191,6 +194,7 @@ export async function getCourseOutline(deps: Deps, actor: Actor, courseId: strin
       description: course.description,
       color: course.color,
       listed: course.publishedAt !== null,
+      coverVersion: coverVersion(course.coverKey),
     },
     modules: course.modules.map((m) => ({
       id: m.id,

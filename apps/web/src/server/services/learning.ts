@@ -22,11 +22,14 @@ import {
 import { LessonType, VideoStatus, type Prisma } from "@elearner/db";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess, visibleCoursesWhere } from "../policies";
+import { coverVersion } from "./course-cover";
 
 export interface CourseCard {
   id: string;
   title: string;
   color: string;
+  /** Uploaded cover version (see course-cover.ts), or null for the generated tile. */
+  coverVersion: string | null;
   grade: string | null;
   teacherName: string;
   studentCount: number;
@@ -117,6 +120,7 @@ export async function listMyCourses(deps: Deps, actor: Actor): Promise<CourseCar
       id: true,
       title: true,
       color: true,
+      coverKey: true,
       grade: true,
       teacher: { select: { name: true } },
       _count: { select: { enrollments: { where: { revokedAt: null } } } },
@@ -155,6 +159,7 @@ export async function listMyCourses(deps: Deps, actor: Actor): Promise<CourseCar
       id: c.id,
       title: c.title,
       color: c.color,
+      coverVersion: coverVersion(c.coverKey),
       grade: c.grade,
       teacherName: c.teacher.name,
       studentCount: c._count.enrollments,
@@ -313,6 +318,7 @@ export async function getCourseDetail(deps: Deps, actor: Actor, courseId: string
       title: true,
       description: true,
       color: true,
+      coverKey: true,
       grade: true,
       teacherId: true,
       teacher: { select: { name: true } },
@@ -360,6 +366,7 @@ export async function getCourseDetail(deps: Deps, actor: Actor, courseId: string
     title: course.title,
     description: course.description,
     color: course.color,
+    coverVersion: coverVersion(course.coverKey),
     grade: course.grade,
     teacherName: course.teacher.name,
     studentCount: course._count.enrollments,

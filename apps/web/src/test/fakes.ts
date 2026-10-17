@@ -88,7 +88,7 @@ export function fakeStorage(
     abortMultipart: async () => undefined,
     presignGet: async (key, ttl) => `https://storage.test/${key}?ttl=${ttl}`,
     head: async (key) =>
-      key.startsWith("attachments/") || key.startsWith("submissions/")
+      key.startsWith("attachments/") || key.startsWith("submissions/") || key.startsWith("courses/")
         ? sizes.has(key)
           ? { size: sizes.get(key)!, contentType: undefined }
           : null

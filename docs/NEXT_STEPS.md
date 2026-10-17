@@ -56,7 +56,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       roster with Remove
 - [x] ~~Parental consent~~: removed (2026-10-16). Students are all 18+, so no date of birth or parent approval
 - [x] Recording consent (2026-10-17): `/recording-consent`, join gate, attendance badge
-- [ ] A search box for long course catalogs
+- [x] A search box for long course catalogs (2026-10-17)
 - [ ] Decide whether Google invites should carry the Meet link (the recording-consent gate can't cover them)
 - [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
       lesson page with Mark as done; course pages follow Module/Lesson order
@@ -75,7 +75,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Self-service account deletion (2026-10-17): `/account`, admin cancel, purge deletes submission files
 - [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
 - [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
-- [ ] Course cover images (optional upload; `CourseTile` is the fallback)
+- [x] Course cover images (2026-10-17): Edit course → Cover image; `CourseTile` is the fallback
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
 - [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
 - [x] Gradebook per course and CSV grade reports (2026-10-16): `/courses/:id/grades`

@@ -140,6 +140,7 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
             title={course.title}
             grade={course.grade}
             color={course.color}
+            cover={{ courseId: course.id, version: course.coverVersion }}
             className="h-36 sm:w-60"
           />
           <div className="flex min-w-0 flex-1 flex-col gap-3">

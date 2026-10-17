@@ -1,19 +1,34 @@
 /**
- * Course "thumbnail": a generated cover in the course's colour, so every course has artwork
- * without teachers uploading images. Decorative — the card's heading carries the name.
+ * Course "thumbnail": the uploaded cover image when there is one (`cover` = the course id and cover version),
+ * else a generated cover in the course's colour, so every course has artwork. Decorative — the card's heading
+ * carries the name.
  */
 export function CourseTile({
   title,
   grade,
   color,
+  cover,
   className = "",
 }: {
   title: string;
   grade: string | null;
   color: string;
+  cover?: { courseId: string; version: string | null } | null;
   className?: string;
 }) {
   const [subject] = title.split("·");
+  if (cover?.version)
+    return (
+      <div aria-hidden="true" className={`relative shrink-0 overflow-hidden rounded-xl bg-line ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a signed storage redirect; next/image can't optimise it */}
+        <img
+          src={`/api/v1/courses/${cover.courseId}/cover?v=${cover.version}`}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 size-full object-cover"
+        />
+      </div>
+    );
   return (
     <div
       aria-hidden="true"
