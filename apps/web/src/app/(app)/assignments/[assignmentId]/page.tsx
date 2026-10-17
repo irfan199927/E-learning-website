@@ -1,6 +1,7 @@
 import { formatInZone, isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Markdown } from "@/components/markdown";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
@@ -83,7 +84,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
         <h2 id="instructions-h" className="mb-2 font-display text-xl font-bold">
           Instructions
         </h2>
-        <div className="max-w-prose whitespace-pre-line leading-relaxed">{a.instructions}</div>
+        <Markdown>{a.instructions}</Markdown>
       </section>
 
       {!view.canManage && (

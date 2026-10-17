@@ -197,6 +197,7 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `assignment.create`, `assignment.update`, `assignment.delete`, `assignment.submit`, `grade.edit` (with the
   previous and new score), `quiz.create`, `quiz.update`, `quiz.delete`
 - `grade.export` (a teacher or admin downloads a course gradebook as CSV: names, emails and marks)
+- `lesson.reorder` (drag and drop in a module)
 - `consent.grant`, `consent.withdraw` (a student agrees to or withdraws from the class-recording notice)
 - `payment.settings`, `payment.submit`, `payment.approve`, `payment.reject`, `course.price` (manual UPI payments)
 - `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)

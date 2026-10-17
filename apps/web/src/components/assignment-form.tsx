@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
+import { MarkdownField } from "./markdown-field";
 
 export interface AssignmentFormValues {
   id: string;
@@ -89,27 +90,15 @@ export function AssignmentForm({
         defaultValue={assignment?.title}
         error={fieldErrors.title}
       />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="instructions" className="text-sm font-semibold">
-          Instructions
-        </label>
-        <textarea
-          id="instructions"
-          name="instructions"
-          rows={8}
-          maxLength={20000}
-          required
-          defaultValue={assignment?.instructions}
-          aria-invalid={fieldErrors.instructions ? true : undefined}
-          aria-describedby={fieldErrors.instructions ? "instructions-error" : undefined}
-          className="rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-[15px]"
-        />
-        {fieldErrors.instructions && (
-          <p id="instructions-error" className="text-[13px] text-live">
-            {fieldErrors.instructions}
-          </p>
-        )}
-      </div>
+      <MarkdownField
+        id="instructions"
+        name="instructions"
+        label="Instructions"
+        rows={8}
+        required
+        defaultValue={assignment?.instructions}
+        error={fieldErrors.instructions}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id="dueAt"

@@ -23,13 +23,16 @@ export function VideoUploader({
   courses,
   initialCourseId,
   initialModuleId,
+  replace,
 }: {
   courses: UploadCourse[];
   initialCourseId?: string;
   initialModuleId?: string;
+  /** Replacing a video lesson's video: course and module are fixed. */
+  replace?: { lessonId: string; courseId: string; title: string };
 }) {
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
-  const [courseId, setCourseId] = useState(initialCourseId ?? courses[0]?.id ?? "");
+  const [courseId, setCourseId] = useState(replace?.courseId ?? initialCourseId ?? courses[0]?.id ?? "");
   const modules = courses.find((c) => c.id === courseId)?.modules ?? [];
   const [moduleId, setModuleId] = useState(
     modules.some((m) => m.id === initialModuleId) ? initialModuleId! : "",
@@ -56,7 +59,8 @@ export function VideoUploader({
           json: {
             courseId,
             title: f.get("title"),
-            moduleId: moduleId || undefined,
+            moduleId: replace ? undefined : moduleId || undefined,
+            replaceLessonId: replace?.lessonId,
             fileName: file.name,
             mimeType: file.type,
             sizeBytes: file.size,
@@ -100,8 +104,9 @@ export function VideoUploader({
   if (phase.name === "done") {
     return (
       <FormAlert tone="success">
-        Uploaded. We&apos;re preparing the video for streaming. It appears as a lesson in the course in a few
-        minutes.
+        {replace
+          ? "Uploaded. Students keep seeing the old video until the new one is ready, in a few minutes."
+          : "Uploaded. We're preparing the video for streaming. It appears as a lesson in the course in a few minutes."}
       </FormAlert>
     );
   }
@@ -112,52 +117,64 @@ export function VideoUploader({
       className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-line bg-surface p-6"
     >
       {phase.name === "error" && <FormAlert>{phase.message}</FormAlert>}
-      <Field id="title" name="title" label="Title" required minLength={3} maxLength={160} />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="courseId" className="text-sm font-semibold">
-          Course
-        </label>
-        <select
-          id="courseId"
-          name="courseId"
-          value={courseId}
-          onChange={(e) => {
-            setCourseId(e.target.value);
-            setModuleId("");
-          }}
-          className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
-        >
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="moduleId" className="text-sm font-semibold">
-          Module
-        </label>
-        <select
-          id="moduleId"
-          value={moduleId}
-          onChange={(e) => setModuleId(e.target.value)}
-          aria-describedby="moduleId-hint"
-          className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
-        >
-          <option value="">Videos (added automatically)</option>
-          {modules
-            .filter((m) => m.title !== "Videos")
-            .map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.title}
-              </option>
-            ))}
-        </select>
-        <p id="moduleId-hint" className="text-[13px] text-muted">
-          The video becomes a lesson at the end of this module.
-        </p>
-      </div>
+      <Field
+        id="title"
+        name="title"
+        label="Title"
+        required
+        minLength={3}
+        maxLength={160}
+        defaultValue={replace?.title}
+      />
+      {!replace && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="courseId" className="text-sm font-semibold">
+              Course
+            </label>
+            <select
+              id="courseId"
+              name="courseId"
+              value={courseId}
+              onChange={(e) => {
+                setCourseId(e.target.value);
+                setModuleId("");
+              }}
+              className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="moduleId" className="text-sm font-semibold">
+              Module
+            </label>
+            <select
+              id="moduleId"
+              value={moduleId}
+              onChange={(e) => setModuleId(e.target.value)}
+              aria-describedby="moduleId-hint"
+              className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
+            >
+              <option value="">Videos (added automatically)</option>
+              {modules
+                .filter((m) => m.title !== "Videos")
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.title}
+                  </option>
+                ))}
+            </select>
+            <p id="moduleId-hint" className="text-[13px] text-muted">
+              The video becomes a lesson at the end of this module.
+            </p>
+          </div>
+        </>
+      )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="file" className="text-sm font-semibold">
           Video file

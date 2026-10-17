@@ -7,6 +7,7 @@ import { FormAlert } from "@/components/form";
 import { Icon, type IconName } from "@/components/icons";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
+import { MarkdownField } from "@/components/markdown-field";
 
 type LessonType = "VIDEO" | "NOTE" | "LINK" | "DOCUMENT" | "QUIZ" | "ASSIGNMENT";
 
@@ -262,20 +263,85 @@ function ModuleCard({
       {m.lessons.length === 0 ? (
         <p className="py-3 text-sm text-muted">No lessons in this module yet.</p>
       ) : (
-        <ol className="mt-2 flex flex-col divide-y divide-line">
-          {m.lessons.map((l, i) => (
-            <LessonRow
-              key={l.id}
-              courseId={courseId}
-              lesson={l}
-              isFirst={i === 0}
-              isLast={i === m.lessons.length - 1}
-            />
-          ))}
-        </ol>
+        <DraggableLessons courseId={courseId} moduleId={m.id} lessons={m.lessons} />
       )}
       <AddLesson courseId={courseId} module={m} />
     </section>
+  );
+}
+
+/**
+ * Lessons in a module, reorderable by drag and drop (mouse and touch-screen pointers that support HTML5 drag).
+ * Keyboard and screen-reader users have the Move up / Move down buttons on each row; a drop is announced.
+ */
+function DraggableLessons({
+  courseId,
+  moduleId,
+  lessons,
+}: {
+  courseId: string;
+  moduleId: string;
+  lessons: EditorLesson[];
+}) {
+  const router = useRouter();
+  const [order, setOrder] = useState(lessons);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [synced, setSynced] = useState(lessons);
+  if (synced !== lessons) {
+    // New server data (after any change): start again from it.
+    setSynced(lessons);
+    setOrder(lessons);
+  }
+
+  async function drop(targetId: string) {
+    const from = order.findIndex((l) => l.id === dragging);
+    const to = order.findIndex((l) => l.id === targetId);
+    setDragging(null);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = [...order];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved!);
+    setOrder(next);
+    setError(null);
+    try {
+      await api(`/api/v1/modules/${moduleId}/lesson-order`, {
+        method: "PUT",
+        json: { lessonIds: next.map((l) => l.id) },
+      });
+      setAnnounce(`Moved ${moved!.title} to position ${to + 1} of ${next.length}.`);
+      router.refresh();
+    } catch (err) {
+      setOrder(lessons);
+      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+    }
+  }
+
+  return (
+    <>
+      <ol className="mt-2 flex flex-col divide-y divide-line">
+        {order.map((l, i) => (
+          <LessonRow
+            key={l.id}
+            courseId={courseId}
+            lesson={l}
+            isFirst={i === 0}
+            isLast={i === order.length - 1}
+            drag={{
+              active: dragging === l.id,
+              onStart: () => setDragging(l.id),
+              onEnd: () => setDragging(null),
+              onDrop: () => void drop(l.id),
+            }}
+          />
+        ))}
+      </ol>
+      <p className="sr-only" aria-live="polite">
+        {announce}
+      </p>
+      {error && <FormAlert>{error}</FormAlert>}
+    </>
   );
 }
 
@@ -284,11 +350,13 @@ function LessonRow({
   lesson: l,
   isFirst,
   isLast,
+  drag,
 }: {
   courseId: string;
   lesson: EditorLesson;
   isFirst: boolean;
   isLast: boolean;
+  drag: { active: boolean; onStart: () => void; onEnd: () => void; onDrop: () => void };
 }) {
   const { busy, note, run } = useAction();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -304,8 +372,25 @@ function LessonRow({
     .join(" · ");
 
   return (
-    <li className="flex flex-col gap-2 py-3 lg:flex-row lg:items-center">
+    <li
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", l.title);
+        drag.onStart();
+      }}
+      onDragEnd={drag.onEnd}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        drag.onDrop();
+      }}
+      className={`flex flex-col gap-2 py-3 lg:flex-row lg:items-center ${drag.active ? "opacity-50" : ""}`}
+    >
       <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="cursor-grab select-none text-muted" aria-hidden="true" title="Drag to reorder">
+          ⠿
+        </span>
         <span
           className="grid size-10 shrink-0 place-items-center rounded-full bg-canvas text-primary-fg"
           aria-hidden="true"
@@ -494,18 +579,12 @@ function AddLesson({ courseId, module: m }: { courseId: string; module: EditorMo
               />
             </div>
           )}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={id("body")} className="text-sm font-semibold">
-              {type === "NOTE" ? "Text" : "Instructions (optional)"}
-            </label>
-            <textarea
-              id={id("body")}
-              name="body"
-              rows={type === "NOTE" ? 6 : 3}
-              maxLength={20000}
-              className="rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-[15px]"
-            />
-          </div>
+          <MarkdownField
+            id={id("body")}
+            name="body"
+            label={type === "NOTE" ? "Text" : "Instructions (optional)"}
+            rows={type === "NOTE" ? 6 : 3}
+          />
           {type === "DOCUMENT" && (
             <p className="text-sm text-muted">
               After you add the lesson, you can attach PDFs, slides and other files.

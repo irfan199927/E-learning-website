@@ -113,6 +113,8 @@ export const initUploadSchema = z.object({
   sizeBytes: z.number().int().positive(),
   /** Module to add the video lesson to. Without one it goes into the course's "Videos" module. */
   moduleId: id.optional(),
+  /** Replace the video of this VIDEO lesson instead of adding a lesson (swapped in once the new one is ready). */
+  replaceLessonId: id.optional(),
 });
 export type InitUploadInput = z.infer<typeof initUploadSchema>;
 
@@ -601,3 +603,7 @@ export const listPaymentsQuerySchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
 });
 export type ListPaymentsQuery = z.infer<typeof listPaymentsQuerySchema>;
+
+/** The full new order of a module's lessons (drag and drop). Must list exactly the module's lessons. */
+export const lessonOrderSchema = z.object({ lessonIds: z.array(z.string().min(1).max(64)).min(1).max(500) });
+export type LessonOrderInput = z.infer<typeof lessonOrderSchema>;

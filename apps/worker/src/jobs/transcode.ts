@@ -70,15 +70,27 @@ export async function transcodeVideo(ctx: JobContext, job: TranscodeJob, opts: T
     const thumbKey = keys.videoThumb(video.id);
     await ctx.storage.putStream(thumbKey, createReadStream(thumb), "image/jpeg");
 
-    await ctx.db.video.update({
-      where: { id: video.id },
-      data: {
-        status: "READY",
-        hlsPrefix: prefix,
-        thumbnailKey: thumbKey,
-        durationSeconds: probe.durationSeconds,
-      },
-    });
+    await ctx.db.$transaction([
+      ctx.db.video.update({
+        where: { id: video.id },
+        data: {
+          status: "READY",
+          hlsPrefix: prefix,
+          thumbnailKey: thumbKey,
+          durationSeconds: probe.durationSeconds,
+          replacesLessonId: null,
+        },
+      }),
+      // A replacement upload: swap it into its lesson now that it can play. The old video stays (no lesson).
+      ...(video.replacesLessonId
+        ? [
+            ctx.db.lesson.updateMany({
+              where: { id: video.replacesLessonId, type: "VIDEO" },
+              data: { videoId: video.id },
+            }),
+          ]
+        : []),
+    ]);
     ctx.log.info(
       { videoId: video.id, renditions: renditions.map((r) => r.name), files },
       "transcode complete",

@@ -458,6 +458,8 @@ model Video {
   transcriptKey   String? // WebVTT
   summary         String?     @db.Text // AI summary
   error           String?
+  /// A replacement upload: when it's READY, the worker points this lesson at it (the old video stays, lessonless).
+  replacesLessonId String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

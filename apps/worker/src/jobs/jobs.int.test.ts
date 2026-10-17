@@ -12,6 +12,7 @@ import {
   purgeDeletedUsers,
   reconcileReminders,
   sweepClasses,
+  sweepOrphanUploads,
 } from "./maintenance";
 import { RECORDINGS_MODULE_TITLE, syncRecording } from "./recording-sync";
 import { sendReminder } from "./reminder";
@@ -286,6 +287,39 @@ describe("maintenance", () => {
     expect(left.map((n) => n.title).sort()).toEqual(["old unread", "recent read"]);
   });
 
+  it("deletes uploads nothing points at, once they're 2 days old", async () => {
+    const w = await classWorld();
+    const db = testDb();
+    const lesson = await db.lesson.create({
+      data: {
+        module: { create: { courseId: w.course.id, title: "M", position: 1 } },
+        title: "Files",
+        type: "DOCUMENT",
+        position: 1,
+      },
+    });
+    const kept = `attachments/${lesson.id}/${w.tag}-a/worksheet.pdf`;
+    await db.attachment.create({
+      data: {
+        lessonId: lesson.id,
+        fileName: "worksheet.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 10,
+        storageKey: kept,
+      },
+    });
+    const old = new Date(Date.now() - 3 * 86_400_000);
+    const orphan = `attachments/${lesson.id}/${w.tag}-b/never-completed.pdf`;
+    const fresh = `courses/${w.course.id}/cover/${w.tag}.png`;
+    const storage = fakeStorage([
+      { key: kept, lastModified: old },
+      { key: orphan, lastModified: old },
+      { key: fresh, lastModified: new Date() }, // still uploading, maybe
+    ]);
+    await sweepOrphanUploads(makeCtx({ storage }));
+    expect(storage.deleted).toEqual([orphan]);
+  });
+
   it("purges accounts 30 days after a deletion request, with their files; skips content owners", async () => {
     const w = await classWorld();
     const db = testDb();
@@ -342,6 +376,28 @@ describe("transcode job (real ffmpeg)", () => {
     ]);
 
     const w = await classWorld();
+    // This upload replaces the video of an existing lesson: it's swapped in once READY.
+    const oldVideo = await testDb().video.create({
+      data: {
+        title: "Old take",
+        source: "UPLOAD",
+        status: "READY",
+        uploaderId: w.teacher.id,
+        courseId: w.course.id,
+      },
+    });
+    const week = await testDb().module.create({
+      data: { courseId: w.course.id, title: "Week 1", position: 1 },
+    });
+    const lesson = await testDb().lesson.create({
+      data: {
+        moduleId: week.id,
+        title: "Intro",
+        type: "VIDEO",
+        position: 1,
+        videoId: oldVideo.id,
+      },
+    });
     const v = await testDb().video.create({
       data: {
         title: "Upload",
@@ -350,12 +406,15 @@ describe("transcode job (real ffmpeg)", () => {
         uploaderId: w.teacher.id,
         courseId: w.course.id,
         rawKey: "videos/x/raw.mp4",
+        replacesLessonId: lesson.id,
       },
     });
     const storage = fakeStorage();
     const res = await transcodeVideo(makeCtx({ storage }), { videoId: v.id }, { inputOverride: input });
 
     expect(res).toMatchObject({ renditions: ["360p", "720p"], durationSeconds: 8 });
+    expect((await testDb().lesson.findUniqueOrThrow({ where: { id: lesson.id } })).videoId).toBe(v.id);
+    expect((await testDb().video.findUniqueOrThrow({ where: { id: v.id } })).replacesLessonId).toBeNull();
     const keys = [...storage.puts.keys()];
     expect(keys).toContain(`videos/${v.id}/hls/master.m3u8`);
     expect(keys).toContain(`videos/${v.id}/hls/720p/index.m3u8`);

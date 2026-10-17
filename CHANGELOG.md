@@ -5,6 +5,18 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — Markdown, drag and drop, video replacement, orphan clean-up (2026-10-17)
+
+- Readings, link/file lesson instructions and assignment instructions are **Markdown**, with a **Preview**
+  toggle and a formatting hint in the editors. Raw HTML and unsafe links are never rendered; plain text written
+  before keeps its line breaks.
+- Lessons can be **dragged and dropped** within a module (`PUT /api/v1/modules/:id/lesson-order`, full order,
+  refused if the lessons changed meanwhile). The Move up / down buttons stay for keyboard users.
+- **Replace video** on a video lesson: the new upload is processed while students keep the old one; the worker
+  swaps it in when ready (migration `video_replacement`: `Video.replacesLessonId`).
+- New daily worker job `sweep-orphan-uploads`: deletes uploads under `attachments/`, `courses/`,
+  `submissions/` and `payments/` that nothing in the database points at, once they're 2 days old.
+
 ### Changed — live notification count and clean-up (2026-10-17)
 
 - The bell's unread count updates without a reload: on every page change, every minute while the tab is

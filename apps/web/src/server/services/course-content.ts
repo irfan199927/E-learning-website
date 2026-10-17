@@ -20,6 +20,7 @@ import {
   type CreateLessonInput,
   type CreateModuleInput,
   type InitAttachmentInput,
+  type LessonOrderInput,
   type UpdateCourseInput,
   type UpdateLessonInput,
   type UpdateModuleInput,
@@ -333,8 +334,32 @@ export interface LessonForEditing {
   url: string | null;
   published: boolean;
   video: { id: string; title: string; status: VideoStatus } | null;
+  /** A replacement video still being uploaded or processed (swapped in when ready). */
+  replacement: { id: string; title: string; status: VideoStatus } | null;
   attachments: { id: string; fileName: string; sizeBytes: number }[];
   modules: { id: string; title: string }[];
+}
+
+/** Put a module's lessons in a new order (drag and drop). The list must be exactly the module's lessons. */
+export async function reorderLessons(
+  deps: Deps,
+  actor: Actor,
+  moduleId: string,
+  input: LessonOrderInput,
+): Promise<void> {
+  const mod = await managedModule(deps, actor, moduleId);
+  const current = await deps.db.lesson.findMany({ where: { moduleId: mod.id }, select: { id: true } });
+  const ids = new Set(current.map((l) => l.id));
+  if (
+    input.lessonIds.length !== ids.size ||
+    new Set(input.lessonIds).size !== ids.size ||
+    !input.lessonIds.every((id) => ids.has(id))
+  )
+    throw Errors.conflict("The lessons changed while you were moving them. Reload and try again.");
+  await deps.db.$transaction(
+    input.lessonIds.map((id, i) => deps.db.lesson.update({ where: { id }, data: { position: i + 1 } })),
+  );
+  await audit(deps.db, actor, "lesson.reorder", { type: "Module", id: mod.id });
 }
 
 export async function getLessonForEditing(
@@ -379,6 +404,11 @@ export async function getLessonForEditing(
     url: lesson.url,
     published: lesson.publishedAt !== null,
     video: lesson.video,
+    replacement: await deps.db.video.findFirst({
+      where: { replacesLessonId: lesson.id, status: { not: VideoStatus.FAILED } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, status: true },
+    }),
     attachments: lesson.attachments,
     modules,
   };

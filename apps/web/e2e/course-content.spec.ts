@@ -50,7 +50,11 @@ test("a teacher builds a course from modules and lessons, and a student works th
   // A reading…
   await week.getByRole("button", { name: "Add a lesson to Week 1" }).click();
   await week.getByLabel("Title").fill("Welcome");
-  await week.getByLabel("Text").fill("Angles add up to 180° in a triangle.");
+  await week.getByLabel("Text").fill("Angles add up to **180°** in a triangle.");
+  // Markdown: the preview shows the formatting before saving.
+  await week.getByRole("button", { name: "Preview" }).click();
+  await expect(week.locator("strong", { hasText: "180°" })).toBeVisible();
+  await week.getByRole("button", { name: "Back to editing" }).click();
   await week.getByRole("button", { name: "Add lesson", exact: true }).click();
   await expect(week.getByRole("link", { name: "Welcome" })).toBeVisible();
 
@@ -80,6 +84,14 @@ test("a teacher builds a course from modules and lessons, and a student works th
   await page.getByRole("link", { name: `Edit ${title}` }).click();
   await week.getByRole("button", { name: "Move Worksheet up" }).click();
   await expect(week.getByRole("listitem").nth(1)).toContainText("Worksheet");
+  // Drag and drop (mouse; keyboard users have the buttons above): Worksheet to the top, then back.
+  if (info.project.name === "desktop") {
+    const row = (name: string) => week.getByRole("listitem").filter({ hasText: name });
+    await row("Worksheet").dragTo(row("Welcome"));
+    await expect(week.getByRole("listitem").nth(0)).toContainText("Worksheet");
+    await row("Welcome").dragTo(row("Worksheet"));
+    await expect(week.getByRole("listitem").nth(0)).toContainText("Welcome");
+  }
   await week.getByRole("button", { name: "Hide Protractor tool from students" }).click();
   await expect(week.getByRole("button", { name: "Show Protractor tool to students" })).toBeVisible();
 
@@ -106,6 +118,7 @@ test("a teacher builds a course from modules and lessons, and a student works th
 
   await lessons.nth(0).getByRole("link").click();
   await expect(page.getByText("Angles add up to 180° in a triangle.")).toBeVisible();
+  await expect(page.locator("strong", { hasText: "180°" })).toBeVisible();
   await expect(page.getByText("Week 1 · Lesson 1 of 2")).toBeVisible();
   await page.getByRole("button", { name: "Mark as done" }).click();
   await expect(page.getByRole("button", { name: "Done · undo" })).toBeVisible();

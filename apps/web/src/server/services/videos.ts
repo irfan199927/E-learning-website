@@ -16,7 +16,7 @@ import {
   type InitUploadInput,
   type VideoProgressInput,
 } from "@elearner/core";
-import { VideoSource, VideoStatus } from "@elearner/db";
+import { LessonType, VideoSource, VideoStatus } from "@elearner/db";
 import { extensionFor, keys } from "@elearner/storage";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
@@ -41,8 +41,16 @@ export async function initUpload(
       `Videos can be at most ${Math.round(deps.config.maxUploadBytes / 1024 ** 3)} GB.`,
     );
   }
+  const replacing = input.replaceLessonId
+    ? await deps.db.lesson.findFirst({
+        where: { id: input.replaceLessonId, type: LessonType.VIDEO, module: { courseId: input.courseId } },
+        select: { id: true },
+      })
+    : null;
+  if (input.replaceLessonId && !replacing) throw Errors.notFound("Lesson");
   const video = await deps.db.video.create({
     data: {
+      replacesLessonId: replacing?.id ?? null,
       title: input.title,
       source: VideoSource.UPLOAD,
       status: VideoStatus.PENDING_UPLOAD,
@@ -52,7 +60,8 @@ export async function initUpload(
       sizeBytes: BigInt(input.sizeBytes),
     },
   });
-  await addUploadLesson(deps, actor, input.courseId, video.id, input.title, input.moduleId);
+  // A replacement keeps the lesson on its old video until the worker finishes this one (transcode.ts).
+  if (!replacing) await addUploadLesson(deps, actor, input.courseId, video.id, input.title, input.moduleId);
   const rawKey = keys.videoRaw(video.id, extensionFor(input.mimeType));
   const uploadId = await deps.storage.createMultipart(rawKey, input.mimeType);
   await deps.db.video.update({ where: { id: video.id }, data: { rawKey, uploadId } });

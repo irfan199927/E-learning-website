@@ -12,6 +12,8 @@ export default defineConfig({
     projects: [
       {
         resolve: { alias },
+        // Same JSX runtime as Next.js, so component tests don't need React in scope.
+        esbuild: { jsx: "automatic" },
         test: {
           name: "unit",
           include: ["src/**/*.test.ts"],

@@ -11,7 +11,10 @@ let db: Db | undefined;
 export const testDb = () =>
   (db ??= createDb(process.env.DATABASE_URL ?? "postgresql://elearner:elearner@127.0.0.1:5432/elearner"));
 
-export function fakeStorage(): WorkerStorage & {
+export function fakeStorage(
+  /** Objects listObjects() reports (the orphan sweep reads these). */
+  objects: { key: string; lastModified: Date }[] = [],
+): WorkerStorage & {
   puts: Map<string, number>;
   deleted: string[];
   prefixes: string[];
@@ -33,6 +36,9 @@ export function fakeStorage(): WorkerStorage & {
     abortMultipart: async () => undefined,
     deleteObject: async (key) => void deleted.push(key),
     deletePrefix: async (prefix) => (prefixes.push(prefix), 0),
+    listObjects: async function* (prefix) {
+      yield* objects.filter((o) => o.key.startsWith(prefix));
+    },
   };
 }
 

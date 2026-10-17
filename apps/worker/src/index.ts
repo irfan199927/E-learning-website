@@ -146,6 +146,11 @@ async function registerSchedules() {
     { name: "watch", data: { task: "renew-watch-channels" } },
   );
   await jobs.maintenance.upsertJobScheduler(
+    "sweep-orphan-uploads",
+    { pattern: "5 4 * * *", tz },
+    { name: "orphans", data: { task: "sweep-orphan-uploads" } },
+  );
+  await jobs.maintenance.upsertJobScheduler(
     "prune-notifications",
     { pattern: "55 3 * * *", tz },
     { name: "notifications", data: { task: "prune-notifications" } },
