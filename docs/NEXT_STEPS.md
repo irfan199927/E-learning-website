@@ -86,7 +86,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Email digests of unread notifications
 - [x] Paid courses with manual UPI payments (2026-10-17): Admin → Payments, course price, pay page
 - [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
-- [ ] Export payments as CSV for the school's accounts
+- [x] Export payments as CSV for the school's accounts (2026-10-17)
 - [x] PWA: installable, offline page (2026-10-17)
 - [x] i18n plumbing (next-intl: en/hi/mr, 2026-10-17): language picker, cookie + Accept-Language, Devanagari font;
       translated: app shell, sign-in, account

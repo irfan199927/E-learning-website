@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { formatRupees, upiPayLink } from "./payments";
-import { decidePaymentSchema, paymentSettingsSchema, submitPaymentSchema } from "./schemas";
+import {
+  decidePaymentSchema,
+  paymentSettingsSchema,
+  paymentsExportQuerySchema,
+  submitPaymentSchema,
+} from "./schemas";
 
 describe("manual UPI payments", () => {
   it("formats rupees and builds a UPI pay link", () => {
@@ -33,5 +38,18 @@ describe("manual UPI payments", () => {
     expect(decidePaymentSchema.safeParse({ decision: "approve" }).success).toBe(true);
     expect(decidePaymentSchema.safeParse({ decision: "reject" }).success).toBe(false);
     expect(decidePaymentSchema.safeParse({ decision: "reject", note: "No such UTR" }).success).toBe(true);
+  });
+});
+
+describe("payments export range", () => {
+  const parse = (q: Record<string, string>) => paymentsExportQuerySchema.safeParse(q);
+  it("takes two dates up to a year apart, all statuses by default", () => {
+    expect(parse({ from: "2026-04-01", to: "2027-03-31" })).toMatchObject({
+      success: true,
+      data: { status: "ALL" },
+    });
+    expect(parse({ from: "2026-10-02", to: "2026-10-01" }).success).toBe(false);
+    expect(parse({ from: "2026-01-01", to: "2027-06-01" }).success).toBe(false);
+    expect(parse({ from: "1 Oct", to: "2026-10-01" }).success).toBe(false);
   });
 });

@@ -5,6 +5,13 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — payments CSV for the accounts (2026-10-17)
+
+- Admin → Payments → **Download for your accounts**: payments reported between two dates (the admin's time zone,
+  at most a year), all or one status, with amount, UPI reference, student, course and the decision. Formula
+  injection is escaped (`toCsv`); each download is audited `payment.export`.
+- API: `GET /api/v1/admin/payments/csv?from=&to=&status=`.
+
 ### Added — Hindi and Marathi interface (first screens) (2026-10-17)
 
 - next-intl (no locale in URLs): the language comes from a `locale` cookie, else the browser's Accept-Language.

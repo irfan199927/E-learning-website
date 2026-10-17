@@ -1,10 +1,11 @@
-import { formatInZone, formatRupees } from "@elearner/core";
+import { formatInZone, formatRupees, utcToZonedInput } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getPaymentSettings, listPayments } from "@/server/services/payments";
 import { DecidePayment } from "./decide-payment";
+import { PaymentsExportForm } from "./export-form";
 import { QrEditor } from "./qr-editor";
 import { PaymentSettingsForm } from "./settings-form";
 
@@ -29,6 +30,9 @@ export default async function PaymentsPage({
     getPaymentSettings(deps()),
     listPayments(deps(), actor, { status }),
   ]);
+
+  // Default export range: this month so far, in the admin's time zone.
+  const today = utcToZonedInput(new Date(), actor.timezone).slice(0, 10);
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
@@ -109,6 +113,17 @@ export default async function PaymentsPage({
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-labelledby="export-h" className={card}>
+        <h2 id="export-h" className="mb-1 font-display text-xl font-bold">
+          Download for your accounts
+        </h2>
+        <p className="mb-4 text-sm text-muted">
+          A spreadsheet of payments reported between two dates: amount, UPI reference, student, course and
+          what was decided. Amounts are plain numbers, so the sheet can add them up.
+        </p>
+        <PaymentsExportForm defaultFrom={`${today.slice(0, 8)}01`} defaultTo={today} />
       </section>
 
       <section aria-labelledby="upi-h" className={card}>
