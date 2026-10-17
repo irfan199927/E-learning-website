@@ -21,6 +21,8 @@ function csp(nonce: string): string {
     // Video segments and direct-to-storage multipart uploads.
     `connect-src 'self' ${storage}${isDev ? " ws:" : ""}`,
     `media-src 'self' blob: ${storage}`,
+    "worker-src 'self'", // the PWA service worker (public/sw.js)
+    "manifest-src 'self'",
     "frame-ancestors 'none'",
     "form-action 'self' https://accounts.google.com",
     "base-uri 'self'",
