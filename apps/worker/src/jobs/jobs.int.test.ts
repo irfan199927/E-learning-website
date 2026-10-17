@@ -8,6 +8,7 @@ import { syncCalendar } from "./calendar-sync";
 import {
   abortStaleUploads,
   deleteTranscodedRaw,
+  pruneNotifications,
   purgeDeletedUsers,
   reconcileReminders,
   sweepClasses,
@@ -256,6 +257,33 @@ describe("maintenance", () => {
     expect(after.rawKey).toBeNull();
     expect(after.hlsPrefix).toBe(old.hlsPrefix);
     expect((await testDb().video.findUniqueOrThrow({ where: { id: recent.id } })).rawKey).toBe(recent.rawKey);
+  });
+
+  it("deletes read notifications after 90 days and any after a year", async () => {
+    const w = await classWorld();
+    const db = testDb();
+    const day = 86_400_000;
+    const mk = (title: string, ageDays: number, read: boolean) =>
+      db.notification.create({
+        data: {
+          userId: w.student.id,
+          channel: "IN_APP",
+          type: "test",
+          title,
+          body: "",
+          createdAt: new Date(Date.now() - ageDays * day),
+          readAt: read ? new Date() : null,
+        },
+      });
+    await Promise.all([
+      mk("old read", 91, true),
+      mk("recent read", 10, true),
+      mk("old unread", 91, false),
+      mk("ancient", 400, false),
+    ]);
+    await pruneNotifications(makeCtx());
+    const left = await db.notification.findMany({ where: { userId: w.student.id }, select: { title: true } });
+    expect(left.map((n) => n.title).sort()).toEqual(["old unread", "recent read"]);
   });
 
   it("purges accounts 30 days after a deletion request, with their files; skips content owners", async () => {

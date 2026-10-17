@@ -1,6 +1,7 @@
 import type { Role } from "@elearner/core";
 import Link from "next/link";
 import { Icon } from "./icons";
+import { NotificationBell } from "./notification-bell";
 import { ShellFrame } from "./shell-frame";
 import { ThemeToggle } from "./theme-toggle";
 import { SignOutButton } from "./sign-out-button";
@@ -40,21 +41,7 @@ export function AppShell({
           )}
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle className="text-muted hover:text-ink" />
-            <Link
-              href="/notifications"
-              className="relative grid size-11 place-items-center rounded-full text-muted hover:bg-canvas hover:text-ink"
-              aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
-            >
-              <Icon name="bell" size={22} />
-              {unread > 0 && (
-                <span
-                  className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-live px-1 text-[11px] font-bold text-white"
-                  aria-hidden="true"
-                >
-                  {unread > 9 ? "9+" : unread}
-                </span>
-              )}
-            </Link>
+            <NotificationBell initial={unread} />
             <Link
               href="/account"
               className="flex min-h-11 items-center gap-3 rounded-full hover:bg-canvas sm:pl-3"

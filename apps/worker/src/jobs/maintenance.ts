@@ -30,6 +30,8 @@ export async function runMaintenance(ctx: JobContext, job: MaintenanceJob): Prom
       return reconcileReminders(ctx);
     case "delete-transcoded-raw":
       return deleteTranscodedRaw(ctx);
+    case "prune-notifications":
+      return pruneNotifications(ctx);
   }
 }
 
@@ -191,4 +193,21 @@ export async function purgeDeletedUsers(ctx: JobContext) {
     purged++;
   }
   return { purged };
+}
+
+/** Read notifications are kept for 90 days, unread ones for a year; older rows are deleted (data minimisation). */
+export const READ_NOTIFICATION_RETENTION_MS = 90 * 86_400_000;
+export const NOTIFICATION_RETENTION_MS = 365 * 86_400_000;
+
+export async function pruneNotifications(ctx: JobContext) {
+  const now = ctx.now().getTime();
+  const { count } = await ctx.db.notification.deleteMany({
+    where: {
+      OR: [
+        { readAt: { not: null }, createdAt: { lt: new Date(now - READ_NOTIFICATION_RETENTION_MS) } },
+        { createdAt: { lt: new Date(now - NOTIFICATION_RETENTION_MS) } },
+      ],
+    },
+  });
+  return { deleted: count };
 }

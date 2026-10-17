@@ -49,4 +49,8 @@ test("the teacher's bell shows a join request; opening it marks it read and goes
     await markAll.click();
     await expect(page.locator("li", { hasText: "(unread)" })).toHaveCount(0);
   }
+  // The bell keeps itself up to date from this endpoint.
+  const count = await page.request.get("/api/v1/notifications/unread-count");
+  expect(count.status()).toBe(200);
+  expect(typeof ((await count.json()) as { data: { unread: number } }).data.unread).toBe("number");
 });
