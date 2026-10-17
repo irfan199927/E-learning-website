@@ -86,7 +86,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - `/` is the public landing page (`app/(marketing)`, scoped CSS under `.lp`); course copy lives in `course.ts`. The
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
 - i18n (next-intl, no locale URLs): `locale` cookie, else Accept-Language (`src/i18n/request.ts`). New UI text goes in
-  `apps/web/messages/en.json` (hi/mr fall back to English per key). The static landing export skips next-intl,
+  `apps/web/messages/en/<Namespace>.json` (+ hi/mr; they fall back to English per key; new namespaces are listed in
+  `src/i18n/catalog.ts`). Format dates with `intlLocale(locale)` (Western digits). The static landing export skips next-intl,
   so components it shares (`ThemeToggle`) take labels as props instead of calling `useTranslations`. Emails use
   `User.locale` (saved by the Account page picker): every template takes `mailLocale(user.locale)`; wording in
   `packages/notify/src/copy.ts`.
