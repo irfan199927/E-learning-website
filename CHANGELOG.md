@@ -5,6 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — API reference, testing guide and runbooks (2026-10-17)
+
+- `docs/api.md`: conventions (auth, 404 for hidden resources, problem+json error codes) and every `/api/v1`
+  endpoint by area.
+- `docs/testing.md`: test layers, commands, resetting the dev database for e2e, fixture conventions.
+- `docs/runbooks/`: recording sync, transcode failures, Google reconnect, payments, database restore, secret
+  rotation, incident response.
+
 ### Added — installable app (PWA) (2026-10-17)
 
 - `app/manifest.ts` (`/manifest.webmanifest`): installable as "E-learner" from the browser ("Add to Home

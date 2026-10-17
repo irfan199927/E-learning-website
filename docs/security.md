@@ -246,7 +246,7 @@ _Not legal advice. Have counsel review the privacy notice before launch._
    affected users. Do this promptly; the DPDP rules expect notification without delay.
 4. **Fix and review:** write a blameless postmortem and add a test or control so the same thing can't happen again.
 
-The full incident-response runbook is still to be written (NEXT_STEPS §3).
+The full step-by-step version is [runbooks/incident-response.md](runbooks/incident-response.md).
 
 ## Known gaps
 
