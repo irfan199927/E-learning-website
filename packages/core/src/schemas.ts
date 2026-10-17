@@ -274,6 +274,28 @@ export type InitAttachmentInput = z.infer<typeof initAttachmentSchema>;
 export const completeAttachmentSchema = z.object({ attachmentId: z.string().uuid(), ...attachmentFile });
 export type CompleteAttachmentInput = z.infer<typeof completeAttachmentSchema>;
 
+// ── Course cover images ──
+
+export const COVER_MAX_BYTES = 2 * 1024 * 1024;
+/** Image types a cover can be, with the file extension each is stored under. */
+export const COVER_MIME_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
+const coverMime = z.enum(Object.keys(COVER_MIME_TYPES) as [keyof typeof COVER_MIME_TYPES], {
+  errorMap: () => ({ message: "Use a JPEG, PNG or WebP image." }),
+});
+
+export const initCoverSchema = z.object({
+  mimeType: coverMime,
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(COVER_MAX_BYTES, `Cover images can be at most ${COVER_MAX_BYTES / 1024 ** 2} MB.`),
+});
+export type InitCoverInput = z.infer<typeof initCoverSchema>;
+
+export const completeCoverSchema = z.object({ coverId: z.string().uuid(), mimeType: coverMime });
+export type CompleteCoverInput = z.infer<typeof completeCoverSchema>;
+
 export const linkChildSchema = z.object({
   studentEmail: z.string().trim().toLowerCase().email("Enter the student's email address.").max(254),
 });

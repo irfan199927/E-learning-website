@@ -23,7 +23,7 @@ test("the teacher's bell shows a join request; opening it marks it read and goes
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
 
   await signIn(page, "kabir@school.edu");
-  await page.goto("/courses");
+  await page.goto(`/courses?q=${encodeURIComponent(title)}`);
   await page.getByRole("button", { name: `Ask to join ${title}` }).click();
   await expect(
     page.getByRole("article").filter({ hasText: title }).getByText("Request sent. Waiting for your teacher."),

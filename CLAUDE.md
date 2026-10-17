@@ -117,6 +117,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Account deletion (`services/account.ts`): students and parents soft-delete their own account (`deletedAt`,
   sessions deleted); the worker purges after `ERASURE_GRACE_DAYS` (core `account.ts`), deleting submission files
   first. Admin lists include pending deletions (`purgeOn`); other admin actions still skip `deletedAt` users.
+- Course covers (`services/course-cover.ts`): optional `Course.coverKey` under `keys.courseCover`; pass
+  `cover={{ courseId, version }}` to `CourseTile` (version = upload id, busts caches). Catalog = `listCatalog(q)`,
+  courses the student isn't in, max `CATALOG_LIMIT`; tests must search for their own course (shared dev DB).
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

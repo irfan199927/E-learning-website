@@ -26,6 +26,22 @@ test("a teacher builds a course from modules and lessons, and a student works th
   await page.getByRole("link", { name: "Edit course" }).click();
   await expect(page.getByRole("heading", { level: 1, name: `Edit ${title}` })).toBeVisible();
 
+  // A cover image (a 1×1 PNG) goes straight to storage; the course then shows it instead of the colour tile.
+  await page.getByLabel("Choose a cover image").setInputFiles({
+    name: "cover.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(page.getByText("Cover saved.")).toBeVisible();
+  const coverSrc = await page.locator('img[src*="/cover?v="]').first().getAttribute("src");
+  const cover = await page.request.get(coverSrc!, { maxRedirects: 0 });
+  expect(cover.status()).toBe(302);
+  const image = await page.request.get(cover.headers()["location"]!);
+  expect(image.headers()["content-type"]).toBe("image/png");
+
   await page.getByLabel("New module").fill("Week 1");
   await page.getByRole("button", { name: "Add module" }).click();
   const week = page.getByRole("region", { name: "Week 1" });
@@ -69,7 +85,7 @@ test("a teacher builds a course from modules and lessons, and a student works th
 
   // ── A student joins (Kabir is an adult with no courses) ──
   await signIn(page, "kabir@school.edu");
-  await page.goto("/courses");
+  await page.goto(`/courses?q=${encodeURIComponent(title)}`);
   await page.getByRole("button", { name: `Ask to join ${title}` }).click();
   await expect(
     page.getByRole("article").filter({ hasText: title }).getByText("Request sent. Waiting for your teacher."),

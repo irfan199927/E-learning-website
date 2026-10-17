@@ -15,9 +15,13 @@ import { JoinRequestStatus } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess } from "../policies";
+import { coverVersion } from "./course-cover";
 import { notifyUsers } from "./notifications";
 
-export type CatalogState = "enrolled" | "pending" | "declined" | "none";
+/** How many catalog courses a page shows; search narrows longer lists. */
+export const CATALOG_LIMIT = 60;
+
+export type CatalogState = "pending" | "declined" | "none";
 
 export interface CatalogCourse {
   id: string;
@@ -27,36 +31,51 @@ export interface CatalogCourse {
   description: string | null;
   teacherName: string;
   state: CatalogState;
+  /** Uploaded cover image (a cache-busting version for /api/v1/courses/:id/cover), or null for the generated tile. */
+  coverVersion: string | null;
 }
 
-/** Published courses a student can ask to join, with where they stand on each. */
-export async function listCatalog(deps: Deps, actor: Actor): Promise<CatalogCourse[]> {
+/**
+ * Published courses a student isn't in yet, with where they stand on each (asked, declined). `q` matches the
+ * title, description or teacher's name. Alphabetical, at most CATALOG_LIMIT.
+ */
+export async function listCatalog(
+  deps: Deps,
+  actor: Actor,
+  opts: { q?: string } = {},
+): Promise<CatalogCourse[]> {
   if (actor.role !== "STUDENT") return [];
+  const q = opts.q?.trim().slice(0, 100);
+  const contains = (s: string) => ({ contains: s, mode: "insensitive" as const });
   const courses = await deps.db.course.findMany({
-    where: { publishedAt: { not: null } },
+    where: {
+      publishedAt: { not: null },
+      enrollments: { none: { userId: actor.id, revokedAt: null } },
+      ...(q
+        ? { OR: [{ title: contains(q) }, { description: contains(q) }, { teacher: { name: contains(q) } }] }
+        : {}),
+    },
     select: {
       id: true,
       title: true,
       grade: true,
       color: true,
       description: true,
+      coverKey: true,
       teacher: { select: { name: true } },
-      enrollments: { where: { userId: actor.id, revokedAt: null }, select: { id: true } },
       joinRequests: { where: { userId: actor.id }, select: { status: true } },
     },
     orderBy: { title: "asc" },
-    take: 200,
+    take: CATALOG_LIMIT,
   });
   return courses.map((c) => {
     const request = c.joinRequests[0]?.status;
     const state: CatalogState =
-      c.enrollments.length > 0
-        ? "enrolled"
-        : request === JoinRequestStatus.PENDING
-          ? "pending"
-          : request === JoinRequestStatus.DECLINED
-            ? "declined"
-            : "none";
+      request === JoinRequestStatus.PENDING
+        ? "pending"
+        : request === JoinRequestStatus.DECLINED
+          ? "declined"
+          : "none";
     return {
       id: c.id,
       title: c.title,
@@ -65,6 +84,7 @@ export async function listCatalog(deps: Deps, actor: Actor): Promise<CatalogCour
       description: c.description,
       teacherName: c.teacher.name,
       state,
+      coverVersion: coverVersion(c.coverKey),
     };
   });
 }

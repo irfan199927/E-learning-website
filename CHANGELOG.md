@@ -5,6 +5,18 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — catalog search and course covers (2026-10-17)
+
+- **Search courses** on Find a course (title, description or teacher). The catalog now lists only courses the
+  student isn't in, at most 60 alphabetically, so search is how long catalogs stay usable.
+- Teachers can upload a cover image on Edit course (JPEG, PNG or WebP, up to 2 MB; straight to storage, size
+  checked on completion). It replaces the colour tile everywhere; **Remove cover** goes back. Covers of published
+  courses are visible to anyone signed in; drafts only to staff. Audited as `course.cover`.
+- Migration `course_cover` adds `Course.coverKey`.
+- API: `POST /api/v1/courses/:id/cover/uploads`, `PUT|DELETE /api/v1/courses/:id/cover`, `GET .../cover?v=`
+  (redirect to a signed URL).
+- Tests: the recording-consent e2e test no longer assumes a freshly seeded student.
+
 ### Added — account page and self-service deletion (2026-10-17)
 
 - `/account` (the name and avatar in the top bar link to it): your details, a link to class recordings for
