@@ -4,7 +4,12 @@
  *
  * Totals count work that is marked or overdue: a graded assignment or a taken quiz scores its points; an
  * assignment past its due date with nothing handed in (or a quiz past its closing date never taken) scores 0;
- * work handed in but not graded yet, and work not due yet, are left out until they are.
+ * work handed in but not graded yet, and work not due yet, are left out until they are. Work a teacher excused
+ * is always left out.
+ *
+ * Weighting: by points (the default), or a course can give assignments a share of the total in percent (quizzes
+ * get the rest); the total is then the weighted mix of the two categories' percentages (a category with nothing
+ * counted yet is left out of the mix).
  */
 
 export type GradeItemKind = "assignment" | "quiz";
@@ -22,8 +27,9 @@ export interface GradeItem {
  * to-grade      handed in, waiting for the teacher
  * missing       overdue and nothing handed in / never taken: counts as 0
  * open          not due yet, nothing handed in
+ * excused       the teacher excused this student from it: left out of totals and averages
  */
-export type GradeCellStatus = "graded" | "to-grade" | "missing" | "open";
+export type GradeCellStatus = "graded" | "to-grade" | "missing" | "open" | "excused";
 
 export interface GradeCell {
   status: GradeCellStatus;
@@ -37,9 +43,11 @@ export interface GradeFacts {
   status: "SUBMITTED" | "LATE" | "GRADED" | "RETURNED" | null;
   score: number | null;
   late?: boolean;
+  excused?: boolean;
 }
 
 export function gradeCell(item: GradeItem, facts: GradeFacts | undefined, now: Date): GradeCell {
+  if (facts?.excused) return { status: "excused", score: null, late: false };
   const late = facts?.late ?? facts?.status === "LATE";
   if (facts?.status === "GRADED" && facts.score !== null)
     return { status: "graded", score: facts.score, late };
@@ -55,19 +63,40 @@ export interface GradeTotal {
   percent: number | null;
 }
 
-export function gradeTotal(items: readonly GradeItem[], cells: readonly GradeCell[]): GradeTotal {
-  let earned = 0;
-  let possible = 0;
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * `assignmentWeight`: assignments' share of the total in percent (0–100), or null to weigh by points.
+ * `earned`/`possible` are always raw points; only `percent` is weighted.
+ */
+export function gradeTotal(
+  items: readonly GradeItem[],
+  cells: readonly GradeCell[],
+  assignmentWeight: number | null = null,
+): GradeTotal {
+  const sums = { assignment: { earned: 0, possible: 0 }, quiz: { earned: 0, possible: 0 } };
   items.forEach((item, i) => {
     const cell = cells[i];
+    const sum = sums[item.kind];
     if (cell?.status === "graded") {
-      earned += cell.score ?? 0;
-      possible += item.maxPoints;
+      sum.earned += cell.score ?? 0;
+      sum.possible += item.maxPoints;
     } else if (cell?.status === "missing") {
-      possible += item.maxPoints;
+      sum.possible += item.maxPoints;
     }
   });
-  return { earned, possible, percent: possible > 0 ? Math.round((earned / possible) * 1000) / 10 : null };
+  const earned = sums.assignment.earned + sums.quiz.earned;
+  const possible = sums.assignment.possible + sums.quiz.possible;
+  if (possible === 0) return { earned, possible, percent: null };
+  if (assignmentWeight === null) return { earned, possible, percent: round1((earned / possible) * 100) };
+  const parts = [
+    { weight: assignmentWeight, ...sums.assignment },
+    { weight: 100 - assignmentWeight, ...sums.quiz },
+  ].filter((p) => p.possible > 0 && p.weight > 0);
+  const weights = parts.reduce((n, p) => n + p.weight, 0);
+  if (weights === 0) return { earned, possible, percent: round1((earned / possible) * 100) };
+  const percent = parts.reduce((n, p) => n + (p.earned / p.possible) * 100 * (p.weight / weights), 0);
+  return { earned, possible, percent: round1(percent) };
 }
 
 /** Mean of the scored cells (missing work counts as 0), rounded to one decimal; null when none count. */

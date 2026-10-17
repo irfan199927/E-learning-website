@@ -8,8 +8,6 @@ import type { MonthActivity } from "@/server/services/learning";
  * parent's view of their child.
  */
 
-/** Daily watch-time goal shown on the "Today" ring. */
-export const DAILY_GOAL_MINUTES = 30;
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const card = "rounded-[var(--radius-card)] border border-line bg-surface";
 
@@ -23,10 +21,16 @@ function SectionTitle({ id, children }: { id: string; children: React.ReactNode 
 
 export function TodayProgress({
   seconds,
+  goalMinutes,
+  questions,
   lessonsCompleted,
   coursesInProgress,
 }: {
   seconds: number;
+  /** The school's daily watch goal (Admin → Settings). */
+  goalMinutes: number;
+  /** Quiz questions answered today. */
+  questions: number;
   lessonsCompleted: number;
   coursesInProgress: number;
 }) {
@@ -36,22 +40,26 @@ export function TodayProgress({
       <SectionTitle id="today-h">Today&apos;s progress</SectionTitle>
       <div className={`flex flex-1 flex-wrap items-center justify-around gap-6 p-6 ${card}`}>
         <ProgressRing
-          value={(minutes / DAILY_GOAL_MINUTES) * 100}
+          value={(minutes / goalMinutes) * 100}
           size={132}
           stroke={12}
           color="var(--color-primary)"
-          label={`${minutes} of ${DAILY_GOAL_MINUTES} minutes watched today`}
+          label={`${minutes} of ${goalMinutes} minutes watched today`}
         >
           <span className="flex flex-col">
             <b className="text-2xl">{minutes}</b>
             <span className="text-xs text-muted">
-              of {DAILY_GOAL_MINUTES} min
+              of {goalMinutes} min
               <br />
               watched
             </span>
           </span>
         </ProgressRing>
         <dl className="flex flex-col gap-4">
+          <div>
+            <dt className="text-xs text-muted">Questions answered</dt>
+            <dd className="text-2xl font-bold">{questions}</dd>
+          </div>
           <div>
             <dt className="text-xs text-muted">Lessons completed</dt>
             <dd className="text-2xl font-bold">{lessonsCompleted}</dd>

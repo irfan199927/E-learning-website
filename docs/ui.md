@@ -107,7 +107,9 @@ list.
   handed in), or "—" (not due yet). A class average row at the bottom. The table scrolls sideways inside its card
   with the student column pinned. **Download CSV** exports the same data with emails (audited).
 - **Student (My grades):** their total so far and each piece of work with its status, linked from the course page.
-- Totals: graded work counts its score; overdue work never handed in counts as 0; work waiting to be graded and
+- **Excuse** on a Missing cell (and **Undo** on an Excused one) leaves that work out for that student.
+  **Weighting** (below the table): by points, or assignments X% / quizzes the rest.
+- Totals: graded work counts its score; overdue work never handed in counts as 0; excused work is left out; work waiting to be graded and
   work not due yet are left out (`gradeTotal` in `packages/core/src/gradebook.ts`).
 - Entry points: **Gradebook** button on the course page header (staff); **My grades** link under the progress bar
   (students, once the course has work).

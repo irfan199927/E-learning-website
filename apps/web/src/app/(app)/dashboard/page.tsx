@@ -87,6 +87,8 @@ export default async function DashboardPage({
             <div className="grid gap-7 md:grid-cols-2">
               <TodayProgress
                 seconds={overview.todaySeconds}
+                goalMinutes={overview.goalMinutes}
+                questions={overview.questionsToday}
                 lessonsCompleted={overview.lessonsCompleted}
                 coursesInProgress={overview.coursesInProgress}
               />

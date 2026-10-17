@@ -109,7 +109,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   enrolled courses only (NOT_FOUND otherwise). Quiz correct options never leave the server before submit; scoring
   is `scoreQuiz` in core. Submission files must live under `keys.submissionPrefix(assignment, student)`.
 - Gradebook (`services/gradebook.ts`, `/courses/:id/grades`): cell and total rules are `gradeCell`/`gradeTotal`
-  in core (overdue + nothing handed in = 0; ungraded or not-due work left out). CSV goes through core `toCsv`
+  in core (overdue + nothing handed in = 0; ungraded, not-due or excused work left out; optional
+  `Course.assignmentWeight` weighting). School-wide settings: `services/school-settings.ts` (one row). CSV goes through core `toCsv`
   (formula-injection escaping); exports are audited `grade.export`.
 - Recording consent (`services/recording-consent.ts`): students need an agreement to the current
   `RECORDING_NOTICE_VERSION` (core `recording.ts`) to join classes (`getJoinUrl`); bump the version when the text

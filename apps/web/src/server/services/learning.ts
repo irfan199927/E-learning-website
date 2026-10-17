@@ -23,6 +23,7 @@ import { LessonType, VideoStatus, type Prisma } from "@elearner/db";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess, visibleCoursesWhere } from "../policies";
 import { coverVersion } from "./course-cover";
+import { getSchoolSettings } from "./school-settings";
 
 export interface CourseCard {
   id: string;
@@ -185,6 +186,10 @@ export interface MonthActivity {
 export interface LearnerOverview {
   today: string;
   todaySeconds: number;
+  /** The school's daily watch goal (school-settings.ts). */
+  goalMinutes: number;
+  /** Quiz questions answered in attempts submitted today (local day). */
+  questionsToday: number;
   streak: number;
   resume: CourseCard | null;
   coursesInProgress: number;
@@ -194,6 +199,18 @@ export interface LearnerOverview {
 }
 
 const STREAK_LOOKBACK_DAYS = 370;
+
+/** Questions answered in quiz attempts submitted on the learner's local `day`. */
+async function questionsAnsweredOn(deps: Deps, actor: Actor, day: string): Promise<number> {
+  const since = new Date(deps.now().getTime() - 48 * 3600_000); // covers any timezone's "today"
+  const attempts = await deps.db.quizAttempt.findMany({
+    where: { userId: actor.id, submittedAt: { gte: since } },
+    select: { answers: true, submittedAt: true },
+  });
+  return attempts
+    .filter((a) => localDayKey(a.submittedAt!, actor.timezone) === day)
+    .reduce((n, a) => n + Object.keys((a.answers ?? {}) as Record<string, unknown>).length, 0);
+}
 
 /** Seconds watched per local day over the streak lookback window. */
 async function recentActivity(deps: Deps, actor: Actor, today: string): Promise<Map<string, number>> {
@@ -250,6 +267,8 @@ export async function getLearnerOverview(
   return {
     today,
     todaySeconds: recent.get(today) ?? 0,
+    goalMinutes: (await getSchoolSettings(deps)).dailyGoalMinutes,
+    questionsToday: await questionsAnsweredOn(deps, actor, today),
     streak: learningStreak(recent.keys(), today),
     resume,
     coursesInProgress: courses.filter((c) => c.state === "in-progress").length,
