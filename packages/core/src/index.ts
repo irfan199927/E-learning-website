@@ -1,3 +1,4 @@
+export * from "./account";
 export * from "./attendance";
 export * from "./crypto";
 export * from "./errors";

@@ -187,7 +187,8 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `google.connect`
 - `class.schedule`, `class.reschedule`, `class.cancel`
 - `video.upload`
-- `user.purge` (written by the worker)
+- `user.purge` (written by the worker), `user.delete_request` (someone deletes their own account), `user.restore`
+  (an admin cancels a deletion before the purge)
 - `course.create`, `course.join_request`, `enrollment.approve`, `enrollment.decline`
 - `user.create`, `user.invite`, `user.role`, `user.activate`, `user.deactivate` (the admin Users page, and
   `user.role` also from the "Admin: set user role" workflow)
@@ -203,7 +204,6 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 
 **Must be added with the features that need them:**
 
-- user deletion requests
 - denied video access
 
 ## Personal data and the DPDP Act 2023
@@ -213,15 +213,15 @@ data, verifiable parental consent) does not apply; the parental-consent flow was
 (dates of birth, parent links and names) dropped by migration `remove_parental_consent`. If the school ever admits
 under-18s, that flow has to come back first (see git history).
 
-| Requirement                       | How we meet it                                                                                                                                        | Status                                |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| No tracking or targeted ads       | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                        | Built                                 |
-| Data minimisation                 | No date of birth, phone numbers or addresses.                                                                                                         | Built                                 |
-| Consent to be recorded in classes | Students agree to the recording notice (`/recording-consent`, versioned `Consent` rows) before joining live classes from E-learner; withdraw any time | Built (see known gaps)                |
-| Erasure on request                | Soft-delete (`deletedAt`) blocks sign-in immediately. After 30 days the worker purges the user and their data (cascade), and writes an audit row.     | Built (purge job); request UI planned |
-| Grievance officer                 | Contact details in the site footer                                                                                                                    | Planned                               |
-| Data location                     | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                                  | To decide (architecture.md G7)        |
-| Breach notification               | Tell the Data Protection Board and affected users without delay                                                                                       | Process: see below                    |
+| Requirement                       | How we meet it                                                                                                                                                                                                                                                                                                  | Status                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| No tracking or targeted ads       | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                                                                                                                                                                                  | Built                          |
+| Data minimisation                 | No date of birth, phone numbers or addresses.                                                                                                                                                                                                                                                                   | Built                          |
+| Consent to be recorded in classes | Students agree to the recording notice (`/recording-consent`, versioned `Consent` rows) before joining live classes from E-learner; withdraw any time                                                                                                                                                           | Built (see known gaps)         |
+| Erasure on request                | Students and parents delete their account at `/account` (teachers and admins via an admin). Soft-delete (`deletedAt`) signs them out and blocks sign-in at once; an admin can cancel within 30 days; then the worker purges the user, their data (cascade) and their submission files, and writes an audit row. | Built                          |
+| Grievance officer                 | Contact details in the site footer                                                                                                                                                                                                                                                                              | Planned                        |
+| Data location                     | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                                                                                                                                                                                            | To decide (architecture.md G7) |
+| Breach notification               | Tell the Data Protection Board and affected users without delay                                                                                                                                                                                                                                                 | Process: see below             |
 
 Known erasure limits:
 

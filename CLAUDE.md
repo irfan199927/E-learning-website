@@ -114,6 +114,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Recording consent (`services/recording-consent.ts`): students need an agreement to the current
   `RECORDING_NOTICE_VERSION` (core `recording.ts`) to join classes (`getJoinUrl`); bump the version when the text
   changes, and the copy in `seed.ts`. Staff never need it.
+- Account deletion (`services/account.ts`): students and parents soft-delete their own account (`deletedAt`,
+  sessions deleted); the worker purges after `ERASURE_GRACE_DAYS` (core `account.ts`), deleting submission files
+  first. Admin lists include pending deletions (`purgeOn`); other admin actions still skip `deletedAt` users.
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

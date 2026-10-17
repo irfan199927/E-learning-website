@@ -55,16 +55,22 @@ export function AppShell({
                 </span>
               )}
             </Link>
-            <span className="hidden min-w-0 flex-col text-right sm:flex">
-              <span className="truncate text-sm font-semibold">{user.name}</span>
-              <span className="text-xs capitalize text-muted">{user.role.toLowerCase()}</span>
-            </span>
-            <span
-              className="grid size-10 place-items-center rounded-full bg-success-soft text-sm font-bold text-success"
-              aria-hidden="true"
+            <Link
+              href="/account"
+              className="flex min-h-11 items-center gap-3 rounded-full hover:bg-canvas sm:pl-3"
+              aria-label={`Account: ${user.name}`}
             >
-              {initials}
-            </span>
+              <span className="hidden min-w-0 flex-col text-right sm:flex" aria-hidden="true">
+                <span className="truncate text-sm font-semibold">{user.name}</span>
+                <span className="text-xs capitalize text-muted">{user.role.toLowerCase()}</span>
+              </span>
+              <span
+                className="grid size-10 place-items-center rounded-full bg-success-soft text-sm font-bold text-success"
+                aria-hidden="true"
+              >
+                {initials}
+              </span>
+            </Link>
             <SignOutButton />
           </div>
         </>

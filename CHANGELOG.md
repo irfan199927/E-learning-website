@@ -5,6 +5,16 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — account page and self-service deletion (2026-10-17)
+
+- `/account` (the name and avatar in the top bar link to it): your details, a link to class recordings for
+  students, and **Delete my account** for students and parents (type `DELETE` to confirm).
+- Deleting signs the person out everywhere and blocks sign-in at once; they get an email with the date. The
+  worker purges the account 30 days later, as before, and now also deletes their submission files from storage.
+- Admins see "Deleting on …" on the Users page and can **Cancel deletion** until the purge.
+- Audited: `user.delete_request`, `user.restore`. No database change.
+- API: `POST /api/v1/me/deletion-request` (`{ confirm: "DELETE" }`), `POST /api/v1/admin/users/:id/restore`.
+
 ### Added — recording consent (2026-10-17)
 
 - Students agree to a class-recording notice before joining live classes from E-learner (`/recording-consent`).

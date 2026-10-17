@@ -485,3 +485,11 @@ export function parseUserCsv(text: string): {
 /** The notice version the student was shown (RECORDING_NOTICE_VERSION). */
 export const agreeRecordingSchema = z.object({ version: z.string().trim().min(1).max(40) });
 export type AgreeRecordingInput = z.infer<typeof agreeRecordingSchema>;
+
+// ─────────────────────────── Account deletion ───────────────────────────
+
+/** The person types DELETE to confirm, so a stray click can't delete an account. */
+export const deleteAccountSchema = z.object({
+  confirm: z.literal("DELETE", { errorMap: () => ({ message: "Type DELETE to confirm." }) }),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
