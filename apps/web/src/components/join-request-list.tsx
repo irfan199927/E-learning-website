@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export interface JoinRequestRow {
 
 /** A teacher's queue of students asking to join one course, with Approve / Decline. */
 export function JoinRequestList({ requests }: { requests: JoinRequestRow[] }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [rows, setRows] = useState(requests);
   const [busy, setBusy] = useState<string | null>(null);
@@ -28,10 +30,12 @@ export function JoinRequestList({ requests }: { requests: JoinRequestRow[] }) {
     try {
       await api(`/api/v1/join-requests/${row.id}`, { method: "PATCH", json: { decision } });
       setRows((r) => r.filter((x) => x.id !== row.id));
-      setDone(decision === "approve" ? `${row.name} can now open this course.` : `Declined ${row.name}.`);
+      setDone(
+        decision === "approve" ? t("approved", { name: row.name }) : t("declinedName", { name: row.name }),
+      );
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
     } finally {
       setBusy(null);
     }
@@ -42,7 +46,7 @@ export function JoinRequestList({ requests }: { requests: JoinRequestRow[] }) {
       {done && <FormAlert tone="success">{done}</FormAlert>}
       {error && <FormAlert>{error}</FormAlert>}
       {rows.length === 0 ? (
-        <p className="text-muted">No one is waiting to join.</p>
+        <p className="text-muted">{t("noRequests")}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {rows.map((r) => (
@@ -53,7 +57,7 @@ export function JoinRequestList({ requests }: { requests: JoinRequestRow[] }) {
               <div className="min-w-0">
                 <p className="font-semibold">{r.name}</p>
                 <p className="truncate text-sm text-muted">
-                  {r.email} · asked {r.requestedOn}
+                  {t("asked", { email: r.email, date: r.requestedOn })}
                 </p>
                 {r.message && <p className="mt-1 text-sm">“{r.message}”</p>}
               </div>
@@ -61,17 +65,17 @@ export function JoinRequestList({ requests }: { requests: JoinRequestRow[] }) {
                 <Button
                   onClick={() => decide(r, "approve")}
                   disabled={busy !== null}
-                  aria-label={`Approve ${r.name}`}
+                  aria-label={t("approveNamed", { name: r.name })}
                 >
-                  Approve
+                  {t("approve")}
                 </Button>
                 <Button
                   variant="secondary"
                   onClick={() => decide(r, "decline")}
                   disabled={busy !== null}
-                  aria-label={`Decline ${r.name}`}
+                  aria-label={t("declineNamed", { name: r.name })}
                 >
-                  Decline
+                  {t("decline")}
                 </Button>
               </div>
             </li>

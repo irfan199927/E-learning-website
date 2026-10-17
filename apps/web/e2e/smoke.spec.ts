@@ -15,6 +15,8 @@ test("health endpoints", async ({ request }) => {
   expect((await request.get("/api/health")).ok()).toBe(true);
   const ready = await request.get("/api/health/ready");
   expect(await ready.json()).toMatchObject({ status: "ok", checks: { database: "ok", redis: "ok" } });
+  const openapi = await request.get("/api/v1/openapi.json");
+  expect(await openapi.json()).toMatchObject({ openapi: "3.0.3", info: { title: "E-learner API" } });
 });
 
 test("signed-out users are sent to sign-in, and APIs return 401 problem+json", async ({ page, request }) => {

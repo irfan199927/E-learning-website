@@ -146,6 +146,10 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   public), production later on AWS. Google is optional: empty `GOOGLE_CLIENT_ID` = password sign-in only.
 - Plain-HTTP hosts (LAN UAT): CSP `upgrade-insecure-requests` and secure cookies switch on only when `APP_URL` is
   https. Empty env strings mean unset (Compose passes `""`), so optional zod fields must accept `""`.
+- New API endpoint: also list it in `server/openapi.ts` (`openapi.test.ts` fails otherwise); served at
+  `/api/v1/openapi.json`. No app-wide `loading.tsx`: a Suspense boundary above a page streams it, so its
+  `notFound()`/`redirect()` arrive with status 200. Skeletons (`components/skeleton.tsx`) only on pages that never
+  404 or redirect (Overview).
 - Restarting `next start` locally: `pkill -x next-server` does NOT match (the process name includes the version), so a
   stale server keeps serving old asset hashes (CSS 404 as text/html). Kill by PID.
 

@@ -2,6 +2,7 @@
 
 import { PAYMENT_IMAGE_TYPES, QR_MAX_BYTES } from "@elearner/core/payments";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { api, ApiError } from "@/lib/api-client";
 
 /** Upload, replace or remove the UPI QR code image students can scan. */
 export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
+  const t = useTranslations("AdminPayments");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
@@ -23,7 +25,7 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "The upload didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("uploadFailed"),
       });
     } finally {
       setBusy(false);
@@ -31,10 +33,9 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
   }
 
   const upload = (file: File) => {
-    if (!(file.type in PAYMENT_IMAGE_TYPES))
-      return setNote({ tone: "error", text: "Use a JPEG, PNG or WebP image." });
+    if (!(file.type in PAYMENT_IMAGE_TYPES)) return setNote({ tone: "error", text: t("qrBadType") });
     if (file.size > QR_MAX_BYTES)
-      return setNote({ tone: "error", text: `The QR image can be at most ${QR_MAX_BYTES / 1024 ** 2} MB.` });
+      return setNote({ tone: "error", text: t("qrTooBig", { mb: QR_MAX_BYTES / 1024 ** 2 }) });
     void run(async () => {
       const init = await api<{ qrId: string; uploadUrl: string }>(
         "/api/v1/admin/payment-settings/qr/uploads",
@@ -53,7 +54,7 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
         method: "PUT",
         json: { qrId: init.qrId, mimeType: file.type },
       });
-    }, "QR code saved.");
+    }, t("qrSaved"));
   };
 
   return (
@@ -62,17 +63,15 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
         // eslint-disable-next-line @next/next/no-img-element -- a signed storage redirect
         <img
           src={`/api/v1/payment-qr?v=${qrVersion}`}
-          alt="Your UPI QR code"
+          alt={t("qrAlt")}
           className="size-40 rounded-xl border border-line bg-white object-contain p-2"
         />
       ) : (
-        <p className="text-sm text-muted sm:w-40">
-          No QR code yet. Students can still pay to the UPI ID or number.
-        </p>
+        <p className="text-sm text-muted sm:w-40">{t("noQr")}</p>
       )}
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          {qrVersion ? "Replace the QR code" : "Upload a QR code"}
+          {qrVersion ? t("replaceQr") : t("uploadQr")}
           <input
             type="file"
             accept={Object.keys(PAYMENT_IMAGE_TYPES).join(",")}
@@ -85,27 +84,22 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
             className="text-sm font-normal file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border file:border-line-strong file:bg-surface file:px-4 file:font-semibold"
           />
         </label>
-        <p className="text-sm text-muted">
-          The QR from your UPI or bank app (JPEG, PNG or WebP, up to 2 MB).
-        </p>
+        <p className="text-sm text-muted">{t("qrHint", { mb: QR_MAX_BYTES / 1024 ** 2 })}</p>
         {qrVersion && (
           <Button
             variant="secondary"
             disabled={busy}
             onClick={() =>
-              void run(
-                () => api("/api/v1/admin/payment-settings/qr", { method: "DELETE" }),
-                "QR code removed.",
-              )
+              void run(() => api("/api/v1/admin/payment-settings/qr", { method: "DELETE" }), t("qrRemoved"))
             }
             className="w-fit"
           >
-            Remove QR code
+            {t("removeQr")}
           </Button>
         )}
         <div aria-live="polite">
           {busy ? (
-            <p className="text-sm text-muted">Saving…</p>
+            <p className="text-sm text-muted">{t("saving")}</p>
           ) : (
             note && <FormAlert tone={note.tone}>{note.text}</FormAlert>
           )}

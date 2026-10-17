@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
@@ -19,6 +20,7 @@ export interface SheetRow {
 
 /** One Present / Absent choice per student, "Mark everyone present", and Save. */
 export function AttendanceSheet({ classId, rows }: { classId: string; rows: SheetRow[] }) {
+  const t = useTranslations("Attendance");
   const router = useRouter();
   const [marks, setMarks] = useState<Record<string, boolean | null>>(
     Object.fromEntries(rows.map((r) => [r.userId, r.present])),
@@ -32,24 +34,24 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
     const list = Object.entries(marks).flatMap(([userId, present]) =>
       present === null ? [] : [{ userId, present }],
     );
-    if (list.length === 0) return setNote({ tone: "error", text: "Mark at least one student first." });
+    if (list.length === 0) return setNote({ tone: "error", text: t("markOne") });
     setBusy(true);
     setNote(null);
     try {
       await api(`/api/v1/classes/${classId}/attendance`, { method: "PUT", json: { marks: list } });
       setNote({
         tone: "success",
-        text: `Saved attendance for ${list.length} ${list.length === 1 ? "student" : "students"}.`,
+        text: t("saved", { count: list.length }),
       });
       router.refresh();
     } catch (err) {
-      setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't save. Try again." });
+      setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("saveFailed") });
     } finally {
       setBusy(false);
     }
   }
 
-  if (rows.length === 0) return <p className="text-muted">No students in this course yet.</p>;
+  if (rows.length === 0) return <p className="text-muted">{t("noStudents")}</p>;
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,10 +61,10 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
           disabled={busy}
           onClick={() => setMarks(Object.fromEntries(rows.map((r) => [r.userId, true])))}
         >
-          Mark everyone present
+          {t("markAll")}
         </Button>
         <span className="text-sm text-muted" aria-live="polite">
-          {unmarked > 0 ? `${unmarked} not marked yet` : "Everyone is marked"}
+          {unmarked > 0 ? t("notMarked", { count: unmarked }) : t("allMarked")}
         </span>
       </div>
       <ul className="flex flex-col divide-y divide-line">
@@ -78,18 +80,19 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
                 <p className="font-semibold">
                   {r.name}
                   {!r.enrolled && (
-                    <span className="ml-2 text-sm font-normal text-muted">(left the course)</span>
+                    <span className="ml-2 text-sm font-normal text-muted">{t("leftCourse")}</span>
                   )}
                   {!r.recordingConsent && (
                     <span className="ml-2 inline-block rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
-                      Not agreed to recording
+                      {t("noConsent")}
                     </span>
                   )}
                 </p>
                 <p className="truncate text-sm text-muted">
                   {r.email}
-                  {r.source === "MEET_API" && ` · from Google Meet${r.minutes ? `, ${r.minutes} min` : ""}`}
-                  {r.source === "MANUAL" && " · marked by a teacher"}
+                  {r.source === "MEET_API" &&
+                    ` · ${r.minutes ? t("fromMeetMinutes", { minutes: r.minutes }) : t("fromMeet")}`}
+                  {r.source === "MANUAL" && ` · ${t("manual")}`}
                 </p>
               </div>
               <fieldset className="flex gap-2">
@@ -98,12 +101,12 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
                   [
                     [
                       true,
-                      "Present",
+                      t("present"),
                       "has-[:checked]:border-[#12805c] has-[:checked]:bg-success-soft has-[:checked]:text-[#0C6447]",
                     ],
                     [
                       false,
-                      "Absent",
+                      t("absent"),
                       "has-[:checked]:border-live has-[:checked]:bg-live-soft has-[:checked]:text-[#A11C14]",
                     ],
                   ] as const
@@ -129,7 +132,7 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
       </ul>
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
       <Button disabled={busy || !dirty} onClick={() => void save()} className="w-fit">
-        {busy ? "Saving…" : "Save attendance"}
+        {busy ? t("saving") : t("save")}
       </Button>
     </div>
   );

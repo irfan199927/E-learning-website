@@ -1,6 +1,7 @@
 "use client";
 
 import { utcToZonedInput, zonedInputToUtc } from "@elearner/core/time";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
@@ -30,6 +31,7 @@ export function AssignmentForm({
   assignment?: AssignmentFormValues;
   timeZone: string;
 }) {
+  const t = useTranslations("WorkEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export function AssignmentForm({
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length)
         setFieldErrors(Object.fromEntries(err.fieldErrors.map((x) => [x.path, x.message])));
-      else setError(err instanceof ApiError ? err.message : "Couldn't save. Try again.");
+      else setError(err instanceof ApiError ? err.message : t("saveFailed"));
       setBusy(false);
     }
   }
@@ -84,7 +86,7 @@ export function AssignmentForm({
       <Field
         id="title"
         name="title"
-        label="Title"
+        label={t("title")}
         required
         maxLength={160}
         defaultValue={assignment?.title}
@@ -93,7 +95,7 @@ export function AssignmentForm({
       <MarkdownField
         id="instructions"
         name="instructions"
-        label="Instructions"
+        label={t("instructions")}
         rows={8}
         required
         defaultValue={assignment?.instructions}
@@ -104,10 +106,10 @@ export function AssignmentForm({
           id="dueAt"
           name="dueAt"
           type="datetime-local"
-          label="Due"
+          label={t("due")}
           required
           defaultValue={defaultDue}
-          hint={`Times in ${timeZone}`}
+          hint={t("timesIn", { zone: timeZone })}
           error={fieldErrors.dueAt}
         />
         <Field
@@ -117,42 +119,22 @@ export function AssignmentForm({
           inputMode="numeric"
           min={1}
           max={1000}
-          label="Points"
+          label={t("points")}
           required
           defaultValue={assignment?.maxPoints ?? 100}
           error={fieldErrors.maxPoints}
         />
       </div>
       <fieldset className="flex flex-col gap-1">
-        <legend className="mb-1 text-sm font-semibold">Students hand in</legend>
-        {check(
-          "allowText",
-          "A written answer",
-          "Typed into a box on the assignment page.",
-          assignment?.allowText ?? true,
-        )}
-        {check(
-          "allowFile",
-          "Files",
-          "Up to 5 files (PDF, Office, images, zip), 25 MB each.",
-          assignment?.allowFile ?? true,
-        )}
+        <legend className="mb-1 text-sm font-semibold">{t("studentsHandIn")}</legend>
+        {check("allowText", t("allowText"), t("allowTextHint"), assignment?.allowText ?? true)}
+        {check("allowFile", t("allowFile"), t("allowFileHint"), assignment?.allowFile ?? true)}
         {fieldErrors.allowText && <p className="text-[13px] text-live">{fieldErrors.allowText}</p>}
       </fieldset>
-      {check(
-        "allowLate",
-        "Accept late work",
-        "After the due date, work is still accepted and marked late.",
-        assignment?.allowLate ?? false,
-      )}
-      {check(
-        "published",
-        "Visible to students",
-        "Untick to keep it as a draft.",
-        assignment?.published ?? true,
-      )}
+      {check("allowLate", t("allowLate"), t("allowLateHint"), assignment?.allowLate ?? false)}
+      {check("published", t("visible"), t("visibleHint"), assignment?.published ?? true)}
       <Button type="submit" disabled={busy} className="w-fit">
-        {busy ? "Saving…" : assignment ? "Save changes" : "Create assignment"}
+        {busy ? t("saving") : assignment ? t("saveChanges") : t("createAssignment")}
       </Button>
     </form>
   );

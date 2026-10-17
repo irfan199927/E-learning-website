@@ -1,6 +1,8 @@
 import { formatInZone, formatRupees, utcToZonedInput } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getPaymentSettings, listPayments } from "@/server/services/payments";
@@ -9,13 +11,15 @@ import { PaymentsExportForm } from "./export-form";
 import { QrEditor } from "./qr-editor";
 import { PaymentSettingsForm } from "./settings-form";
 
-export const metadata: Metadata = { title: "Payments" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("AdminPayments"))("title") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface p-5";
 const TABS = [
-  { status: "PENDING", label: "To check" },
-  { status: "APPROVED", label: "Approved" },
-  { status: "REJECTED", label: "Rejected" },
+  { status: "PENDING", label: "tabPending" },
+  { status: "APPROVED", label: "tabApproved" },
+  { status: "REJECTED", label: "tabRejected" },
 ] as const;
 
 export default async function PaymentsPage({
@@ -25,11 +29,14 @@ export default async function PaymentsPage({
 }) {
   const actor = await requirePageActor(["ADMIN"]);
   const { status: raw } = await searchParams;
-  const status = TABS.find((t) => t.status === raw)?.status ?? "PENDING";
-  const [settings, payments] = await Promise.all([
+  const status = TABS.find((tab) => tab.status === raw)?.status ?? "PENDING";
+  const [settings, payments, t, locale] = await Promise.all([
     getPaymentSettings(deps()),
     listPayments(deps(), actor, { status }),
+    getTranslations("AdminPayments"),
+    getLocale(),
   ]);
+  const when = (d: Date) => formatInZone(d, actor.timezone, intlLocale(locale));
 
   // Default export range: this month so far, in the admin's time zone.
   const today = utcToZonedInput(new Date(), actor.timezone).slice(0, 10);
@@ -37,40 +44,35 @@ export default async function PaymentsPage({
   return (
     <div className="flex max-w-5xl flex-col gap-6">
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Payments</h1>
-        <p className="mt-1 text-muted">
-          Students pay for courses straight to your UPI, then send the payment reference. Check it in your
-          bank or UPI app, then approve to give them the course.
-        </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
 
       <section aria-labelledby="list-h" className={card}>
         <h2 id="list-h" className="mb-3 font-display text-xl font-bold">
-          Reported payments
+          {t("reportedHeading")}
         </h2>
-        <nav aria-label="Payment status" className="mb-4">
+        <nav aria-label={t("statusNav")} className="mb-4">
           <ul className="flex flex-wrap gap-2">
-            {TABS.map((t) => (
-              <li key={t.status}>
+            {TABS.map((tab) => (
+              <li key={tab.status}>
                 <Link
-                  href={t.status === "PENDING" ? "/admin/payments" : `/admin/payments?status=${t.status}`}
-                  aria-current={t.status === status ? "page" : undefined}
+                  href={tab.status === "PENDING" ? "/admin/payments" : `/admin/payments?status=${tab.status}`}
+                  aria-current={tab.status === status ? "page" : undefined}
                   className={`inline-flex h-11 items-center rounded-full border px-5 text-[15px] font-medium ${
-                    t.status === status
+                    tab.status === status
                       ? "border-ink bg-ink text-surface"
                       : "border-line-strong bg-surface text-muted hover:text-ink"
                   }`}
                 >
-                  {t.label}
+                  {t(tab.label)}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
         {payments.length === 0 ? (
-          <p className="text-muted">
-            {status === "PENDING" ? "Nothing to check. New payments show up here." : "None yet."}
-          </p>
+          <p className="text-muted">{status === "PENDING" ? t("emptyPending") : t("emptyOther")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {payments.map((p) => (
@@ -86,10 +88,13 @@ export default async function PaymentsPage({
                     {p.student.email} · {p.course.title}
                   </p>
                   <p className="text-sm">
-                    UPI reference <span className="font-mono font-semibold">{p.reference}</span> · reported{" "}
-                    {formatInZone(p.createdAt, actor.timezone)}
+                    {t.rich("reference", {
+                      reference: p.reference,
+                      date: when(p.createdAt),
+                      ref: (chunks) => <span className="font-mono font-semibold">{chunks}</span>,
+                    })}
                   </p>
-                  {p.note && <p className="text-sm">Note: {p.note}</p>}
+                  {p.note && <p className="text-sm">{t("note", { note: p.note })}</p>}
                   {p.hasProof && (
                     <a
                       href={`/api/v1/admin/payments/${p.id}/proof`}
@@ -97,14 +102,17 @@ export default async function PaymentsPage({
                       rel="noopener"
                       className="text-sm font-semibold text-primary-fg"
                     >
-                      View screenshot
+                      {t("viewProof")}
                     </a>
                   )}
                   {p.decidedAt && (
                     <p className="text-sm text-muted">
-                      {p.status === "APPROVED" ? "Approved" : "Rejected"} by {p.decidedBy ?? "an admin"} on{" "}
-                      {formatInZone(p.decidedAt, actor.timezone)}
-                      {p.decisionNote ? `: ${p.decisionNote}` : ""}
+                      {t(p.decisionNote ? "decidedNote" : "decided", {
+                        status: p.status,
+                        by: p.decidedBy ?? t("anAdmin"),
+                        date: when(p.decidedAt),
+                        note: p.decisionNote ?? "",
+                      })}
                     </p>
                   )}
                 </div>
@@ -117,31 +125,25 @@ export default async function PaymentsPage({
 
       <section aria-labelledby="export-h" className={card}>
         <h2 id="export-h" className="mb-1 font-display text-xl font-bold">
-          Download for your accounts
+          {t("exportHeading")}
         </h2>
-        <p className="mb-4 text-sm text-muted">
-          A spreadsheet of payments reported between two dates: amount, UPI reference, student, course and
-          what was decided. Amounts are plain numbers, so the sheet can add them up.
-        </p>
+        <p className="mb-4 text-sm text-muted">{t("exportHelp")}</p>
         <PaymentsExportForm defaultFrom={`${today.slice(0, 8)}01`} defaultTo={today} />
       </section>
 
       <section aria-labelledby="upi-h" className={card}>
         <h2 id="upi-h" className="mb-1 font-display text-xl font-bold">
-          Where students pay
+          {t("upiHeading")}
         </h2>
         <p className="mb-4 text-sm text-muted">
-          {settings.ready
-            ? "Students see these details on a paid course's payment page."
-            : "Add a UPI ID or a phone number so students can pay. Until then, paid courses can't be bought."}{" "}
-          Set a course&apos;s price on its Edit course page.
+          {settings.ready ? t("upiReady") : t("upiNotReady")} {t("priceHint")}
         </p>
         <PaymentSettingsForm settings={settings} />
       </section>
 
       <section aria-labelledby="qr-h" className={card}>
         <h2 id="qr-h" className="mb-3 font-display text-xl font-bold">
-          QR code
+          {t("qrHeading")}
         </h2>
         <QrEditor qrVersion={settings.qrVersion} />
       </section>

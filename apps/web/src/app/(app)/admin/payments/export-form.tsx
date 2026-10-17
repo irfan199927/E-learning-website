@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
  * server's message here instead of a page of JSON.
  */
 export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: string; defaultTo: string }) {
+  const t = useTranslations("AdminPayments");
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
   const [status, setStatus] = useState("ALL");
@@ -18,8 +20,8 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
   async function download(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!from || !to) return setError("Choose both dates.");
-    if (from > to) return setError("The end date is before the start date.");
+    if (!from || !to) return setError(t("chooseDates"));
+    if (from > to) return setError(t("endBeforeStart"));
     setBusy(true);
     try {
       const params = new URLSearchParams({ from, to, status });
@@ -29,7 +31,7 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
           title?: string;
           errors?: { message: string }[];
         } | null;
-        setError(problem?.errors?.[0]?.message ?? problem?.title ?? "That didn't work. Try again.");
+        setError(problem?.errors?.[0]?.message ?? problem?.title ?? t("failed"));
         return;
       }
       const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1];
@@ -40,18 +42,18 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
-      setError("That didn't work. Check your connection and try again.");
+      setError(t("offline"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={(e) => void download(e)} className="flex flex-col gap-4" aria-label="Download payments">
+    <form onSubmit={(e) => void download(e)} className="flex flex-col gap-4" aria-label={t("exportLabel")}>
       <div className="grid gap-4 sm:grid-cols-3">
         <Field
           id="export-from"
-          label="From"
+          label={t("from")}
           type="date"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
@@ -59,7 +61,7 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
         />
         <Field
           id="export-to"
-          label="To"
+          label={t("to")}
           type="date"
           value={to}
           onChange={(e) => setTo(e.target.value)}
@@ -67,7 +69,7 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
         />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="export-status" className="text-sm font-semibold">
-            Which payments
+            {t("which")}
           </label>
           <select
             id="export-status"
@@ -75,16 +77,16 @@ export function PaymentsExportForm({ defaultFrom, defaultTo }: { defaultFrom: st
             onChange={(e) => setStatus(e.target.value)}
             className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]"
           >
-            <option value="ALL">All</option>
-            <option value="APPROVED">Approved</option>
-            <option value="PENDING">Waiting to be checked</option>
-            <option value="REJECTED">Rejected</option>
+            <option value="ALL">{t("all")}</option>
+            <option value="APPROVED">{t("tabApproved")}</option>
+            <option value="PENDING">{t("waiting")}</option>
+            <option value="REJECTED">{t("tabRejected")}</option>
           </select>
         </div>
       </div>
       {error && <FormAlert>{error}</FormAlert>}
       <Button type="submit" variant="secondary" disabled={busy} className="w-fit">
-        {busy ? "Preparing…" : "Download CSV"}
+        {busy ? t("preparing") : t("downloadCsv")}
       </Button>
     </form>
   );

@@ -1,14 +1,18 @@
 import { formatInZone, isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icons";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getAttendanceSheet } from "@/server/services/attendance";
 import { AttendanceSheet } from "./attendance-sheet";
 
-export const metadata: Metadata = { title: "Attendance" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Attendance"))("title") };
+}
 
 export default async function AttendancePage({ params }: { params: Promise<{ classId: string }> }) {
   const actor = await requirePageActor(["TEACHER", "ADMIN"]);
@@ -17,9 +21,11 @@ export default async function AttendancePage({ params }: { params: Promise<{ cla
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
+  const [t, locale] = await Promise.all([getTranslations("Attendance"), getLocale()]);
+  const startsAt = formatInZone(sheet.class.startsAt, actor.timezone, intlLocale(locale));
   const c = sheet.class;
   const notAgreed = sheet.rows.filter((r) => r.enrolled && !r.recordingConsent).length;
-  const where = [c.location, c.fromGoogle ? "Google Meet" : c.online ? "Online link" : null].filter(Boolean);
+  const where = [c.location, c.fromGoogle ? "Google Meet" : c.online ? t("online") : null].filter(Boolean);
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -31,12 +37,12 @@ export default async function AttendancePage({ params }: { params: Promise<{ cla
         {c.courseTitle}
       </Link>
       <header>
-        <p className="text-sm font-semibold text-muted">Attendance</p>
+        <p className="text-sm font-semibold text-muted">{t("title")}</p>
         <h1 className="font-display text-3xl font-bold tracking-tight">{c.title}</h1>
         <p className="mt-1 text-muted">
-          {formatInZone(c.startsAt, actor.timezone)}
+          {startsAt}
           {where.length > 0 && ` · ${where.join(" · ")}`}
-          {c.status === "CANCELLED" && " · Cancelled"}
+          {c.status === "CANCELLED" && ` · ${t("cancelled")}`}
         </p>
       </header>
 
@@ -45,29 +51,21 @@ export default async function AttendancePage({ params }: { params: Promise<{ cla
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="sheet-h" className="font-display text-xl font-bold">
-          Students ({sheet.rows.length})
+          {t("students", { count: sheet.rows.length })}
         </h2>
         <p className="mb-3 text-sm text-muted">
           {sheet.marked > 0
-            ? `${sheet.present} present of ${sheet.marked} marked.`
+            ? t("summary", { present: sheet.present, marked: sheet.marked })
             : c.fromGoogle
-              ? "Google Meet fills this in after the class. You can change any mark."
-              : "Nobody is marked yet."}{" "}
-          Parents see these marks.
-          {c.online && notAgreed > 0 && (
-            <>
-              {" "}
-              {notAgreed === 1 ? "1 student hasn't" : `${notAgreed} students haven't`} agreed to class
-              recordings, so they can't join from E-learner.
-            </>
-          )}
+              ? t("meetFills")
+              : t("nobodyMarked")}{" "}
+          {t("parentsSee")}
+          {c.online && notAgreed > 0 && <> {t("notAgreed", { count: notAgreed })}</>}
         </p>
         {c.status === "CANCELLED" ? (
-          <p className="text-muted">This class was cancelled, so there's no attendance to take.</p>
+          <p className="text-muted">{t("wasCancelled")}</p>
         ) : !c.started ? (
-          <p className="text-muted">
-            You can take attendance once the class starts, at {formatInZone(c.startsAt, actor.timezone)}.
-          </p>
+          <p className="text-muted">{t("notStarted", { time: startsAt })}</p>
         ) : (
           <AttendanceSheet classId={c.id} rows={sheet.rows} />
         )}

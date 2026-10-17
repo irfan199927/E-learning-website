@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { api, ApiError } from "@/lib/api-client";
 
 /** Admin: set a course's price in whole rupees (0 = free). */
 export function PriceEditor({ courseId, priceInPaise }: { courseId: string; priceInPaise: number | null }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [rupees, setRupees] = useState(priceInPaise ? String(priceInPaise / 100) : "0");
   const [busy, setBusy] = useState(false);
@@ -24,15 +26,13 @@ export function PriceEditor({ courseId, priceInPaise }: { courseId: string; pric
       });
       setNote({
         tone: "success",
-        text: res.priceInPaise
-          ? "Saved. Students now pay to join this course."
-          : "Saved. This course is free.",
+        text: res.priceInPaise ? t("pricePaid") : t("priceFree"),
       });
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
     } finally {
       setBusy(false);
@@ -40,10 +40,14 @@ export function PriceEditor({ courseId, priceInPaise }: { courseId: string; pric
   }
 
   return (
-    <form onSubmit={(e) => void save(e)} aria-label="Course price" className="flex flex-wrap items-end gap-3">
+    <form
+      onSubmit={(e) => void save(e)}
+      aria-label={t("priceForm")}
+      className="flex flex-wrap items-end gap-3"
+    >
       <div className="w-48">
         <Field
-          label="Price in rupees (0 = free)"
+          label={t("priceRupees")}
           id="price-rupees"
           value={rupees}
           onChange={(e) => setRupees(e.target.value)}
@@ -52,7 +56,7 @@ export function PriceEditor({ courseId, priceInPaise }: { courseId: string; pric
         />
       </div>
       <Button type="submit" disabled={busy}>
-        {busy ? "Saving…" : "Save price"}
+        {busy ? t("saving") : t("savePrice")}
       </Button>
       <div className="basis-full" aria-live="polite">
         {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}

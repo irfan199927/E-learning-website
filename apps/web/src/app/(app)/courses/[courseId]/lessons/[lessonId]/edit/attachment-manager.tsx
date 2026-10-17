@@ -2,6 +2,7 @@
 
 import { ATTACHMENT_MAX_BYTES, ATTACHMENT_MIME_TYPES } from "@elearner/core/schemas";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Icon } from "@/components/icons";
@@ -35,6 +36,7 @@ function mimeOf(file: File): string {
 
 /** Upload files to a lesson (straight to storage), list them, and delete them. */
 export function AttachmentManager({ lessonId, files }: { lessonId: string; files: AttachmentRow[] }) {
+  const t = useTranslations("LessonEditor");
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -49,10 +51,10 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
     const failed: string[] = [];
     let done = 0;
     for (const file of Array.from(list)) {
-      setStatus(`Uploading ${file.name}…`);
+      setStatus(t("uploadingFile", { name: file.name }));
       try {
         if (file.size > ATTACHMENT_MAX_BYTES)
-          throw new Error(`${file.name} is larger than ${ATTACHMENT_MAX_BYTES / 1024 ** 2} MB.`);
+          throw new Error(t("tooLarge", { name: file.name, mb: ATTACHMENT_MAX_BYTES / 1024 ** 2 }));
         const mimeType = mimeOf(file);
         const init = await api<{ attachmentId: string; uploadUrl: string }>(
           `/api/v1/lessons/${lessonId}/attachments/uploads`,
@@ -63,7 +65,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
           body: file,
           headers: { "content-type": mimeType },
         });
-        if (!put.ok) throw new Error(`Upload of ${file.name} failed.`);
+        if (!put.ok) throw new Error(t("uploadFailed", { name: file.name }));
         await api(`/api/v1/lessons/${lessonId}/attachments`, {
           method: "POST",
           json: { attachmentId: init.attachmentId, fileName: file.name, mimeType },
@@ -79,7 +81,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
     setBusy(false);
     if (input.current) input.current.value = "";
     if (failed.length) setNote({ tone: "error", text: failed.join(" ") });
-    else setNote({ tone: "success", text: done === 1 ? "File added." : `${done} files added.` });
+    else setNote({ tone: "success", text: t("added", { count: done }) });
     router.refresh();
   }
 
@@ -91,7 +93,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
       setConfirming(null);
       router.refresh();
     } catch (err) {
-      setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't delete. Try again." });
+      setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("deleteFailed") });
     } finally {
       setBusy(false);
     }
@@ -101,7 +103,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
     <div className="flex flex-col gap-3">
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
       {files.length === 0 ? (
-        <p className="text-muted">No files yet.</p>
+        <p className="text-muted">{t("noFiles")}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {files.map((f) => (
@@ -115,12 +117,16 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
               </a>
               <span className="text-sm text-muted">{fileSize(f.sizeBytes)}</span>
               {confirming === f.id ? (
-                <span role="group" aria-label={`Confirm removing ${f.fileName}`} className="flex gap-2">
+                <span
+                  role="group"
+                  aria-label={t("confirmRemove", { name: f.fileName })}
+                  className="flex gap-2"
+                >
                   <Button variant="live" disabled={busy} onClick={() => void remove(f.id)}>
-                    Remove
+                    {t("remove")}
                   </Button>
                   <Button variant="secondary" onClick={() => setConfirming(null)}>
-                    Keep
+                    {t("keep")}
                   </Button>
                 </span>
               ) : (
@@ -129,7 +135,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
                   className="w-11 px-0!"
                   disabled={busy}
                   onClick={() => setConfirming(f.id)}
-                  aria-label={`Remove ${f.fileName}`}
+                  aria-label={t("removeNamed", { name: f.fileName })}
                 >
                   <Icon name="trash" size={18} />
                 </Button>
@@ -140,7 +146,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="files" className="text-sm font-semibold">
-          Add files
+          {t("addFiles")}
         </label>
         <input
           ref={input}
@@ -154,8 +160,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
           className="text-sm file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-primary-fg-strong"
         />
         <p id="files-hint" className="text-[13px] text-muted">
-          PDF, Word, PowerPoint, Excel, OpenDocument, text, CSV, images or zip, up to{" "}
-          {ATTACHMENT_MAX_BYTES / 1024 ** 2} MB each. Students download them from the lesson.
+          {t("filesHint", { mb: ATTACHMENT_MAX_BYTES / 1024 ** 2 })}
         </p>
       </div>
       <p role="status" aria-live="polite" className="text-sm">

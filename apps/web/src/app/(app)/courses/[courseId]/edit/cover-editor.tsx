@@ -2,6 +2,7 @@
 
 import { COVER_MAX_BYTES, COVER_MIME_TYPES } from "@elearner/core/schemas";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { CourseTile } from "@/components/course-tile";
 import { FormAlert } from "@/components/form";
@@ -14,18 +15,18 @@ export function CoverEditor({
 }: {
   course: { id: string; title: string; grade: string | null; color: string; coverVersion: string | null };
 }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
 
   async function upload(file: File) {
     setNote(null);
-    if (!(file.type in COVER_MIME_TYPES))
-      return setNote({ tone: "error", text: "Use a JPEG, PNG or WebP image." });
+    if (!(file.type in COVER_MIME_TYPES)) return setNote({ tone: "error", text: t("coverBadType") });
     if (file.size > COVER_MAX_BYTES)
       return setNote({
         tone: "error",
-        text: `Cover images can be at most ${COVER_MAX_BYTES / 1024 ** 2} MB.`,
+        text: t("coverTooBig", { mb: COVER_MAX_BYTES / 1024 ** 2 }),
       });
     setBusy(true);
     try {
@@ -48,13 +49,13 @@ export function CoverEditor({
       });
       setNote({
         tone: "success",
-        text: "Cover saved. Students see it in the catalog and on the course page.",
+        text: t("coverSaved"),
       });
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "The upload didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("uploadFailed"),
       });
     } finally {
       setBusy(false);
@@ -66,12 +67,12 @@ export function CoverEditor({
     setNote(null);
     try {
       await api(`/api/v1/courses/${course.id}/cover`, { method: "DELETE" });
-      setNote({ tone: "success", text: "Cover removed. The course uses its coloured tile again." });
+      setNote({ tone: "success", text: t("coverRemoved") });
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
     } finally {
       setBusy(false);
@@ -88,12 +89,9 @@ export function CoverEditor({
         className="h-36 sm:w-64"
       />
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted">
-          JPEG, PNG or WebP, up to {COVER_MAX_BYTES / 1024 ** 2} MB. A wide image (about 16:9) looks best.
-          Without one, the course shows a tile in its colour.
-        </p>
+        <p className="text-sm text-muted">{t("coverHelp", { mb: COVER_MAX_BYTES / 1024 ** 2 })}</p>
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          {course.coverVersion ? "Replace the cover image" : "Choose a cover image"}
+          {course.coverVersion ? t("replaceCover") : t("chooseCover")}
           <input
             type="file"
             accept={Object.keys(COVER_MIME_TYPES).join(",")}
@@ -108,12 +106,12 @@ export function CoverEditor({
         </label>
         {course.coverVersion && (
           <Button variant="secondary" disabled={busy} onClick={() => void remove()} className="w-fit">
-            Remove cover
+            {t("removeCover")}
           </Button>
         )}
         <div aria-live="polite">
           {busy ? (
-            <p className="text-sm text-muted">Uploading…</p>
+            <p className="text-sm text-muted">{t("uploading")}</p>
           ) : (
             note && <FormAlert tone={note.tone}>{note.text}</FormAlert>
           )}

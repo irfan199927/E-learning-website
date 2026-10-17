@@ -2,6 +2,7 @@ import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Icon } from "@/components/icons";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
@@ -11,7 +12,9 @@ import { CoverEditor } from "./cover-editor";
 import { PriceEditor } from "./price-editor";
 import { OutlineEditor } from "./outline-editor";
 
-export const metadata: Metadata = { title: "Edit course" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("CourseEditor"))("editTitle") };
+}
 
 export default async function EditCoursePage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER"]);
@@ -20,6 +23,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
+  const t = await getTranslations("CourseEditor");
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
@@ -28,19 +32,18 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
         className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
       >
         <Icon name="chevronLeft" size={16} />
-        Back to the course
+        {t("backToCourse")}
       </Link>
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Edit {outline.course.title}</h1>
-        <p className="mt-1 text-muted">
-          Organise lessons into modules. Students see them in this order; hidden lessons stay invisible to
-          them.
-        </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          {t("editHeading", { title: outline.course.title })}
+        </h1>
+        <p className="mt-1 text-muted">{t("editIntro")}</p>
       </header>
 
       <section aria-labelledby="content-h" className="flex flex-col gap-4">
         <h2 id="content-h" className="font-display text-xl font-bold">
-          Modules and lessons
+          {t("modulesAndLessons")}
         </h2>
         <OutlineEditor
           courseId={courseId}
@@ -65,7 +68,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="details-h" className="mb-3 font-display text-xl font-bold">
-          Course details
+          {t("details")}
         </h2>
         <CourseDetailsForm course={outline.course} />
       </section>
@@ -76,12 +79,9 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
           className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="price-h" className="mb-1 font-display text-xl font-bold">
-            Price
+            {t("price")}
           </h2>
-          <p className="mb-3 text-sm text-muted">
-            Free courses: students ask to join and the teacher approves. Paid courses: students pay by UPI and
-            you approve the payment on the Payments page.
-          </p>
+          <p className="mb-3 text-sm text-muted">{t("priceHelp")}</p>
           <PriceEditor courseId={courseId} priceInPaise={outline.course.priceInPaise} />
         </section>
       )}
@@ -91,7 +91,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="cover-h" className="mb-3 font-display text-xl font-bold">
-          Cover image
+          {t("cover")}
         </h2>
         <CoverEditor course={outline.course} />
       </section>

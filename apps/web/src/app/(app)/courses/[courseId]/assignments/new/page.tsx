@@ -1,6 +1,7 @@
 import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AssignmentForm } from "@/components/assignment-form";
 import { Icon } from "@/components/icons";
@@ -8,7 +9,9 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getCourseDetail } from "@/server/services/learning";
 
-export const metadata: Metadata = { title: "New assignment" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("WorkEditor"))("newAssignment") };
+}
 
 export default async function NewAssignmentPage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["TEACHER", "ADMIN"]);
@@ -18,6 +21,7 @@ export default async function NewAssignmentPage({ params }: { params: Promise<{ 
     throw err;
   });
   if (!course.canManage) notFound();
+  const t = await getTranslations("WorkEditor");
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <Link
@@ -27,7 +31,7 @@ export default async function NewAssignmentPage({ params }: { params: Promise<{ 
         <Icon name="chevronLeft" size={16} />
         {course.title}
       </Link>
-      <h1 className="font-display text-3xl font-bold tracking-tight">New assignment</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">{t("newAssignment")}</h1>
       <section className="rounded-[var(--radius-card)] border border-line bg-surface p-5">
         <AssignmentForm courseId={courseId} timeZone={actor.timezone} />
       </section>

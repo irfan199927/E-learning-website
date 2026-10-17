@@ -58,7 +58,3 @@ export function Markdown({ children, className = "" }: { children: string; class
     </div>
   );
 }
-
-/** One line for writers: what formatting works. */
-export const MARKDOWN_HINT =
-  "Formatting: **bold**, *italic*, # Heading, - lists, 1. numbered lists, [link text](https://…)";

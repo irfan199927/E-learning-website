@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getLessonForEditing } from "@/server/services/course-content";
 import { listManageableCourses } from "@/server/services/courses";
 import { VideoUploader } from "./video-uploader";
 
-export const metadata: Metadata = { title: "Upload video" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Upload"))("title") };
+}
 
 export default async function UploadPage({
   searchParams,
@@ -19,15 +22,14 @@ export default async function UploadPage({
   const lesson = replace ? await getLessonForEditing(deps(), actor, replace).catch(() => null) : null;
   const replacing = lesson?.type === "VIDEO" ? lesson : null;
   const maxGb = Math.round(deps().config.maxUploadBytes / 1024 ** 3);
+  const t = await getTranslations("Upload");
   return (
     <div className="flex max-w-2xl flex-col gap-5">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          {replacing ? `Replace the video in “${replacing.title}”` : "Upload a video"}
+          {replacing ? t("replaceHeading", { title: replacing.title }) : t("heading")}
         </h1>
-        <p className="mt-1 text-muted">
-          MP4, WebM or MOV up to {maxGb} GB. Uploads resume if your connection drops.
-        </p>
+        <p className="mt-1 text-muted">{t("intro", { gb: maxGb })}</p>
       </header>
       <VideoUploader
         courses={courses.map((c) => ({ id: c.id, title: c.title, modules: c.modules }))}

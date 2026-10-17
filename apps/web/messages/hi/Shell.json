@@ -7,5 +7,6 @@
   "notificationsUnread": "सूचनाएँ, {count} अपठित",
   "darkMode": "डार्क मोड",
   "darkModeTitle": "लाइट और डार्क के बीच बदलें",
-  "home": "E-learner होम"
+  "home": "E-learner होम",
+  "loading": "लोड हो रहा है…"
 }

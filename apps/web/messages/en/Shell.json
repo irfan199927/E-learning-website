@@ -7,5 +7,6 @@
   "notificationsUnread": "Notifications, {count} unread",
   "darkMode": "Dark mode",
   "darkModeTitle": "Switch between light and dark",
-  "home": "E-learner home"
+  "home": "E-learner home",
+  "loading": "Loading…"
 }

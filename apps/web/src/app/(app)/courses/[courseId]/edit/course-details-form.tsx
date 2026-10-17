@@ -2,6 +2,7 @@
 
 import { COURSE_COLORS } from "@elearner/core/schemas";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export interface CourseDetails {
 }
 
 export function CourseDetailsForm({ course }: { course: CourseDetails }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
@@ -39,13 +41,12 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
           listed: f.get("listed") === "on",
         },
       });
-      setNote({ tone: "success", text: "Saved." });
+      setNote({ tone: "success", text: t("saved") });
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length)
         setFieldErrors(Object.fromEntries(err.fieldErrors.map((x) => [x.path, x.message])));
-      else
-        setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't save. Try again." });
+      else setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("saveFailed") });
     } finally {
       setBusy(false);
     }
@@ -57,7 +58,7 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
       <Field
         id="title"
         name="title"
-        label="Course title"
+        label={t("courseTitle")}
         defaultValue={course.title}
         required
         maxLength={120}
@@ -66,14 +67,14 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
       <Field
         id="grade"
         name="grade"
-        label="Class or grade (optional)"
+        label={t("grade")}
         defaultValue={course.grade ?? ""}
         maxLength={20}
         error={fieldErrors.grade}
       />
       <div className="flex flex-col gap-1.5">
         <label htmlFor="description" className="text-sm font-semibold">
-          What students will learn (optional)
+          {t("description")}
         </label>
         <textarea
           id="description"
@@ -85,7 +86,7 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-sm font-semibold">Card colour</legend>
+        <legend className="mb-1.5 text-sm font-semibold">{t("cardColour")}</legend>
         <div className="flex flex-wrap gap-2">
           {COURSE_COLORS.map((c) => (
             <label
@@ -100,7 +101,7 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
                 className="sr-only"
               />
               <span className="size-5 rounded-full" style={{ background: c.value }} aria-hidden="true" />
-              <span className="text-sm">{c.name}</span>
+              <span className="text-sm">{t(`colors.${c.name}`)}</span>
             </label>
           ))}
         </div>
@@ -113,14 +114,12 @@ export function CourseDetailsForm({ course }: { course: CourseDetails }) {
           className="mt-1 size-5 shrink-0"
         />
         <span>
-          <span className="font-semibold">Listed in Find a course</span>
-          <span className="block text-sm text-muted">
-            Students can find it and ask to join. Students already in the course keep access either way.
-          </span>
+          <span className="font-semibold">{t("listed")}</span>
+          <span className="block text-sm text-muted">{t("listedHelp")}</span>
         </span>
       </label>
       <Button type="submit" disabled={busy} className="w-fit">
-        {busy ? "Saving…" : "Save details"}
+        {busy ? t("saving") : t("saveDetails")}
       </Button>
     </form>
   );

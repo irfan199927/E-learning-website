@@ -2,18 +2,14 @@
 
 import type { Role } from "@elearner/core";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
 import { ParentChildren, type ChildLink } from "./parent-children";
 
-const ROLE_OPTIONS: { value: Role; label: string }[] = [
-  { value: "STUDENT", label: "Student" },
-  { value: "TEACHER", label: "Teacher" },
-  { value: "PARENT", label: "Parent" },
-  { value: "ADMIN", label: "Admin" },
-];
+const ROLE_OPTIONS = ["STUDENT", "TEACHER", "PARENT", "ADMIN"] as const satisfies readonly Role[];
 
 export interface UserRowData {
   id: string;
@@ -32,6 +28,8 @@ export interface UserRowData {
 
 /** One account: role picker (saved on change), switch off/on, and resend the invite for people who never set a password. */
 export function UserRow({ user }: { user: UserRowData }) {
+  const t = useTranslations("AdminUsers");
+  const roles = useTranslations("Roles");
   const router = useRouter();
   const [role, setRole] = useState(user.role);
   const [active, setActive] = useState(user.isActive);
@@ -49,7 +47,7 @@ export function UserRow({ user }: { user: UserRowData }) {
       undo?.();
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
     } finally {
       setBusy(false);
@@ -61,7 +59,7 @@ export function UserRow({ user }: { user: UserRowData }) {
     setRole(next);
     void run(
       () => api(`/api/v1/admin/users/${user.id}`, { method: "PATCH", json: { role: next } }),
-      `${user.name} is now ${ROLE_OPTIONS.find((r) => r.value === next)!.label.toLowerCase()}.`,
+      t("roleChanged", { name: user.name, role: next }),
       () => setRole(prev),
     );
   };
@@ -71,17 +69,17 @@ export function UserRow({ user }: { user: UserRowData }) {
         await api(`/api/v1/admin/users/${user.id}`, { method: "PATCH", json: { isActive: !active } });
         setActive(!active);
       },
-      active ? `${user.name} can't sign in now.` : `${user.name} can sign in again.`,
+      active ? t("switchedOffNote", { name: user.name }) : t("switchedOnNote", { name: user.name }),
     );
   const cancelDeletion = () =>
     void run(
       () => api(`/api/v1/admin/users/${user.id}/restore`, { method: "POST" }),
-      `Cancelled. ${user.name} can sign in again.`,
+      t("deletionCancelled", { name: user.name }),
     );
   const resend = () =>
     void run(
       () => api(`/api/v1/admin/users/${user.id}/invite`, { method: "POST" }),
-      `Sent ${user.email} a new link to choose a password.`,
+      t("inviteSent", { email: user.email }),
     );
 
   return (
@@ -89,15 +87,15 @@ export function UserRow({ user }: { user: UserRowData }) {
       <div className="min-w-0">
         <p className="font-semibold">
           {user.name}
-          {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">(you)</span>}
+          {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">{t("you")}</span>}
           {user.deletesOn && (
             <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
-              Deleting on {user.deletesOn}
+              {t("deletingOn", { date: user.deletesOn })}
             </span>
           )}
           {!active && (
             <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
-              Switched off
+              {t("switchedOff")}
             </span>
           )}
         </p>
@@ -117,14 +115,14 @@ export function UserRow({ user }: { user: UserRowData }) {
           variant="secondary"
           disabled={busy}
           onClick={cancelDeletion}
-          aria-label={`Cancel deletion of ${user.name}`}
+          aria-label={t("cancelDeletionLabel", { name: user.name })}
         >
-          Cancel deletion
+          {t("cancelDeletion")}
         </Button>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`role-${user.id}`}>
-            Role for {user.name}
+            {t("roleFor", { name: user.name })}
           </label>
           <select
             id={`role-${user.id}`}
@@ -134,8 +132,8 @@ export function UserRow({ user }: { user: UserRowData }) {
             className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] disabled:opacity-60"
           >
             {ROLE_OPTIONS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
+              <option key={r} value={r}>
+                {roles(r)}
               </option>
             ))}
           </select>
@@ -144,9 +142,9 @@ export function UserRow({ user }: { user: UserRowData }) {
               variant="ghost"
               disabled={busy}
               onClick={resend}
-              aria-label={`Resend invite to ${user.name}`}
+              aria-label={t("resendLabel", { name: user.name })}
             >
-              Resend invite
+              {t("resend")}
             </Button>
           )}
           {!user.isSelf && (
@@ -154,9 +152,9 @@ export function UserRow({ user }: { user: UserRowData }) {
               variant="secondary"
               disabled={busy}
               onClick={toggleActive}
-              aria-label={`${active ? "Switch off" : "Switch on"} ${user.name}`}
+              aria-label={t(active ? "switchOffLabel" : "switchOnLabel", { name: user.name })}
             >
-              {active ? "Switch off" : "Switch on"}
+              {active ? t("switchOff") : t("switchOn")}
             </Button>
           )}
         </div>

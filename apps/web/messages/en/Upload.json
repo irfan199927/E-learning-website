@@ -1,0 +1,21 @@
+{
+  "title": "Upload video",
+  "heading": "Upload a video",
+  "replaceHeading": "Replace the video in “{title}”",
+  "intro": "MP4, WebM or MOV up to {gb} GB. Uploads resume if your connection drops.",
+  "chooseFile": "Choose a video file.",
+  "badType": "Upload an MP4, WebM or MOV video.",
+  "failed": "Upload failed. Check your connection and try again.",
+  "doneReplace": "Uploaded. Students keep seeing the old video until the new one is ready, in a few minutes.",
+  "done": "Uploaded. We're preparing the video for streaming. It appears as a lesson in the course in a few minutes.",
+  "titleLabel": "Title",
+  "course": "Course",
+  "module": "Module",
+  "autoModule": "Videos (added automatically)",
+  "moduleHint": "The video becomes a lesson at the end of this module.",
+  "file": "Video file",
+  "uploading": "Uploading…",
+  "progress": "Upload progress",
+  "cancel": "Cancel upload",
+  "upload": "Upload"
+}
