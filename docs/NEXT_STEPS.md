@@ -55,7 +55,9 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Admin Users page (`/admin/users`): add one or CSV import with email invites, roles, switch off/on; course
       roster with Remove
 - [x] ~~Parental consent~~: removed (2026-10-16). Students are all 18+, so no date of birth or parent approval
-- [ ] Recording consent (`ConsentType.RECORDING`); a search box for long course catalogs
+- [x] Recording consent (2026-10-17): `/recording-consent`, join gate, attendance badge
+- [ ] A search box for long course catalogs
+- [ ] Decide whether Google invites should carry the Meet link (the recording-consent gate can't cover them)
 - [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
       lesson page with Mark as done; course pages follow Module/Lesson order
 - [ ] Rich text for readings (Markdown with a sanitiser); drag-and-drop reordering; video lesson re-upload

@@ -111,6 +111,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Gradebook (`services/gradebook.ts`, `/courses/:id/grades`): cell and total rules are `gradeCell`/`gradeTotal`
   in core (overdue + nothing handed in = 0; ungraded or not-due work left out). CSV goes through core `toCsv`
   (formula-injection escaping); exports are audited `grade.export`.
+- Recording consent (`services/recording-consent.ts`): students need an agreement to the current
+  `RECORDING_NOTICE_VERSION` (core `recording.ts`) to join classes (`getJoinUrl`); bump the version when the text
+  changes, and the copy in `seed.ts`. Staff never need it.
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

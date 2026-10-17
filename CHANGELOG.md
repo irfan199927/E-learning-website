@@ -5,6 +5,20 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — recording consent (2026-10-17)
+
+- Students agree to a class-recording notice before joining live classes from E-learner (`/recording-consent`).
+  A banner asks until they answer; the Join button sends them to the notice instead of Meet, and the server
+  refuses the join. They can withdraw at any time.
+- Each agreement is a versioned `Consent` row (type `RECORDING`); changing the notice text
+  (`RECORDING_NOTICE_VERSION`) asks everyone again. Agreements and withdrawals are audited
+  (`consent.grant`, `consent.withdraw`). No database change.
+- Teachers see who hasn't agreed on the attendance sheet.
+- Seed: Aanya has agreed; Rohan and Kabir haven't answered (re-seeding resets them).
+- API: `GET`, `POST` (`{ version }`) and `DELETE /api/v1/me/recording-consent`.
+- Known gap: students also get the Meet link in their Google Calendar invite, which the gate can't stop
+  (docs/security.md).
+
 ### Added — gradebook and grade reports (2026-10-16)
 
 - `/courses/:id/grades`: teachers and admins see a gradebook (every enrolled student × every published

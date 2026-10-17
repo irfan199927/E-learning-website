@@ -15,6 +15,7 @@ import type { Actor } from "@/server/deps";
 import { listClasses } from "@/server/services/classes";
 import { isGoogleConnected } from "@/server/services/courses";
 import { listChildren } from "@/server/services/parents";
+import { mayJoinRecordedClasses } from "@/server/services/recording-consent";
 import { getLearnerOverview, listMyCourses, type CourseCard } from "@/server/services/learning";
 
 export const metadata: Metadata = { title: "Overview" };
@@ -30,7 +31,7 @@ export default async function DashboardPage({
   const { month } = await searchParams;
   const d = deps();
   const now = d.now();
-  const [classes, googleOk, overview, courses, children] = await Promise.all([
+  const [classes, googleOk, overview, courses, children, mayJoin] = await Promise.all([
     listClasses(d, actor, {
       from: new Date(now.getTime() - 3 * 3600_000),
       to: new Date(now.getTime() + 7 * 86_400_000),
@@ -41,6 +42,7 @@ export default async function DashboardPage({
       : Promise.resolve(null),
     actor.role === "TEACHER" || actor.role === "ADMIN" ? listMyCourses(d, actor) : Promise.resolve([]),
     actor.role === "PARENT" ? listChildren(d, actor) : Promise.resolve(null),
+    mayJoinRecordedClasses(d.db, actor),
   ]);
   const upcoming = classes.filter((c) => new Date(c.endsAt) > now).slice(0, 8);
   const hour = Number(
@@ -50,7 +52,9 @@ export default async function DashboardPage({
   );
   const part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
-  const upcomingSection = <UpcomingClasses actor={actor} upcoming={upcoming} compact={!!overview} />;
+  const upcomingSection = (
+    <UpcomingClasses actor={actor} upcoming={upcoming} compact={!!overview} mayJoin={mayJoin} />
+  );
 
   return (
     <div className="flex max-w-6xl flex-col gap-7">
@@ -187,10 +191,13 @@ function UpcomingClasses({
   actor,
   upcoming,
   compact,
+  mayJoin,
 }: {
   actor: Actor;
   upcoming: UpcomingClass[];
   compact: boolean;
+  /** Students: agreed to the class-recording notice. */
+  mayJoin: boolean;
 }) {
   return (
     <section className={`p-6 ${card}`} aria-labelledby="upcoming-h">
@@ -198,9 +205,16 @@ function UpcomingClasses({
         <h2 id="upcoming-h" className="font-display text-xl font-bold">
           Upcoming classes
         </h2>
-        <Link href="/calendar" className="text-sm font-semibold text-primary-fg">
-          Calendar
-        </Link>
+        <span className="flex gap-4">
+          {actor.role === "STUDENT" && (
+            <Link href="/recording-consent" className="text-sm font-semibold text-primary-fg">
+              Recordings
+            </Link>
+          )}
+          <Link href="/calendar" className="text-sm font-semibold text-primary-fg">
+            Calendar
+          </Link>
+        </span>
       </div>
       {upcoming.length === 0 ? (
         <p className="py-6 text-muted">
@@ -236,6 +250,7 @@ function UpcomingClasses({
                     startsAt={c.startsAt}
                     endsAt={c.endsAt}
                     timeZone={actor.timezone}
+                    needsConsent={!mayJoin}
                   />
                 ) : (
                   <span className="text-sm text-muted">In person</span>

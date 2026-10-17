@@ -479,3 +479,9 @@ export function parseUserCsv(text: string): {
     problems.push({ line: 1, message: `At most ${MAX_USERS_PER_IMPORT} users at a time; split the file.` });
   return { users, problems };
 }
+
+// ─────────────────────────── Recording consent ───────────────────────────
+
+/** The notice version the student was shown (RECORDING_NOTICE_VERSION). */
+export const agreeRecordingSchema = z.object({ version: z.string().trim().min(1).max(40) });
+export type AgreeRecordingInput = z.infer<typeof agreeRecordingSchema>;

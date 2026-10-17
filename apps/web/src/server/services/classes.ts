@@ -23,6 +23,7 @@ import { ClassStatus } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, visibleCoursesWhere } from "../policies";
+import { mayJoinRecordedClasses } from "./recording-consent";
 
 export interface ClassDto {
   id: string;
@@ -278,7 +279,10 @@ export async function cancelClass(deps: Deps, actor: Actor, classId: string): Pr
   await audit(deps.db, actor, "class.cancel", { type: "ClassSession", id: classId });
 }
 
-/** Returns the Meet URL if the join window is open; otherwise explains when it opens. */
+/**
+ * Returns the Meet URL if the join window is open; otherwise explains when it opens. Students must have agreed to
+ * the current recording notice (services/recording-consent.ts).
+ */
 export async function getJoinUrl(deps: Deps, actor: Actor, classId: string): Promise<string> {
   assertCan(actor.role, "class:join");
   const session = await deps.db.classSession.findUnique({
@@ -310,6 +314,10 @@ export async function getJoinUrl(deps: Deps, actor: Actor, classId: string): Pro
     throw Errors.conflict("This class has ended. The recording will appear in the Library.");
   if (w.state === "not-yet")
     throw Errors.conflict(`You can join from ${formatInZone(w.opensAt, actor.timezone)}.`);
+  if (!(await mayJoinRecordedClasses(deps.db, actor)))
+    throw Errors.conflict(
+      "Live classes are recorded. Agree to the recording notice (Class recordings, at /recording-consent) to join.",
+    );
   return session.meetLink;
 }
 
