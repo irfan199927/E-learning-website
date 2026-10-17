@@ -72,6 +72,9 @@ list.
   (to the course's students, once per item), class reminders, and recording problems (to the
   host), payments (to admins; approvals and rejections to the student). Links are always same-site paths.
 - Read notifications are deleted after 90 days, unread ones after a year (worker job `prune-notifications`).
+- Daily email (worker job `send-notification-digest`, 18:00 school time): the newest 5 unread notifications from
+  the last day that weren't emailed already, "…and N more", links back into the app. On by default; switched
+  off on the Account page. Class reminders have their own emails and never repeat in the digest.
 
 ### Assignments (`/assignments/:id`; new at `/courses/:id/assignments/new`)
 
@@ -271,6 +274,7 @@ published at once. A badge on each course, such as "2 students waiting to join",
 ### Account (`/account`, everyone; the name and avatar in the top bar link here)
 
 - Your details (name, email, role, how you sign in, joined date). Name and email changes go through an admin.
+- **Emails**: a checkbox for the daily summary of unread notifications (saves at once).
 - Students: a link to **Class recordings**.
 - **Delete my account** (students and parents): what happens is listed first (signed out at once, data deleted
   for good after 30 days, an admin can cancel until then, recordings may still show you). The button stays

@@ -8,6 +8,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getAccount } from "@/server/services/account";
 import { DeleteAccount } from "./delete-account";
+import { EmailDigestToggle } from "./email-digest";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("Account"))("title") };
@@ -60,6 +61,13 @@ export default async function AccountPage() {
       <section className={card}>
         <LanguagePicker current={locale} />
         <p className="mt-2 text-sm text-muted">{language("help")}</p>
+      </section>
+
+      <section aria-labelledby="email-h" className={card}>
+        <h2 id="email-h" className="mb-3 font-display text-xl font-bold">
+          {t("emails")}
+        </h2>
+        <EmailDigestToggle initial={account.emailDigest} />
       </section>
 
       {account.role === "STUDENT" && (

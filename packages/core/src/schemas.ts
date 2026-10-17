@@ -518,6 +518,10 @@ export const deleteAccountSchema = z.object({
 });
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 
+/** The daily email of unread notifications, on or off. */
+export const emailDigestSchema = z.object({ enabled: z.boolean() });
+export type EmailDigestInput = z.infer<typeof emailDigestSchema>;
+
 // ─────────────────────────── Manual UPI payments ───────────────────────────
 
 const maybeText = (max: number) =>

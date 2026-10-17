@@ -83,7 +83,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Grade weighting by category and excusing a student (2026-10-17)
 - [x] In-app notifications UI (2026-10-16): bell + `/notifications`
 - [x] Live notification count (polling) and deleting old notifications (2026-10-17)
-- [ ] Email digests of unread notifications
+- [x] Email digests of unread notifications (2026-10-17): daily at 18:00, opt-out on the Account page
 - [x] Paid courses with manual UPI payments (2026-10-17): Admin → Payments, course price, pay page
 - [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
 - [x] Export payments as CSV for the school's accounts (2026-10-17)

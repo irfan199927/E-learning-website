@@ -118,6 +118,8 @@ model User {
   image         String?
   role          Role      @default(STUDENT)
   timezone      String    @default("Asia/Kolkata")
+  /// Daily email of unread in-app notifications (worker `send-notification-digest`). People can switch it off.
+  emailDigest   Boolean   @default(true)
   locale        String    @default("en") // en | hi | mr
   isActive      Boolean   @default(false) // false until verified, or after an admin switches them off
   createdAt     DateTime  @default(now())

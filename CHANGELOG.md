@@ -5,6 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — daily email of unread notifications (2026-10-17)
+
+- Worker job `send-notification-digest` (18:00 school time): one email per person with the newest unread
+  notifications from the last day that weren't emailed yet, linking back into the app. Each notification is
+  emailed at most once (`Notification.sentAt`, claimed before sending, released if the send fails).
+- Account page → **Emails**: switch the daily summary off or on (`User.emailDigest`, on by default; migration
+  `notification_digest`). API: `PUT /api/v1/me/email-digest`.
+
 ### Added — payments CSV for the accounts (2026-10-17)
 
 - Admin → Payments → **Download for your accounts**: payments reported between two dates (the admin's time zone,

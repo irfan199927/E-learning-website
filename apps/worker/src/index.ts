@@ -160,6 +160,12 @@ async function registerSchedules() {
     { pattern: "45 2 * * *", tz },
     { name: "purge", data: { task: "purge-deleted-users" } },
   );
+  // Early evening, after the school day: one email of the day's unread notifications.
+  await jobs.maintenance.upsertJobScheduler(
+    "send-notification-digest",
+    { pattern: "0 18 * * *", tz },
+    { name: "digest", data: { task: "send-notification-digest" } },
+  );
 }
 
 const health = createServer(async (req, res) => {
