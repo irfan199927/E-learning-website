@@ -2,12 +2,13 @@ import { formatInZone, isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
 import { Icon, type IconName } from "@/components/icons";
 import { JoinRequestList } from "@/components/join-request-list";
 import { RosterList } from "@/components/roster-list";
 import { buttonClasses } from "@/components/ui/button";
-import { minutes, plural } from "@/lib/format";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listCourseAssignments } from "@/server/services/assignments";
@@ -17,21 +18,22 @@ import { listCourseQuizzes } from "@/server/services/quizzes";
 import { getCourseDetail, type CourseLesson } from "@/server/services/learning";
 import { listRoster } from "@/server/services/roster";
 
-export const metadata: Metadata = { title: "Course" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Courses"))("courseTitle") };
+}
 
-const STATUS_LABEL: Partial<Record<NonNullable<CourseLesson["video"]>["status"], string>> = {
-  PENDING_UPLOAD: "Uploading",
-  UPLOADED: "Queued for processing",
-  TRANSCODING: "Processing",
-  FAILED: "Processing failed",
-};
+/** Video states worth a label in the lesson list (READY says nothing): the keys of `Courses.videoStatus`. */
+const STATUS_LABEL = ["PENDING_UPLOAD", "UPLOADED", "TRANSCODING", "FAILED"] as const;
+const hasStatusLabel = (
+  status: NonNullable<CourseLesson["video"]>["status"],
+): status is (typeof STATUS_LABEL)[number] => (STATUS_LABEL as readonly string[]).includes(status);
 
-const TYPE: Record<string, { icon: IconName; label: string }> = {
-  VIDEO: { icon: "play", label: "Video" },
-  NOTE: { icon: "text", label: "Reading" },
-  LINK: { icon: "link", label: "Link" },
-  DOCUMENT: { icon: "file", label: "Files" },
-};
+const TYPE = {
+  VIDEO: "play",
+  NOTE: "text",
+  LINK: "link",
+  DOCUMENT: "file",
+} satisfies Record<string, IconName>;
 
 export default async function CoursePage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
@@ -52,13 +54,23 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     listCourseAssignments(deps(), actor, courseId),
     listCourseQuizzes(deps(), actor, courseId),
   ]);
-  const day = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
+  const [t, locale] = await Promise.all([getTranslations("Courses"), getLocale().then(intlLocale)]);
+  const day = new Intl.DateTimeFormat(locale, { timeZone: actor.timezone, day: "numeric", month: "short" });
+  const when = (date: Date) => formatInZone(date, actor.timezone, locale);
+  /** "12 min", "1 h 5 min"; null when unknown (like `minutes()` in lib/format, translated). */
+  const duration = (seconds: number | null) => {
+    if (!seconds) return null;
+    const m = Math.round(seconds / 60);
+    return m >= 60
+      ? t("hoursMinutes", { h: Math.floor(m / 60), m: m % 60 })
+      : t("minutes", { m: Math.max(1, m) });
+  };
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
       <Link href="/courses" className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg">
         <Icon name="chevronLeft" size={16} />
-        {learner ? "My courses" : "Courses"}
+        {learner ? t("myCourses") : t("title")}
       </Link>
 
       <header className="flex flex-col gap-5 rounded-[var(--radius-card)] border border-line bg-surface p-5 sm:flex-row">
@@ -72,21 +84,21 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <h1 className="font-display text-3xl font-bold tracking-tight">{course.title}</h1>
           <p className="text-muted">
-            With {course.teacherName} · {plural(course.studentCount, "student")}
+            {t("withTeacherStudents", { name: course.teacherName, count: course.studentCount })}
           </p>
           {course.description && <p>{course.description}</p>}
           {learner && (
             <div className="mt-auto pt-2">
               <div className="flex justify-between text-sm">
                 <span className="font-semibold">
-                  {course.completedCount}/{course.lessonCount} lessons completed
+                  {t("lessonsCompleted", { done: course.completedCount, total: course.lessonCount })}
                 </span>
                 <span className="text-muted">{course.percent}%</span>
               </div>
               <div
                 className="mt-1.5 h-2 overflow-hidden rounded-full bg-line"
                 role="progressbar"
-                aria-label="Course progress"
+                aria-label={t("courseProgress")}
                 aria-valuenow={course.percent}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -98,7 +110,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   href={`/courses/${course.id}/grades`}
                   className="mt-3 flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
                 >
-                  My grades
+                  {t("myGrades")}
                   <Icon name="chevronRight" size={16} />
                 </Link>
               )}
@@ -108,15 +120,15 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
             <div className="mt-auto flex flex-wrap gap-2 pt-2">
               <Link href={`/courses/${course.id}/edit`} className={buttonClasses("primary")}>
                 <Icon name="edit" size={18} />
-                Edit course
+                {t("editCourse")}
               </Link>
               <Link href={`/library/upload?course=${course.id}`} className={buttonClasses("secondary")}>
                 <Icon name="upload" size={18} />
-                Upload video
+                {t("uploadVideo")}
               </Link>
               <Link href={`/courses/${course.id}/grades`} className={buttonClasses("secondary")}>
                 <Icon name="users" size={18} />
-                Gradebook
+                {t("gradebook")}
               </Link>
             </div>
           )}
@@ -130,11 +142,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="join-h" className="mb-1 font-display text-xl font-bold">
-            Join requests{requests.length > 0 && ` (${requests.length})`}
+            {requests.length > 0 ? t("joinRequestsCount", { count: requests.length }) : t("joinRequests")}
           </h2>
-          <p className="mb-3 text-sm text-muted">
-            Students who signed up and asked to join. Approving gives them the lessons and class invites.
-          </p>
+          <p className="mb-3 text-sm text-muted">{t("joinRequestsHelp")}</p>
           <JoinRequestList
             requests={requests.map((r) => ({
               id: r.id,
@@ -153,7 +163,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="students-h" className="mb-3 font-display text-xl font-bold">
-            Students ({roster.length})
+            {t("students", { count: roster.length })}
           </h2>
           <RosterList
             courseId={courseId}
@@ -174,18 +184,18 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="attendance-h" className="mb-1 font-display text-xl font-bold">
-            Attendance
+            {t("attendance")}
           </h2>
-          <p className="mb-3 text-sm text-muted">
-            Recent classes. Google Meet classes fill in by themselves; take attendance for the rest.
-          </p>
+          <p className="mb-3 text-sm text-muted">{t("attendanceHelp")}</p>
           {recent.classes.length === 0 ? (
             <p className="text-muted">
-              No classes have started yet.{" "}
-              <Link href="/calendar" className="font-semibold text-primary-fg">
-                Schedule one in the Calendar
-              </Link>
-              .
+              {t.rich("noClasses", {
+                link: (chunks) => (
+                  <Link href="/calendar" className="font-semibold text-primary-fg">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
@@ -194,16 +204,21 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   <div className="min-w-0">
                     <p className="font-semibold">{c.title}</p>
                     <p className="text-sm text-muted">
-                      {formatInZone(c.startsAt, actor.timezone)} ·{" "}
-                      {c.marked === 0 ? "Not taken" : `${c.present} of ${recent.students} present`}
+                      {when(c.startsAt)} ·{" "}
+                      {c.marked === 0
+                        ? t("notTaken")
+                        : t("presentOf", { present: c.present, total: recent.students })}
                     </p>
                   </div>
                   <Link
                     href={`/classes/${c.id}/attendance`}
                     className={buttonClasses(c.marked === 0 ? "primary" : "secondary")}
-                    aria-label={`${c.marked === 0 ? "Take" : "Edit"} attendance for ${c.title}, ${formatInZone(c.startsAt, actor.timezone)}`}
+                    aria-label={t(c.marked === 0 ? "takeAttendanceFor" : "editAttendanceFor", {
+                      title: c.title,
+                      when: when(c.startsAt),
+                    })}
                   >
-                    {c.marked === 0 ? "Take attendance" : "Edit"}
+                    {c.marked === 0 ? t("takeAttendance") : t("edit")}
                   </Link>
                 </li>
               ))}
@@ -220,31 +235,31 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 id="assignments-h" className="font-display text-xl font-bold">
-              Assignments
+              {t("assignments")}
             </h2>
             {course.canManage && (
               <Link href={`/courses/${course.id}/assignments/new`} className={buttonClasses("secondary")}>
                 <Icon name="plus" size={18} />
-                New assignment
+                {t("newAssignment")}
               </Link>
             )}
           </div>
           {assignments.length === 0 ? (
-            <p className="text-muted">No assignments yet.</p>
+            <p className="text-muted">{t("noAssignments")}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
               {assignments.map((a) => {
                 const status = a.counts
-                  ? `${a.counts.submitted} handed in · ${a.counts.graded} graded${a.published ? "" : " · Draft"}`
+                  ? `${t("assignmentCounts", { submitted: a.counts.submitted, graded: a.counts.graded })}${a.published ? "" : ` · ${t("draft")}`}`
                   : a.mine?.status === "GRADED"
-                    ? `Graded: ${a.mine.score}/${a.maxPoints}`
+                    ? t("gradedScore", { score: String(a.mine.score), max: a.maxPoints })
                     : a.mine
                       ? a.mine.status === "LATE"
-                        ? "Handed in late"
-                        : "Handed in"
+                        ? t("handedInLate")
+                        : t("handedIn")
                       : a.dueAt < new Date()
-                        ? "Not handed in"
-                        : "To do";
+                        ? t("notHandedIn")
+                        : t("toDo");
                 return (
                   <li key={a.id}>
                     <Link
@@ -255,7 +270,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="font-semibold">{a.title}</span>
                         <span className="text-sm text-muted">
-                          Due {formatInZone(a.dueAt, actor.timezone)} · {status}
+                          {t("due", { date: when(a.dueAt), status })}
                         </span>
                       </span>
                       <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
@@ -276,27 +291,31 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 id="quizzes-h" className="font-display text-xl font-bold">
-              Quizzes
+              {t("quizzes")}
             </h2>
             {course.canManage && (
               <Link href={`/courses/${course.id}/quizzes/new`} className={buttonClasses("secondary")}>
                 <Icon name="plus" size={18} />
-                New quiz
+                {t("newQuiz")}
               </Link>
             )}
           </div>
           {quizzes.length === 0 ? (
-            <p className="text-muted">No quizzes yet.</p>
+            <p className="text-muted">{t("noQuizzes")}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
               {quizzes.map((q) => {
                 const meta = [
-                  `${q.questionCount} ${q.questionCount === 1 ? "question" : "questions"}`,
-                  q.timeLimitSec ? `${Math.round(q.timeLimitSec / 60)} min` : null,
-                  q.dueAt ? `closes ${formatInZone(q.dueAt, actor.timezone)}` : null,
-                  q.takenBy !== null ? `taken by ${q.takenBy}` : null,
-                  q.mine ? (q.mine.best === null ? "Not taken" : `Best ${q.mine.best}/${q.maxPoints}`) : null,
-                  q.published ? null : "Draft",
+                  t("questions", { count: q.questionCount }),
+                  q.timeLimitSec ? t("minutes", { m: Math.round(q.timeLimitSec / 60) }) : null,
+                  q.dueAt ? t("closes", { date: when(q.dueAt) }) : null,
+                  q.takenBy !== null ? t("takenBy", { count: q.takenBy }) : null,
+                  q.mine
+                    ? q.mine.best === null
+                      ? t("notTaken")
+                      : t("best", { score: q.mine.best, max: q.maxPoints })
+                    : null,
+                  q.published ? null : t("draft"),
                 ]
                   .filter(Boolean)
                   .join(" · ");
@@ -326,14 +345,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="lessons-h" className="mb-2 font-display text-xl font-bold">
-          Lessons
+          {t("lessons")}
         </h2>
         {course.modules.length === 0 ? (
-          <p className="py-6 text-muted">
-            {course.canManage
-              ? "No lessons yet. Use Edit course to add modules and lessons; class recordings and uploaded videos are added automatically."
-              : "No lessons yet. Your teacher's lessons and class recordings will appear here."}
-          </p>
+          <p className="py-6 text-muted">{course.canManage ? t("noLessonsStaff") : t("noLessonsLearner")}</p>
         ) : (
           <div className="flex flex-col gap-5">
             {course.modules.map((m) => (
@@ -341,15 +356,16 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                 <h3 className="mb-1 text-sm font-bold uppercase tracking-wide text-muted">{m.title}</h3>
                 <ol className="divide-y divide-line">
                   {m.lessons.map((l) => {
-                    const type = TYPE[l.type] ?? TYPE.NOTE!;
+                    const type = l.type in TYPE ? (l.type as keyof typeof TYPE) : "NOTE";
+                    const status = l.video?.status;
                     const meta = [
-                      type.label,
-                      minutes(l.video?.durationSeconds ?? null),
-                      l.video ? STATUS_LABEL[l.video.status] : null,
-                      l.attachmentCount ? plural(l.attachmentCount, "file") : null,
-                      l.hidden ? "Hidden from students" : null,
-                      learner && l.completed ? "Completed" : null,
-                      learner && !l.completed && l.percent > 0 ? `${l.percent}% watched` : null,
+                      t(`lessonType.${type}`),
+                      duration(l.video?.durationSeconds ?? null),
+                      status && hasStatusLabel(status) ? t(`videoStatus.${status}`) : null,
+                      l.attachmentCount ? t("files", { count: l.attachmentCount }) : null,
+                      l.hidden ? t("hiddenFromStudents") : null,
+                      learner && l.completed ? t("completed") : null,
+                      learner && !l.completed && l.percent > 0 ? t("watched", { percent: l.percent }) : null,
                     ]
                       .filter(Boolean)
                       .join(" · ");
@@ -383,7 +399,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                             <span className="font-semibold">{l.title}</span>
                             <span className="text-sm text-muted">{meta}</span>
                           </span>
-                          <Icon name={type.icon} size={18} className="shrink-0 text-primary-fg" />
+                          <Icon name={TYPE[type]} size={18} className="shrink-0 text-primary-fg" />
                         </Link>
                       </li>
                     );

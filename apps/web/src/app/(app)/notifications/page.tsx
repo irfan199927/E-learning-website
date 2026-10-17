@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import { buttonClasses } from "@/components/ui/button";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listNotifications } from "@/server/services/notifications";
 import { NotificationList } from "./notification-list";
 
-export const metadata: Metadata = { title: "Notifications" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Notifications"))("title") };
+}
+
+type T = Awaited<ReturnType<typeof getTranslations<"Notifications">>>;
 
 /** "5 min ago", "3 h ago", "Yesterday", then a date on the reader's clock. */
-function when(d: Date, now: Date, timeZone: string): string {
+function when(d: Date, now: Date, timeZone: string, t: T, locale: string): string {
   const mins = Math.round((now.getTime() - d.getTime()) / 60_000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
-  if (mins < 24 * 60) return `${Math.round(mins / 60)} h ago`;
-  return new Intl.DateTimeFormat("en-IN", {
+  if (mins < 1) return t("justNow");
+  if (mins < 60) return t("minAgo", { count: mins });
+  if (mins < 24 * 60) return t("hoursAgo", { count: Math.round(mins / 60) });
+  return new Intl.DateTimeFormat(locale, {
     timeZone,
     weekday: "short",
     day: "numeric",
@@ -37,16 +43,17 @@ export default async function NotificationsPage({
   });
   const now = deps().now();
   const last = page.items.at(-1);
+  const [t, locale] = await Promise.all([getTranslations("Notifications"), getLocale()]);
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Notifications</h1>
-        <p className="mt-1 text-muted">Grades, join requests, new work and class reminders.</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
       {page.items.length === 0 ? (
         <p className="rounded-[var(--radius-card)] border border-line bg-surface p-5 text-muted">
-          {before ? "No older notifications." : "Nothing yet. You'll see updates about your courses here."}
+          {before ? t("noOlder") : t("empty")}
         </p>
       ) : (
         <NotificationList
@@ -57,14 +64,14 @@ export default async function NotificationsPage({
             body: n.body,
             link: n.link,
             read: n.read,
-            when: when(n.createdAt, now, actor.timezone),
+            when: when(n.createdAt, now, actor.timezone, t, intlLocale(locale)),
           }))}
         />
       )}
       <div className="flex gap-2">
         {before && (
           <Link href="/notifications" className={buttonClasses("secondary")}>
-            Newest
+            {t("newest")}
           </Link>
         )}
         {page.more && last && (
@@ -72,7 +79,7 @@ export default async function NotificationsPage({
             href={`/notifications?before=${encodeURIComponent(last.createdAt.toISOString())}`}
             className={buttonClasses("secondary")}
           >
-            Older
+            {t("older")}
           </Link>
         )}
       </div>

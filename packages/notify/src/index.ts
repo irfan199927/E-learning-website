@@ -106,7 +106,7 @@ export const templates = {
   }): Message {
     const locale = p.locale ?? "en";
     const c = COPY[locale].reminder;
-    const when = formatInZone(p.startsAt, p.timeZone, `${locale}-IN`);
+    const when = formatInZone(p.startsAt, p.timeZone, `${locale}-IN-u-nu-latn`);
     const where = p.location ? `\n${c.where}: ${p.location}` : "";
     const lead = c.lead(p.kind);
     return {

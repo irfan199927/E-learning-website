@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 /**
  * Course "thumbnail": the uploaded cover image when there is one (`cover` = the course id and cover version),
  * else a generated cover in the course's colour, so every course has artwork. Decorative — the card's heading
@@ -16,6 +18,7 @@ export function CourseTile({
   cover?: { courseId: string; version: string | null } | null;
   className?: string;
 }) {
+  const t = useTranslations("Courses");
   const [subject] = title.split("·");
   if (cover?.version)
     return (
@@ -47,7 +50,7 @@ export function CourseTile({
       </span>
       {grade && (
         <span className="relative w-fit rounded-full border border-white/60 px-2 py-0.5 text-[11px] font-semibold">
-          Grade {grade}
+          {t("grade", { grade })}
         </span>
       )}
     </div>

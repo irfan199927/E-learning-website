@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export function GradeForm({
   score: number | null;
   feedback: string | null;
 }) {
+  const t = useTranslations("Assignments");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
@@ -35,21 +37,26 @@ export function GradeForm({
         method: "PATCH",
         json: { score: Number(f.get("score")), feedback: String(f.get("feedback") ?? "") },
       });
-      setNote({ tone: "success", text: `Saved. ${studentName} can see the grade now.` });
+      setNote({ tone: "success", text: t("gradeSaved", { name: studentName }) });
       router.refresh();
     } catch (err) {
-      setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't save. Try again." });
+      setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("saveFailed") });
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2" noValidate aria-label={`Grade ${studentName}`}>
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-2"
+      noValidate
+      aria-label={t("gradeLabel", { name: studentName })}
+    >
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1">
           <label htmlFor={id("score")} className="text-sm font-semibold">
-            Score (out of {maxPoints})
+            {t("score", { max: maxPoints })}
           </label>
           <input
             id={id("score")}
@@ -65,7 +72,7 @@ export function GradeForm({
         </div>
         <div className="flex min-w-60 flex-1 flex-col gap-1">
           <label htmlFor={id("feedback")} className="text-sm font-semibold">
-            Feedback (optional)
+            {t("feedback")}
           </label>
           <input
             id={id("feedback")}
@@ -76,7 +83,7 @@ export function GradeForm({
           />
         </div>
         <Button type="submit" disabled={busy}>
-          {busy ? "Saving…" : score === null ? "Save grade" : "Update grade"}
+          {busy ? t("saving") : score === null ? t("saveGrade") : t("updateGrade")}
         </Button>
       </div>
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}

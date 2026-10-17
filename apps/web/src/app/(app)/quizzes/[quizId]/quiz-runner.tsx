@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export function QuizRunner({
   questions: AttemptQuestion[];
   deadline: string | null;
 }) {
+  const t = useTranslations("Quizzes");
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
   const [busy, setBusy] = useState(false);
@@ -43,10 +45,10 @@ export function QuizRunner({
       router.refresh();
     } catch (err) {
       sent.current = false;
-      setError(err instanceof ApiError ? err.message : "Couldn't submit. Try again.");
+      setError(err instanceof ApiError ? err.message : t("submitFailed"));
       setBusy(false);
     }
-  }, [answers, attemptId, router]);
+  }, [answers, attemptId, router, t]);
 
   useEffect(() => {
     if (!deadline) return;
@@ -75,10 +77,10 @@ export function QuizRunner({
             left < 60_000 ? "border-live bg-live-soft text-[#A11C14]" : "border-line bg-surface"
           }`}
         >
-          <span aria-hidden="true">{clock(left)} left</span>
+          <span aria-hidden="true">{t("timeLeft", { time: clock(left) })}</span>
           {/* Announce once a minute, not every second. */}
           <span className="sr-only" aria-live="polite">
-            {Math.ceil(left / 60_000)} {Math.ceil(left / 60_000) === 1 ? "minute" : "minutes"} left
+            {t("minutesLeft", { count: Math.ceil(left / 60_000) })}
           </span>
         </div>
       )}
@@ -86,13 +88,13 @@ export function QuizRunner({
         {questions.map((q, i) => (
           <li key={q.id}>
             <fieldset className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-line bg-surface p-5">
-              <legend className="sr-only">Question {i + 1}</legend>
+              <legend className="sr-only">{t("question", { n: i + 1 })}</legend>
               <p className="font-semibold">
                 {i + 1}. {q.prompt}
               </p>
               <p className="text-sm text-muted">
-                {q.points} {q.points === 1 ? "point" : "points"}
-                {q.multiple && " · choose all that apply"}
+                {t("points", { count: q.points })}
+                {q.multiple && ` · ${t("chooseAll")}`}
               </p>
               {q.options.map((o, k) => (
                 <label
@@ -116,15 +118,13 @@ export function QuizRunner({
       </ol>
       {error && <FormAlert>{error}</FormAlert>}
       {confirming && unanswered > 0 ? (
-        <div role="group" aria-label="Confirm submitting" className="flex flex-wrap items-center gap-2">
-          <span className="text-sm">
-            {unanswered} {unanswered === 1 ? "question is" : "questions are"} unanswered. Submit anyway?
-          </span>
+        <div role="group" aria-label={t("confirmLabel")} className="flex flex-wrap items-center gap-2">
+          <span className="text-sm">{t("unanswered", { count: unanswered })}</span>
           <Button disabled={busy} onClick={() => void submit()}>
-            Submit
+            {t("submit")}
           </Button>
           <Button variant="secondary" onClick={() => setConfirming(false)}>
-            Keep going
+            {t("keepGoing")}
           </Button>
         </div>
       ) : (
@@ -133,7 +133,7 @@ export function QuizRunner({
           className="w-fit"
           onClick={() => (unanswered > 0 ? setConfirming(true) : void submit())}
         >
-          {busy ? "Submitting…" : "Submit answers"}
+          {busy ? t("submitting") : t("submitAnswers")}
         </Button>
       )}
     </div>

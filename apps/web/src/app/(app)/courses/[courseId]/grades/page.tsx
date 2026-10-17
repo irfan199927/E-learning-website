@@ -2,15 +2,18 @@ import { formatInZone, isAppError, type GradeCell, type GradeItem, type GradeTot
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
-import { plural } from "@/lib/format";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getGradebook, getMyGrades } from "@/server/services/gradebook";
 import { ExcuseButton, WeightingForm } from "./grade-controls";
 
-export const metadata: Metadata = { title: "Grades" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Grades"))("title") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface p-5";
 const badge = "inline-block rounded-full px-2 py-0.5 text-xs font-semibold";
@@ -21,7 +24,7 @@ function totalText(t: GradeTotal) {
   return t.percent === null ? "—" : `${t.percent}%`;
 }
 
-function Cell({
+async function Cell({
   cell,
   item,
   excuse,
@@ -30,6 +33,7 @@ function Cell({
   item: GradeItem;
   excuse: { courseId: string; userId: string; studentName: string };
 }) {
+  const t = await getTranslations("Grades");
   const excuseButton = (excused: boolean) => (
     <ExcuseButton
       courseId={excuse.courseId}
@@ -46,43 +50,42 @@ function Cell({
       return (
         <>
           {cell.score}
-          {cell.late && <span className="ml-1 text-xs text-muted">late</span>}
+          {cell.late && <span className="ml-1 text-xs text-muted">{t("late")}</span>}
         </>
       );
     case "to-grade":
       return (
         <Link href={itemHref(item)} className={`${badge} bg-primary-soft text-primary-fg-strong`}>
-          To grade{cell.late ? " · late" : ""}
+          {t(cell.late ? "toGradeLate" : "toGrade")}
         </Link>
       );
     case "missing":
       return (
         <span className="flex flex-wrap items-center gap-1">
-          <span className={`${badge} bg-warning-soft text-warning`}>Missing</span>
+          <span className={`${badge} bg-warning-soft text-warning`}>{t("missing")}</span>
           {excuseButton(false)}
         </span>
       );
     case "excused":
       return (
         <span className="flex flex-wrap items-center gap-1">
-          <span className={`${badge} bg-canvas text-muted`}>Excused</span>
+          <span className={`${badge} bg-canvas text-muted`}>{t("excused")}</span>
           {excuseButton(true)}
         </span>
       );
     case "open":
       return (
-        <span className="text-muted" aria-label="Not due yet">
+        <span className="text-muted" aria-label={t("notDue")}>
           —
         </span>
       );
   }
 }
 
-const RULES =
-  "Totals count graded work, and overdue work that was never handed in as 0. Work waiting to be graded, work not due yet and excused work are left out.";
+type GradesT = Awaited<ReturnType<typeof getTranslations<"Grades">>>;
 
-const weightingText = (w: number | null) =>
-  w === null ? "Weighted by points." : `Weighted: assignments ${w}%, quizzes ${100 - w}%.`;
+const weightingText = (t: GradesT, w: number | null) =>
+  w === null ? t("weightedByPoints") : t("weighted", { assignments: w, quizzes: 100 - w });
 
 export default async function GradesPage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
@@ -110,17 +113,19 @@ function BackLink({ course }: { course: { id: string; title: string } }) {
   );
 }
 
-function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>>; tz: string }) {
-  const due = (d: Date | null) => (d ? `Due ${formatInZone(d, tz)}` : "No closing date");
+async function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>>; tz: string }) {
+  const [t, locale] = await Promise.all([getTranslations("Grades"), getLocale()]);
+  const due = (d: Date | null) =>
+    d ? t("due", { when: formatInZone(d, tz, intlLocale(locale)) }) : t("noClosingDate");
   return (
     <div className="flex max-w-6xl flex-col gap-6">
       <BackLink course={book.course} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-muted">{book.course.title}</p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Gradebook</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t("gradebook")}</h1>
           <p className="mt-1 text-muted">
-            {plural(book.students.length, "student")} · {plural(book.items.length, "piece")} of published work
+            {t("summary", { students: book.students.length, items: book.items.length })}
           </p>
         </div>
         {book.students.length > 0 && (
@@ -130,35 +135,29 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
             className={buttonClasses("secondary")}
           >
             <Icon name="download" size={18} />
-            Download CSV
+            {t("downloadCsv")}
           </a>
         )}
       </header>
 
       <section aria-labelledby="book-h" className={card}>
         <h2 id="book-h" className="sr-only">
-          Marks
+          {t("marks")}
         </h2>
         {book.students.length === 0 || book.items.length === 0 ? (
-          <p className="text-muted">
-            {book.students.length === 0
-              ? "No students in this course yet."
-              : "Nothing to grade yet. Published assignments and quizzes appear here."}
-          </p>
+          <p className="text-muted">{book.students.length === 0 ? t("noStudents") : t("nothingToGrade")}</p>
         ) : (
           <>
             <p className="mb-4 text-sm text-muted">
-              {RULES} {weightingText(book.assignmentWeight)}
+              {t("rules")} {weightingText(t, book.assignmentWeight)}
             </p>
-            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Gradebook table">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("tableLabel")}>
               <table className="w-full text-left text-sm">
-                <caption className="sr-only">
-                  Marks for each student. Columns are assignments and quizzes, then the total.
-                </caption>
+                <caption className="sr-only">{t("caption")}</caption>
                 <thead>
                   <tr className="border-b border-line align-bottom text-muted">
                     <th scope="col" className="sticky left-0 z-10 bg-surface py-2 pr-4 font-semibold">
-                      Student
+                      {t("student")}
                     </th>
                     {book.items.map((i) => (
                       <th key={i.id} scope="col" className="min-w-36 px-3 py-2 font-normal">
@@ -166,13 +165,13 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
                           {i.title}
                         </Link>
                         <span className="block text-xs">
-                          {i.kind === "quiz" ? "Quiz" : "Assignment"} · out of {i.maxPoints}
+                          {t("kind", { kind: i.kind })} · {t("outOf", { max: i.maxPoints })}
                         </span>
                         <span className="block text-xs">{due(i.dueAt)}</span>
                       </th>
                     ))}
                     <th scope="col" className="px-3 py-2 font-semibold">
-                      Total
+                      {t("total")}
                     </th>
                   </tr>
                 </thead>
@@ -205,7 +204,7 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
                 <tfoot>
                   <tr className="border-t border-line-strong text-muted">
                     <th scope="row" className="sticky left-0 z-10 bg-surface py-2.5 pr-4 font-semibold">
-                      Class average
+                      {t("classAverage")}
                     </th>
                     {book.averages.map((a, i) => (
                       <td key={book.items[i]!.id} className="px-3 py-2.5">
@@ -223,7 +222,7 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
 
       <section aria-labelledby="weighting-h" className={card}>
         <h2 id="weighting-h" className="mb-3 font-display text-xl font-bold">
-          Weighting
+          {t("weighting")}
         </h2>
         <WeightingForm courseId={book.course.id} assignmentWeight={book.assignmentWeight} />
       </section>
@@ -231,19 +230,20 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
   );
 }
 
-function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrades>>; tz: string }) {
+async function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrades>>; tz: string }) {
+  const [t, locale] = await Promise.all([getTranslations("Grades"), getLocale()]);
   const status = (c: GradeCell, i: GradeItem) => {
     switch (c.status) {
       case "graded":
-        return `${c.score}/${i.maxPoints}${c.late ? " · handed in late" : ""}`;
+        return t(c.late ? "gradedLate" : "graded", { score: c.score ?? 0, max: i.maxPoints });
       case "to-grade":
-        return "Handed in, waiting to be graded";
+        return t("waiting");
       case "missing":
-        return "Missing: counts as 0";
+        return t("missingZero");
       case "excused":
-        return "Excused: not counted";
+        return t("excusedNotCounted");
       case "open":
-        return i.dueAt ? `Due ${formatInZone(i.dueAt, tz)}` : "Not taken yet";
+        return i.dueAt ? t("due", { when: formatInZone(i.dueAt, tz, intlLocale(locale)) }) : t("notTakenYet");
     }
   };
   return (
@@ -251,30 +251,30 @@ function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrad
       <BackLink course={view.course} />
       <header>
         <p className="text-sm font-semibold text-muted">{view.course.title}</p>
-        <h1 className="font-display text-3xl font-bold tracking-tight">My grades</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("myGrades")}</h1>
       </header>
 
       <section aria-labelledby="total-h" className={card}>
         <h2 id="total-h" className="text-sm font-semibold text-muted">
-          Total so far
+          {t("totalSoFar")}
         </h2>
         <p className="font-display text-4xl font-bold">{totalText(view.total)}</p>
         <p className="text-muted">
           {view.total.possible > 0
-            ? `${view.total.earned} of ${view.total.possible} points`
-            : "Nothing has been graded yet."}
+            ? t("pointsOf", { earned: view.total.earned, possible: view.total.possible })
+            : t("nothingGraded")}
         </p>
         <p className="mt-3 text-sm text-muted">
-          {RULES} {weightingText(view.assignmentWeight)}
+          {t("rules")} {weightingText(t, view.assignmentWeight)}
         </p>
       </section>
 
       <section aria-labelledby="work-h" className={card}>
         <h2 id="work-h" className="mb-2 font-display text-xl font-bold">
-          Work
+          {t("work")}
         </h2>
         {view.items.length === 0 ? (
-          <p className="text-muted">No assignments or quizzes yet.</p>
+          <p className="text-muted">{t("noWork")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {view.items.map((i, n) => {
@@ -293,11 +293,11 @@ function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrad
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="font-semibold">{i.title}</span>
                       <span className="text-sm text-muted">
-                        {i.kind === "quiz" ? "Quiz" : "Assignment"} · {status(c, i)}
+                        {t("kind", { kind: i.kind })} · {status(c, i)}
                       </span>
                     </span>
                     {c.status === "missing" && (
-                      <span className={`${badge} bg-warning-soft text-warning`}>Missing</span>
+                      <span className={`${badge} bg-warning-soft text-warning`}>{t("missing")}</span>
                     )}
                     <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
                   </Link>

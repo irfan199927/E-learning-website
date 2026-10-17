@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Icon } from "@/components/icons";
@@ -9,6 +10,7 @@ import { api, ApiError } from "@/lib/api-client";
 
 /** A student ticks a reading, link or file lesson as done (videos complete by watching). */
 export function LessonDoneButton({ lessonId, done }: { lessonId: string; done: boolean }) {
+  const t = useTranslations("Lesson");
   const router = useRouter();
   const [isDone, setDone] = useState(done);
   const [busy, setBusy] = useState(false);
@@ -22,7 +24,7 @@ export function LessonDoneButton({ lessonId, done }: { lessonId: string; done: b
       setDone(!isDone);
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
     } finally {
       setBusy(false);
     }
@@ -39,7 +41,7 @@ export function LessonDoneButton({ lessonId, done }: { lessonId: string; done: b
         className="w-fit"
       >
         <Icon name="check" size={18} />
-        {isDone ? "Done · undo" : "Mark as done"}
+        {isDone ? t("doneUndo") : t("markDone")}
       </Button>
     </div>
   );

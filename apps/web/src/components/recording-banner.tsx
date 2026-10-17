@@ -2,26 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Icon } from "./icons";
 import { buttonClasses } from "./ui/button";
 
 /** Asks a student to read the class-recording notice until they answer (not shown on the notice page itself). */
 export function RecordingBanner({ outdated }: { outdated: boolean }) {
+  const t = useTranslations("RecordingConsent");
   if (usePathname() === "/recording-consent") return null;
+  const b = (chunks: React.ReactNode) => <b>{chunks}</b>;
   return (
     <aside
-      aria-label="Class recordings"
+      aria-label={t("title")}
       className="mb-6 flex flex-wrap items-center gap-4 rounded-[var(--radius-card)] border border-line bg-primary-soft p-4"
     >
       <Icon name="video" size={24} className="shrink-0 text-primary-fg-strong" />
       <p className="min-w-48 flex-1">
-        <b>Live classes are recorded.</b>{" "}
-        {outdated
-          ? "The recording notice has changed. Read it and agree again to keep joining live classes."
-          : "Read the recording notice and agree to it to join live classes."}
+        {outdated ? t.rich("bannerOutdated", { b }) : t.rich("bannerNew", { b })}
       </p>
       <Link href="/recording-consent" className={buttonClasses("primary")}>
-        Read the notice
+        {t("readNotice")}
       </Link>
     </aside>
   );

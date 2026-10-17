@@ -2,13 +2,16 @@ import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Icon } from "@/components/icons";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getPlayerData } from "@/server/services/videos";
 import { VideoPlayer } from "@/components/video-player";
 
-export const metadata: Metadata = { title: "Lesson" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Lesson"))("title") };
+}
 
 export default async function LessonPage({ params }: { params: Promise<{ videoId: string }> }) {
   const actor = await requirePageActor();
@@ -19,6 +22,7 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
   });
   // Videos in a lesson open on the lesson page (old links, recordings). Staff keep this page for loose videos.
   if (video.lessonId) redirect(`/courses/${video.courseId}/lessons/${video.lessonId}`);
+  const t = await getTranslations("Lesson");
 
   return (
     <div className="flex max-w-5xl flex-col gap-5">
@@ -38,11 +42,7 @@ export default async function LessonPage({ params }: { params: Promise<{ videoId
         />
       ) : (
         <div className="grid aspect-video place-items-center rounded-[var(--radius-card)] bg-[#1D2233] text-center text-[#C9CCD6]">
-          <p>
-            {video.status === "FAILED"
-              ? "This video couldn't be processed. Your teacher has been notified."
-              : "This recording is still processing. Check back in a few minutes."}
-          </p>
+          <p>{video.status === "FAILED" ? t("recordingFailed") : t("recordingProcessing")}</p>
         </div>
       )}
       <header>

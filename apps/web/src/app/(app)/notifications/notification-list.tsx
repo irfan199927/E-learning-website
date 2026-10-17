@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export interface ListItem {
 
 /** The list, with "Mark all as read". Opening one marks it read, then follows its link. */
 export function NotificationList({ items, unread }: { items: ListItem[]; unread: number }) {
+  const t = useTranslations("Notifications");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function NotificationList({ items, unread }: { items: ListItem[]; unread:
       if (link) router.push(link);
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
     }
   }
 
@@ -46,7 +48,7 @@ export function NotificationList({ items, unread }: { items: ListItem[]; unread:
       setReadIds(new Set(items.map((i) => i.id)));
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
     } finally {
       setBusy(false);
     }
@@ -57,11 +59,11 @@ export function NotificationList({ items, unread }: { items: ListItem[]; unread:
       {error && <FormAlert>{error}</FormAlert>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted" aria-live="polite">
-          {unreadNow > 0 ? `${unreadNow} unread` : "All caught up"}
+          {unreadNow > 0 ? t("unread", { count: unreadNow }) : t("allCaughtUp")}
         </p>
         {unreadNow > 0 && (
           <Button variant="secondary" disabled={busy} onClick={() => void readAll()}>
-            Mark all as read
+            {t("markAll")}
           </Button>
         )}
       </div>
@@ -82,7 +84,7 @@ export function NotificationList({ items, unread }: { items: ListItem[]; unread:
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className={read ? "" : "font-semibold"}>
                     {n.title}
-                    {!read && <span className="sr-only"> (unread)</span>}
+                    {!read && <span className="sr-only">{t("unreadMark")}</span>}
                   </span>
                   <span className="text-sm text-muted">{n.body}</span>
                   <span className="mt-0.5 text-xs text-muted">{n.when}</span>

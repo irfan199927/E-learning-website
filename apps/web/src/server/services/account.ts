@@ -112,7 +112,7 @@ export async function requestAccountDeletion(
   await deps.mailer
     .send(
       actor.email,
-      templates.accountDeletion(actor.name, formatInZone(purgeOn, actor.timezone, `${lang}-IN`), lang),
+      templates.accountDeletion(actor.name, formatInZone(purgeOn, actor.timezone, `${lang}-IN-u-nu-latn`), lang),
     )
     .catch(() => undefined);
   return { purgeOn };

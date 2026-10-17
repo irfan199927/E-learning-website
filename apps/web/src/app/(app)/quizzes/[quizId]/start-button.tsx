@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
 
 export function StartQuizButton({ quizId, label }: { quizId: string; label: string }) {
+  const t = useTranslations("Quizzes");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,12 +25,12 @@ export function StartQuizButton({ quizId, label }: { quizId: string; label: stri
             await api(`/api/v1/quizzes/${quizId}/attempts`, { method: "POST" });
             router.refresh();
           } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Couldn't start. Try again.");
+            setError(err instanceof ApiError ? err.message : t("startFailed"));
             setBusy(false);
           }
         }}
       >
-        {busy ? "Starting…" : label}
+        {busy ? t("starting") : label}
       </Button>
     </div>
   );
