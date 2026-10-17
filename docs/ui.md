@@ -258,7 +258,8 @@ published at once. A badge on each course, such as "2 students waiting to join",
 - **Admin → Payments:** reported payments in three tabs (**To check**, **Approved**, **Rejected**), each with the
   student, course, amount, UPI reference, note and **View screenshot**; **Approve** enrols the student,
   **Reject** asks for a reason the student sees. Below: **Where students pay** (UPI ID, UPI number, the name
-  students see, instructions) and **QR code** (upload, replace, remove).
+  students see, instructions) and **QR code** (upload, replace, remove). **Download for your accounts**: a CSV
+  of payments reported between two dates (default: this month so far), all or one status; audited `payment.export`.
 - **Edit course → Price** (admins only): whole rupees; 0 makes the course free again.
 - **Catalog:** a paid course shows its price and **Pay and join** instead of **Ask to join** (or "Payment sent.
   Waiting for the school to confirm.", or "Payment not confirmed: try again").

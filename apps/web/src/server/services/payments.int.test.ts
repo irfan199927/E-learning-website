@@ -7,6 +7,7 @@ import {
   getCoursePayment,
   initProofUpload,
   listPayments,
+  paymentsCsv,
   proofUrl,
   setCoursePrice,
   submitPayment,
@@ -137,5 +138,41 @@ describe("manual UPI payments (integration)", () => {
     await setCoursePrice(deps, w.admin, w.course.id, { priceRupees: 0 });
     await expect(getCoursePayment(deps, w.student, w.course.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(requestToJoin(deps, w.student, w.course.id, {})).resolves.toEqual({ status: "pending" });
+  });
+
+  it("exports payments in a date range as CSV, by the admin's local dates", async () => {
+    const w = await world();
+    const deps = makeDeps();
+    const db = deps.db;
+    await db.course.update({ where: { id: w.course.id }, data: { publishedAt: new Date() } });
+    await updatePaymentSettings(deps, w.admin, { upiId: "school@okaxis" });
+    await setCoursePrice(deps, w.admin, w.course.id, { priceRupees: 1500 });
+    const ref = utr();
+    const paid = await submitPayment(deps, w.outsider, w.course.id, { reference: ref, note: "=cmd|calc" });
+    // 19:00 UTC on 31 Jan is 00:30 on 1 Feb in India: it belongs to February for an IST admin.
+    await db.manualPayment.update({
+      where: { id: paid.id },
+      data: { createdAt: new Date("2026-01-31T19:00:00Z") },
+    });
+
+    const feb = await paymentsCsv(deps, w.admin, { from: "2026-02-01", to: "2026-02-28", status: "ALL" });
+    expect(feb.filename).toBe("payments-2026-02-01-to-2026-02-28.csv");
+    const line = feb.csv.split("\r\n").find((l) => l.includes(ref));
+    expect(line).toBe(
+      `2026-02-01 00:30,Waiting,1500,${ref},${w.outsider.name},${w.outsider.email},${w.course.title},'=cmd|calc,,,`,
+    );
+    const jan = await paymentsCsv(deps, w.admin, { from: "2026-01-01", to: "2026-01-31", status: "ALL" });
+    expect(jan.csv).not.toContain(ref);
+    const approvedOnly = await paymentsCsv(deps, w.admin, {
+      from: "2026-02-01",
+      to: "2026-02-01",
+      status: "APPROVED",
+    });
+    expect(approvedOnly.csv).not.toContain(ref);
+
+    expect(await db.auditLog.count({ where: { actorId: w.admin.id, action: "payment.export" } })).toBe(3);
+    await expect(
+      paymentsCsv(deps, w.teacher, { from: "2026-02-01", to: "2026-02-28", status: "ALL" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

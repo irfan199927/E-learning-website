@@ -8,6 +8,7 @@
  * - An admin checks the bank statement and approves (which enrols the student) or rejects with a reason (the
  *   student can report a corrected payment). Everything is audited: payment.settings, payment.submit,
  *   payment.approve, payment.reject, course.price.
+ * - Admins can download payments reported in a date range as CSV for the school's accounts (payment.export).
  * - Images go straight to storage (presigned PUT). The server rebuilds each key from ids it controls and checks
  *   the real size, so nobody can point a payment at someone else's file.
  */
@@ -25,7 +26,11 @@ import {
   type InitPaymentImageInput,
   type ListPaymentsQuery,
   type PaymentSettingsInput,
+  type PaymentsExportQuery,
   type SubmitPaymentInput,
+  toCsv,
+  utcToZonedInput,
+  zonedInputToUtc,
 } from "@elearner/core";
 import { ManualPaymentStatus, Prisma, Role } from "@elearner/db";
 import { keys } from "@elearner/storage";
@@ -431,4 +436,89 @@ export async function decidePayment(
         },
   );
   return { status };
+}
+
+// ── Admins: export for the accounts ──
+
+const EXPORT_LIMIT = 10_000;
+const STATUS_TEXT: Record<ManualPaymentStatus, string> = {
+  PENDING: "Waiting",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+/** "2026-10-31" → "2026-11-01". */
+const nextDay = (day: string) =>
+  new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * Payments reported between `from` and `to` (local dates in the admin's time zone, inclusive) as CSV, oldest
+ * first. Amounts are plain rupee numbers so spreadsheets can add them up. Holds names and emails: audited.
+ */
+export async function paymentsCsv(
+  deps: Deps,
+  actor: Actor,
+  query: PaymentsExportQuery,
+): Promise<{ filename: string; csv: string }> {
+  assertCan(actor.role, "user:manage");
+  const tz = actor.timezone;
+  const rows = await deps.db.manualPayment.findMany({
+    where: {
+      createdAt: {
+        gte: zonedInputToUtc(`${query.from}T00:00`, tz),
+        lt: zonedInputToUtc(`${nextDay(query.to)}T00:00`, tz),
+      },
+      ...(query.status === "ALL" ? {} : { status: query.status }),
+    },
+    orderBy: { createdAt: "asc" },
+    take: EXPORT_LIMIT + 1,
+    select: {
+      status: true,
+      reference: true,
+      amountInPaise: true,
+      createdAt: true,
+      note: true,
+      decidedAt: true,
+      decisionNote: true,
+      decidedBy: { select: { name: true } },
+      user: { select: { name: true, email: true } },
+      course: { select: { title: true } },
+    },
+  });
+  if (rows.length > EXPORT_LIMIT) throw Errors.validation("Too many payments: export a shorter period.");
+  const when = (d: Date | null) => (d ? utcToZonedInput(d, tz).replace("T", " ") : null);
+  const header = [
+    "Reported at",
+    "Status",
+    "Amount (₹)",
+    "UPI reference (UTR)",
+    "Student",
+    "Email",
+    "Course",
+    "Student's note",
+    "Decided at",
+    "Decided by",
+    "Decision note",
+  ];
+  const lines = rows.map((r) => [
+    when(r.createdAt),
+    STATUS_TEXT[r.status],
+    r.amountInPaise / 100,
+    r.reference,
+    r.user.name,
+    r.user.email,
+    r.course.title,
+    r.note,
+    when(r.decidedAt),
+    r.decidedBy?.name ?? null,
+    r.decisionNote,
+  ]);
+  await audit(
+    deps.db,
+    actor,
+    "payment.export",
+    { type: "PaymentSettings", id: "1" },
+    { from: query.from, to: query.to, status: query.status, rows: lines.length },
+  );
+  return { filename: `payments-${query.from}-to-${query.to}.csv`, csv: toCsv([header, ...lines]) };
 }

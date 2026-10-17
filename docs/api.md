@@ -130,17 +130,18 @@ course's teacher or an admin.
 
 ### Payments (manual UPI)
 
-| Method       | Path                                        | Who | What                                             |
-| ------------ | ------------------------------------------- | --- | ------------------------------------------------ |
-| GET / POST   | `/api/v1/courses/:id/payments`              | S   | Where to pay + my latest report / report a UTR   |
-| POST         | `/api/v1/payments/proofs`                   | S   | Presigned PUT for a screenshot                   |
-| GET          | `/api/v1/payment-qr?v=`                     | any | Redirect to the school's QR code                 |
-| GET / PUT    | `/api/v1/admin/payment-settings`            | A   | UPI ID, number, payee name, instructions         |
-| POST         | `/api/v1/admin/payment-settings/qr/uploads` | A   | Presigned PUT for the QR image                   |
-| PUT / DELETE | `/api/v1/admin/payment-settings/qr`         | A   | Record / remove the QR image                     |
-| GET          | `/api/v1/admin/payments?status=`            | A   | Reported payments                                |
-| PATCH        | `/api/v1/admin/payments/:id`                | A   | `{ decision, note? }`: approve (enrols) / reject |
-| GET          | `/api/v1/admin/payments/:id/proof`          | A   | Redirect to the screenshot                       |
+| Method       | Path                                           | Who | What                                                 |
+| ------------ | ---------------------------------------------- | --- | ---------------------------------------------------- |
+| GET / POST   | `/api/v1/courses/:id/payments`                 | S   | Where to pay + my latest report / report a UTR       |
+| POST         | `/api/v1/payments/proofs`                      | S   | Presigned PUT for a screenshot                       |
+| GET          | `/api/v1/payment-qr?v=`                        | any | Redirect to the school's QR code                     |
+| GET / PUT    | `/api/v1/admin/payment-settings`               | A   | UPI ID, number, payee name, instructions             |
+| POST         | `/api/v1/admin/payment-settings/qr/uploads`    | A   | Presigned PUT for the QR image                       |
+| PUT / DELETE | `/api/v1/admin/payment-settings/qr`            | A   | Record / remove the QR image                         |
+| GET          | `/api/v1/admin/payments?status=`               | A   | Reported payments                                    |
+| GET          | `/api/v1/admin/payments/csv?from=&to=&status=` | A   | CSV of payments reported between two dates (audited) |
+| PATCH        | `/api/v1/admin/payments/:id`                   | A   | `{ decision, note? }`: approve (enrols) / reject     |
+| GET          | `/api/v1/admin/payments/:id/proof`             | A   | Redirect to the screenshot                           |
 
 ### People, parents, notifications, settings
 

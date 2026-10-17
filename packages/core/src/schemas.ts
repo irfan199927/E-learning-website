@@ -604,6 +604,22 @@ export const listPaymentsQuerySchema = z.object({
 });
 export type ListPaymentsQuery = z.infer<typeof listPaymentsQuerySchema>;
 
+const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2026-10-01.");
+
+/** Admin: payments reported between two local dates (inclusive), for the school's accounts. At most a year. */
+export const paymentsExportQuerySchema = z
+  .object({
+    from: localDate,
+    to: localDate,
+    status: z.enum(["ALL", "PENDING", "APPROVED", "REJECTED"]).default("ALL"),
+  })
+  .refine((q) => q.from <= q.to, { path: ["to"], message: "The end date is before the start date." })
+  .refine((q) => Date.parse(q.to) - Date.parse(q.from) <= 366 * 86_400_000, {
+    path: ["to"],
+    message: "Export at most a year at a time.",
+  });
+export type PaymentsExportQuery = z.infer<typeof paymentsExportQuerySchema>;
+
 /** The full new order of a module's lessons (drag and drop). Must list exactly the module's lessons. */
 export const lessonOrderSchema = z.object({ lessonIds: z.array(z.string().min(1).max(64)).min(1).max(500) });
 export type LessonOrderInput = z.infer<typeof lessonOrderSchema>;

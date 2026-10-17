@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 const PASSWORD = "Password123!";
@@ -60,6 +61,14 @@ test("an admin sets UPI details and a price; a student pays by UPI; the admin ap
   await expect(row).toContainText(title);
   await row.getByRole("button", { name: "Approve payment from Kabir Rao" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: utr })).toHaveCount(0);
+
+  // The accounts spreadsheet (this month so far, by default) has the approved payment.
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download CSV" }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toMatch(/^payments-\d{4}-\d{2}-01-to-\d{4}-\d{2}-\d{2}\.csv$/);
+  const csv = (await readFile(await download.path())).toString("utf8");
+  expect(csv).toMatch(new RegExp(`,Approved,\\d+,${utr},Kabir Rao,`));
 
   // ── Student: the course is open ──
   await signIn(page, "kabir@school.edu");

@@ -34,4 +34,5 @@ transaction reference (UTR). Nothing is confirmed until an admin approves it.
 
 Every setting change, report, approval and rejection is in `AuditLog` (`payment.*`, `course.price`). Payment rows
 are deleted with a student's account if they ask for deletion (30-day purge): export what you need for your
-accounts first.
+accounts first: Admin → Payments → **Download for your accounts** (CSV for a date range, at most a year; dates
+are in your time zone; amounts are plain rupee numbers). Each download is audited as `payment.export`.
