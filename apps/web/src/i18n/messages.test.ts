@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
-import en from "../../messages/en.json";
-import hi from "../../messages/hi.json";
-import mr from "../../messages/mr.json";
+import { readdirSync, readFileSync } from "node:fs";
+import { en, NAMESPACES } from "./catalog";
 import { withFallback } from "./messages";
+
+const dir = new URL("../../messages/", import.meta.url);
+const read = (locale: string) =>
+  Object.fromEntries(
+    readdirSync(new URL(`${locale}/`, dir)).map((f) => [
+      f.replace(/\.json$/, ""),
+      JSON.parse(readFileSync(new URL(`${locale}/${f}`, dir), "utf8")) as Tree,
+    ]),
+  );
+const hi = read("hi");
+const mr = read("mr");
 
 type Tree = { [key: string]: string | Tree };
 
@@ -24,7 +34,12 @@ const args = (message: string) =>
     ),
   );
 
-const english = flatten(en);
+const english = flatten(en as unknown as Tree);
+
+it("every language has a file for every namespace, and no others", () => {
+  for (const locale of ["en", "hi", "mr"])
+    expect(Object.keys(read(locale)).sort()).toEqual([...NAMESPACES].sort());
+});
 
 describe.each([
   ["hi", hi],

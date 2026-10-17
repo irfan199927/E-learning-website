@@ -1,0 +1,16 @@
+{
+  "title": "Sign in",
+  "intro": "Use your school account.",
+  "deleted": "Your account will be deleted. You've been signed out, and we've emailed you the date.",
+  "google": "Continue with Google",
+  "or": "or",
+  "googleFailed": "Google sign-in didn't work for this account. Ask your school admin to add you.",
+  "confirmEmail": "Confirm your email first — we've sent you a new link.",
+  "tooMany": "Too many attempts. Wait a minute and try again.",
+  "wrong": "That email and password don't match. Check them and try again.",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Sign in",
+  "submitting": "Signing in…",
+  "forgot": "Forgot your password?"
+}

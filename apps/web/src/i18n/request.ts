@@ -1,13 +1,13 @@
 import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
-import en from "../../messages/en.json";
+import { en, loadTranslation, type Messages } from "./catalog";
 import { LOCALE_COOKIE, negotiateLocale, parseLocale, type Locale } from "./locales";
-import { withFallback, type Messages } from "./messages";
+import { withFallback } from "./messages";
 
 const catalogs: Record<Locale, () => Promise<Messages>> = {
   en: async () => en,
-  hi: async () => withFallback((await import("../../messages/hi.json")).default, en),
-  mr: async () => withFallback((await import("../../messages/mr.json")).default, en),
+  hi: async () => withFallback(await loadTranslation("hi"), en),
+  mr: async () => withFallback(await loadTranslation("mr"), en),
 };
 
 /** next-intl: the language for this request (cookie, else Accept-Language) and its messages. */

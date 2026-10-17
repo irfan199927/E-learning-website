@@ -1,0 +1,11 @@
+{
+  "streakTitle": "Days in a row with lesson time",
+  "streak": "{days, plural, one {Day streak} other {Days streak}}",
+  "account": "Account: {name}",
+  "signOut": "Sign out",
+  "notifications": "Notifications",
+  "notificationsUnread": "Notifications, {count} unread",
+  "darkMode": "Dark mode",
+  "darkModeTitle": "Switch between light and dark",
+  "home": "E-learner home"
+}
