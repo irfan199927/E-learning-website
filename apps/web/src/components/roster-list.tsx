@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export interface RosterRow {
 
 /** A course's students for its teacher, with Remove (asks to confirm first). */
 export function RosterList({ courseId, students }: { courseId: string; students: RosterRow[] }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [rows, setRows] = useState(students);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -27,13 +29,13 @@ export function RosterList({ courseId, students }: { courseId: string; students:
     try {
       await api(`/api/v1/courses/${courseId}/students/${row.userId}`, { method: "DELETE" });
       setRows((r) => r.filter((x) => x.userId !== row.userId));
-      setNote({ tone: "success", text: `Removed ${row.name}. They can ask to join again.` });
+      setNote({ tone: "success", text: t("removed", { name: row.name }) });
       setConfirming(null);
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
     } finally {
       setBusy(false);
@@ -44,7 +46,7 @@ export function RosterList({ courseId, students }: { courseId: string; students:
     <div className="flex flex-col gap-3">
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
       {rows.length === 0 ? (
-        <p className="text-muted">No students yet. Approve join requests above to add them.</p>
+        <p className="text-muted">{t("noStudents")}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {rows.map((r) => (
@@ -55,21 +57,21 @@ export function RosterList({ courseId, students }: { courseId: string; students:
               <div className="min-w-0">
                 <p className="font-semibold">{r.name}</p>
                 <p className="truncate text-sm text-muted">
-                  {r.email} · joined {r.enrolledOn}
+                  {t("joined", { email: r.email, date: r.enrolledOn })}
                 </p>
               </div>
               {confirming === r.userId ? (
                 <div
                   className="flex flex-wrap items-center gap-2"
                   role="group"
-                  aria-label={`Confirm removing ${r.name}`}
+                  aria-label={t("confirmRemove", { name: r.name })}
                 >
-                  <span className="text-sm">Remove {r.name}?</span>
+                  <span className="text-sm">{t("removeQuestion", { name: r.name })}</span>
                   <Button variant="live" disabled={busy} onClick={() => void remove(r)}>
-                    Remove
+                    {t("remove")}
                   </Button>
                   <Button variant="secondary" disabled={busy} onClick={() => setConfirming(null)}>
-                    Keep
+                    {t("keep")}
                   </Button>
                 </div>
               ) : (
@@ -77,9 +79,9 @@ export function RosterList({ courseId, students }: { courseId: string; students:
                   variant="secondary"
                   disabled={busy}
                   onClick={() => setConfirming(r.userId)}
-                  aria-label={`Remove ${r.name} from this course`}
+                  aria-label={t("removeFromCourse", { name: r.name })}
                 >
-                  Remove
+                  {t("remove")}
                 </Button>
               )}
             </li>

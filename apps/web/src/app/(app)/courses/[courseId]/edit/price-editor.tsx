@@ -40,7 +40,11 @@ export function PriceEditor({ courseId, priceInPaise }: { courseId: string; pric
   }
 
   return (
-    <form onSubmit={(e) => void save(e)} aria-label={t("priceForm")} className="flex flex-wrap items-end gap-3">
+    <form
+      onSubmit={(e) => void save(e)}
+      aria-label={t("priceForm")}
+      className="flex flex-wrap items-end gap-3"
+    >
       <div className="w-48">
         <Field
           label={t("priceRupees")}

@@ -33,8 +33,7 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
   }
 
   const upload = (file: File) => {
-    if (!(file.type in PAYMENT_IMAGE_TYPES))
-      return setNote({ tone: "error", text: t("qrBadType") });
+    if (!(file.type in PAYMENT_IMAGE_TYPES)) return setNote({ tone: "error", text: t("qrBadType") });
     if (file.size > QR_MAX_BYTES)
       return setNote({ tone: "error", text: t("qrTooBig", { mb: QR_MAX_BYTES / 1024 ** 2 }) });
     void run(async () => {
@@ -68,9 +67,7 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
           className="size-40 rounded-xl border border-line bg-white object-contain p-2"
         />
       ) : (
-        <p className="text-sm text-muted sm:w-40">
-          {t("noQr")}
-        </p>
+        <p className="text-sm text-muted sm:w-40">{t("noQr")}</p>
       )}
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
@@ -87,18 +84,13 @@ export function QrEditor({ qrVersion }: { qrVersion: string | null }) {
             className="text-sm font-normal file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border file:border-line-strong file:bg-surface file:px-4 file:font-semibold"
           />
         </label>
-        <p className="text-sm text-muted">
-          {t("qrHint", { mb: QR_MAX_BYTES / 1024 ** 2 })}
-        </p>
+        <p className="text-sm text-muted">{t("qrHint", { mb: QR_MAX_BYTES / 1024 ** 2 })}</p>
         {qrVersion && (
           <Button
             variant="secondary"
             disabled={busy}
             onClick={() =>
-              void run(
-                () => api("/api/v1/admin/payment-settings/qr", { method: "DELETE" }),
-                t("qrRemoved"),
-              )
+              void run(() => api("/api/v1/admin/payment-settings/qr", { method: "DELETE" }), t("qrRemoved"))
             }
             className="w-fit"
           >

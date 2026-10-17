@@ -1,6 +1,7 @@
 "use client";
 
 import { VIDEO_MIME_TYPES } from "@elearner/core/schemas";
+import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export function VideoUploader({
   /** Replacing a video lesson's video: course and module are fixed. */
   replace?: { lessonId: string; courseId: string; title: string };
 }) {
+  const t = useTranslations("Upload");
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
   const [courseId, setCourseId] = useState(replace?.courseId ?? initialCourseId ?? courses[0]?.id ?? "");
   const modules = courses.find((c) => c.id === courseId)?.modules ?? [];
@@ -45,9 +47,9 @@ export function VideoUploader({
     const f = new FormData(e.currentTarget);
     const file = f.get("file");
     if (!(file instanceof File) || file.size === 0)
-      return setPhase({ name: "error", message: "Choose a video file." });
+      return setPhase({ name: "error", message: t("chooseFile") });
     if (!(VIDEO_MIME_TYPES as readonly string[]).includes(file.type))
-      return setPhase({ name: "error", message: "Upload an MP4, WebM or MOV video." });
+      return setPhase({ name: "error", message: t("badType") });
 
     abort.current = new AbortController();
     setPhase({ name: "uploading", pct: 0 });
@@ -86,8 +88,7 @@ export function VideoUploader({
       if (abort.current?.signal.aborted) return setPhase({ name: "idle" });
       setPhase({
         name: "error",
-        message:
-          err instanceof ApiError ? err.message : "Upload failed. Check your connection and try again.",
+        message: err instanceof ApiError ? err.message : t("failed"),
       });
     }
   }
@@ -102,13 +103,7 @@ export function VideoUploader({
   }
 
   if (phase.name === "done") {
-    return (
-      <FormAlert tone="success">
-        {replace
-          ? "Uploaded. Students keep seeing the old video until the new one is ready, in a few minutes."
-          : "Uploaded. We're preparing the video for streaming. It appears as a lesson in the course in a few minutes."}
-      </FormAlert>
-    );
+    return <FormAlert tone="success">{replace ? t("doneReplace") : t("done")}</FormAlert>;
   }
 
   return (
@@ -120,7 +115,7 @@ export function VideoUploader({
       <Field
         id="title"
         name="title"
-        label="Title"
+        label={t("titleLabel")}
         required
         minLength={3}
         maxLength={160}
@@ -130,7 +125,7 @@ export function VideoUploader({
         <>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="courseId" className="text-sm font-semibold">
-              Course
+              {t("course")}
             </label>
             <select
               id="courseId"
@@ -151,7 +146,7 @@ export function VideoUploader({
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="moduleId" className="text-sm font-semibold">
-              Module
+              {t("module")}
             </label>
             <select
               id="moduleId"
@@ -160,7 +155,7 @@ export function VideoUploader({
               aria-describedby="moduleId-hint"
               className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5"
             >
-              <option value="">Videos (added automatically)</option>
+              <option value="">{t("autoModule")}</option>
               {modules
                 .filter((m) => m.title !== "Videos")
                 .map((m) => (
@@ -170,14 +165,14 @@ export function VideoUploader({
                 ))}
             </select>
             <p id="moduleId-hint" className="text-[13px] text-muted">
-              The video becomes a lesson at the end of this module.
+              {t("moduleHint")}
             </p>
           </div>
         </>
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="file" className="text-sm font-semibold">
-          Video file
+          {t("file")}
         </label>
         <input
           id="file"
@@ -191,7 +186,7 @@ export function VideoUploader({
       {phase.name === "uploading" ? (
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-sm">
-            <span>Uploading…</span>
+            <span>{t("uploading")}</span>
             <span>{phase.pct}%</span>
           </div>
           <div
@@ -200,7 +195,7 @@ export function VideoUploader({
             aria-valuenow={phase.pct}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Upload progress"
+            aria-label={t("progress")}
           >
             <div
               className="h-2 rounded-full bg-primary transition-[width]"
@@ -208,11 +203,11 @@ export function VideoUploader({
             />
           </div>
           <Button variant="secondary" onClick={cancel}>
-            Cancel upload
+            {t("cancel")}
           </Button>
         </div>
       ) : (
-        <Button type="submit">Upload</Button>
+        <Button type="submit">{t("upload")}</Button>
       )}
     </form>
   );

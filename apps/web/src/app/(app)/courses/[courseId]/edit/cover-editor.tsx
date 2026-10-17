@@ -22,8 +22,7 @@ export function CoverEditor({
 
   async function upload(file: File) {
     setNote(null);
-    if (!(file.type in COVER_MIME_TYPES))
-      return setNote({ tone: "error", text: t("coverBadType") });
+    if (!(file.type in COVER_MIME_TYPES)) return setNote({ tone: "error", text: t("coverBadType") });
     if (file.size > COVER_MAX_BYTES)
       return setNote({
         tone: "error",
@@ -90,9 +89,7 @@ export function CoverEditor({
         className="h-36 sm:w-64"
       />
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted">
-          {t("coverHelp", { mb: COVER_MAX_BYTES / 1024 ** 2 })}
-        </p>
+        <p className="text-sm text-muted">{t("coverHelp", { mb: COVER_MAX_BYTES / 1024 ** 2 })}</p>
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           {course.coverVersion ? t("replaceCover") : t("chooseCover")}
           <input

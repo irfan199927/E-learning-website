@@ -128,7 +128,14 @@ export function AddUsers() {
           onSubmit={addOne}
           className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end"
         >
-          <Field id="new-name" name="name" label={t("fullName")} required maxLength={120} autoComplete="off" />
+          <Field
+            id="new-name"
+            name="name"
+            label={t("fullName")}
+            required
+            maxLength={120}
+            autoComplete="off"
+          />
           <Field id="new-email" name="email" type="email" label={t("email")} required autoComplete="off" />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="new-role" className="text-sm font-semibold">

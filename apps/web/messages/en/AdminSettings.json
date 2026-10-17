@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Settings",
+  "intro": "School-wide settings. UPI details for paid courses are on the Payments page.",
+  "learning": "Learning",
+  "saved": "Saved. Students see the new goal on their Overview.",
+  "failed": "That didn't work. Try again.",
+  "formLabel": "School settings",
+  "goalLabel": "Daily learning goal (minutes)",
+  "goalHint": "The ring on each student's Today's progress fills at this many minutes of lessons.",
+  "saving": "Saving…",
+  "save": "Save settings"
+}

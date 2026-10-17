@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { FormAlert } from "@/components/form";
 import { Icon, type IconName } from "@/components/icons";
@@ -26,21 +27,20 @@ export interface EditorModule {
   lessons: EditorLesson[];
 }
 
-const TYPE_LABEL: Record<LessonType, { label: string; icon: IconName }> = {
-  VIDEO: { label: "Video", icon: "play" },
-  NOTE: { label: "Reading", icon: "text" },
-  LINK: { label: "Link", icon: "link" },
-  DOCUMENT: { label: "Files", icon: "file" },
-  QUIZ: { label: "Quiz", icon: "check" },
-  ASSIGNMENT: { label: "Assignment", icon: "file" },
+/** Labels are `CourseEditor.lessonType.<type>`. */
+const TYPE_ICON: Record<LessonType, IconName> = {
+  VIDEO: "play",
+  NOTE: "text",
+  LINK: "link",
+  DOCUMENT: "file",
+  QUIZ: "check",
+  ASSIGNMENT: "file",
 };
 
-const VIDEO_STATUS: Record<string, string> = {
-  PENDING_UPLOAD: "Uploading",
-  UPLOADED: "Queued for processing",
-  TRANSCODING: "Processing",
-  FAILED: "Processing failed",
-};
+/** Video states with a label (`CourseEditor.videoStatus`); READY says nothing. */
+const VIDEO_STATUS = ["PENDING_UPLOAD", "UPLOADED", "TRANSCODING", "FAILED"] as const;
+const hasStatusLabel = (status: string): status is (typeof VIDEO_STATUS)[number] =>
+  (VIDEO_STATUS as readonly string[]).includes(status);
 
 const inputCls =
   "h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] min-w-0";
@@ -49,6 +49,7 @@ const iconBtn = "w-11 px-0!";
 
 /** Shared busy/error state: every action calls the API, then re-renders the page from the server. */
 function useAction() {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
@@ -63,7 +64,7 @@ function useAction() {
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
       return false;
     } finally {
@@ -82,6 +83,7 @@ export function OutlineEditor({
   modules: EditorModule[];
   looseVideos: { id: string; title: string; status: string }[];
 }) {
+  const t = useTranslations("CourseEditor");
   const { busy, note, run } = useAction();
 
   async function addModule(e: FormEvent<HTMLFormElement>) {
@@ -97,12 +99,7 @@ export function OutlineEditor({
   return (
     <div className="flex flex-col gap-5">
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
-      {modules.length === 0 && (
-        <p className="text-muted">
-          Start with a module, for example &ldquo;Week 1&rdquo; or &ldquo;Chapter 1: Number systems&rdquo;.
-          Then add lessons to it.
-        </p>
-      )}
+      {modules.length === 0 && <p className="text-muted">{t("startHint")}</p>}
       {modules.map((m, i) => (
         <ModuleCard
           key={m.id}
@@ -119,13 +116,13 @@ export function OutlineEditor({
       >
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="new-module" className="text-sm font-semibold">
-            New module
+            {t("newModule")}
           </label>
           <input id="new-module" name="title" required maxLength={120} className={inputCls} />
         </div>
         <Button type="submit" disabled={busy}>
           <Icon name="plus" size={18} />
-          Add module
+          {t("addModule")}
         </Button>
       </form>
 
@@ -135,9 +132,9 @@ export function OutlineEditor({
           className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h3 id="loose-h" className="font-display text-lg font-bold">
-            Videos not in a lesson ({looseVideos.length})
+            {t("looseTitle", { count: looseVideos.length })}
           </h3>
-          <p className="mb-3 text-sm text-muted">Students can&apos;t see these. Add them to a module.</p>
+          <p className="mb-3 text-sm text-muted">{t("looseHelp")}</p>
           <ul className="flex flex-col divide-y divide-line">
             {looseVideos.map((v) => (
               <LooseVideo key={v.id} video={v} modules={modules} />
@@ -160,6 +157,7 @@ function ModuleCard({
   isFirst: boolean;
   isLast: boolean;
 }) {
+  const t = useTranslations("CourseEditor");
   const { busy, note, run } = useAction();
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -181,7 +179,7 @@ function ModuleCard({
         {renaming ? (
           <form onSubmit={rename} className="flex flex-1 flex-wrap items-end gap-2">
             <label htmlFor={`rename-${m.id}`} className="sr-only">
-              Module name
+              {t("moduleName")}
             </label>
             <input
               id={`rename-${m.id}`}
@@ -193,10 +191,10 @@ function ModuleCard({
               className={`${inputCls} flex-1`}
             />
             <Button type="submit" disabled={busy}>
-              Save
+              {t("save")}
             </Button>
             <Button variant="secondary" onClick={() => setRenaming(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
           </form>
         ) : (
@@ -205,16 +203,20 @@ function ModuleCard({
           </h3>
         )}
         {!renaming && (
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Module ${m.title}`}>
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label={t("moduleGroup", { title: m.title })}
+          >
             <Button variant="secondary" onClick={() => setRenaming(true)}>
-              Rename
+              {t("rename")}
             </Button>
             <Button
               variant="secondary"
               className={iconBtn}
               disabled={busy || isFirst}
               onClick={() => void run(() => patch({ move: "up" }))}
-              aria-label={`Move module ${m.title} up`}
+              aria-label={t("moveModuleUp", { title: m.title })}
             >
               <Icon name="arrowUp" size={18} />
             </Button>
@@ -223,7 +225,7 @@ function ModuleCard({
               className={iconBtn}
               disabled={busy || isLast}
               onClick={() => void run(() => patch({ move: "down" }))}
-              aria-label={`Move module ${m.title} down`}
+              aria-label={t("moveModuleDown", { title: m.title })}
             >
               <Icon name="arrowDown" size={18} />
             </Button>
@@ -235,10 +237,10 @@ function ModuleCard({
                     disabled={busy}
                     onClick={() => void run(() => api(`/api/v1/modules/${m.id}`, { method: "DELETE" }))}
                   >
-                    Delete module
+                    {t("deleteModule")}
                   </Button>
                   <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
-                    Keep
+                    {t("keep")}
                   </Button>
                 </>
               ) : (
@@ -246,7 +248,7 @@ function ModuleCard({
                   variant="secondary"
                   className={iconBtn}
                   onClick={() => setConfirmDelete(true)}
-                  aria-label={`Delete module ${m.title}`}
+                  aria-label={t("deleteModuleNamed", { title: m.title })}
                 >
                   <Icon name="trash" size={18} />
                 </Button>
@@ -261,7 +263,7 @@ function ModuleCard({
       )}
 
       {m.lessons.length === 0 ? (
-        <p className="py-3 text-sm text-muted">No lessons in this module yet.</p>
+        <p className="py-3 text-sm text-muted">{t("noLessons")}</p>
       ) : (
         <DraggableLessons courseId={courseId} moduleId={m.id} lessons={m.lessons} />
       )}
@@ -283,6 +285,7 @@ function DraggableLessons({
   moduleId: string;
   lessons: EditorLesson[];
 }) {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [order, setOrder] = useState(lessons);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -310,11 +313,11 @@ function DraggableLessons({
         method: "PUT",
         json: { lessonIds: next.map((l) => l.id) },
       });
-      setAnnounce(`Moved ${moved!.title} to position ${to + 1} of ${next.length}.`);
+      setAnnounce(t("moved", { title: moved!.title, position: to + 1, total: next.length }));
       router.refresh();
     } catch (err) {
       setOrder(lessons);
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
     }
   }
 
@@ -358,15 +361,15 @@ function LessonRow({
   isLast: boolean;
   drag: { active: boolean; onStart: () => void; onEnd: () => void; onDrop: () => void };
 }) {
+  const t = useTranslations("CourseEditor");
   const { busy, note, run } = useAction();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const type = TYPE_LABEL[l.type];
   const patch = (json: object) => api(`/api/v1/lessons/${l.id}`, { method: "PATCH", json });
   const meta = [
-    type.label,
-    l.videoStatus ? VIDEO_STATUS[l.videoStatus] : null,
-    l.attachmentCount ? `${l.attachmentCount} ${l.attachmentCount === 1 ? "file" : "files"}` : null,
-    l.published ? null : "Hidden",
+    t(`lessonType.${l.type}`),
+    l.videoStatus && hasStatusLabel(l.videoStatus) ? t(`videoStatus.${l.videoStatus}`) : null,
+    l.attachmentCount ? t("files", { count: l.attachmentCount }) : null,
+    l.published ? null : t("hidden"),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -388,14 +391,14 @@ function LessonRow({
       className={`flex flex-col gap-2 py-3 lg:flex-row lg:items-center ${drag.active ? "opacity-50" : ""}`}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="cursor-grab select-none text-muted" aria-hidden="true" title="Drag to reorder">
+        <span className="cursor-grab select-none text-muted" aria-hidden="true" title={t("dragToReorder")}>
           ⠿
         </span>
         <span
           className="grid size-10 shrink-0 place-items-center rounded-full bg-canvas text-primary-fg"
           aria-hidden="true"
         >
-          <Icon name={l.published ? type.icon : "eyeOff"} size={18} />
+          <Icon name={l.published ? TYPE_ICON[l.type] : "eyeOff"} size={18} />
         </span>
         <span className="flex min-w-0 flex-col">
           <Link
@@ -407,13 +410,13 @@ function LessonRow({
           <span className="text-sm text-muted">{meta}</span>
         </span>
       </div>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Lesson ${l.title}`}>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("lessonGroup", { title: l.title })}>
         <Button
           variant="secondary"
           className={iconBtn}
           disabled={busy || isFirst}
           onClick={() => void run(() => patch({ move: "up" }))}
-          aria-label={`Move ${l.title} up`}
+          aria-label={t("moveUp", { title: l.title })}
         >
           <Icon name="arrowUp" size={18} />
         </Button>
@@ -422,7 +425,7 @@ function LessonRow({
           className={iconBtn}
           disabled={busy || isLast}
           onClick={() => void run(() => patch({ move: "down" }))}
-          aria-label={`Move ${l.title} down`}
+          aria-label={t("moveDown", { title: l.title })}
         >
           <Icon name="arrowDown" size={18} />
         </Button>
@@ -430,9 +433,9 @@ function LessonRow({
           variant="secondary"
           disabled={busy}
           onClick={() => void run(() => patch({ published: !l.published }))}
-          aria-label={`${l.published ? "Hide" : "Show"} ${l.title} ${l.published ? "from" : "to"} students`}
+          aria-label={l.published ? t("hideFrom", { title: l.title }) : t("showTo", { title: l.title })}
         >
-          {l.published ? "Hide" : "Show"}
+          {l.published ? t("hide") : t("show")}
         </Button>
         {confirmDelete ? (
           <>
@@ -441,10 +444,10 @@ function LessonRow({
               disabled={busy}
               onClick={() => void run(() => api(`/api/v1/lessons/${l.id}`, { method: "DELETE" }))}
             >
-              Delete
+              {t("delete")}
             </Button>
             <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
-              Keep
+              {t("keep")}
             </Button>
           </>
         ) : (
@@ -452,7 +455,7 @@ function LessonRow({
             variant="secondary"
             className={iconBtn}
             onClick={() => setConfirmDelete(true)}
-            aria-label={`Delete ${l.title}`}
+            aria-label={t("deleteNamed", { title: l.title })}
           >
             <Icon name="trash" size={18} />
           </Button>
@@ -460,9 +463,7 @@ function LessonRow({
       </div>
       {confirmDelete && (
         <p className="text-sm text-muted lg:basis-full">
-          {l.type === "VIDEO"
-            ? "Deleting the lesson keeps the video; you can add it again from “Videos not in a lesson”."
-            : "This deletes the lesson and its files."}
+          {l.type === "VIDEO" ? t("deleteVideoLesson") : t("deleteLesson")}
         </p>
       )}
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
@@ -473,6 +474,7 @@ function LessonRow({
 type NewType = "NOTE" | "LINK" | "DOCUMENT" | "VIDEO";
 
 function AddLesson({ courseId, module: m }: { courseId: string; module: EditorModule }) {
+  const t = useTranslations("CourseEditor");
   const { busy, note, run } = useAction();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -504,9 +506,13 @@ function AddLesson({ courseId, module: m }: { courseId: string; module: EditorMo
   if (!open)
     return (
       <div className="mt-3">
-        <Button variant="ghost" onClick={() => setOpen(true)} aria-label={`Add a lesson to ${m.title}`}>
+        <Button
+          variant="ghost"
+          onClick={() => setOpen(true)}
+          aria-label={t("addLessonTo", { title: m.title })}
+        >
           <Icon name="plus" size={18} />
-          Add lesson
+          {t("addLesson")}
         </Button>
       </div>
     );
@@ -519,23 +525,23 @@ function AddLesson({ courseId, module: m }: { courseId: string; module: EditorMo
     >
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
       <fieldset>
-        <legend className="mb-1.5 text-sm font-semibold">Lesson type</legend>
+        <legend className="mb-1.5 text-sm font-semibold">{t("lessonTypeLegend")}</legend>
         <div className="flex flex-wrap gap-2">
-          {(["NOTE", "LINK", "DOCUMENT", "VIDEO"] as const).map((t) => (
+          {(["NOTE", "LINK", "DOCUMENT", "VIDEO"] as const).map((option) => (
             <label
-              key={t}
+              key={option}
               className="flex h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 has-[:checked]:border-2 has-[:checked]:border-primary"
             >
               <input
                 type="radio"
                 name="type"
-                value={t}
-                checked={type === t}
-                onChange={() => setType(t)}
+                value={option}
+                checked={type === option}
+                onChange={() => setType(option)}
                 className="size-4"
               />
-              <Icon name={TYPE_LABEL[t].icon} size={16} />
-              <span className="text-sm">{TYPE_LABEL[t].label}</span>
+              <Icon name={TYPE_ICON[option]} size={16} />
+              <span className="text-sm">{t(`lessonType.${option}`)}</span>
             </label>
           ))}
         </div>
@@ -543,29 +549,27 @@ function AddLesson({ courseId, module: m }: { courseId: string; module: EditorMo
 
       {type === "VIDEO" ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm">
-            Upload a video file. It becomes a lesson in {m.title} and appears for students once processed.
-          </p>
+          <p className="text-sm">{t("videoHelp", { module: m.title })}</p>
           <Link
             href={`/library/upload?course=${courseId}&module=${m.id}`}
             className={buttonClasses("primary", "w-fit")}
           >
             <Icon name="upload" size={18} />
-            Upload a video
+            {t("uploadVideo")}
           </Link>
         </div>
       ) : (
         <>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={id("title")} className="text-sm font-semibold">
-              Title
+              {t("title")}
             </label>
             <input id={id("title")} name="title" required maxLength={160} className={inputCls} />
           </div>
           {type === "LINK" && (
             <div className="flex flex-col gap-1.5">
               <label htmlFor={id("url")} className="text-sm font-semibold">
-                Web address
+                {t("url")}
               </label>
               <input
                 id={id("url")}
@@ -582,24 +586,20 @@ function AddLesson({ courseId, module: m }: { courseId: string; module: EditorMo
           <MarkdownField
             id={id("body")}
             name="body"
-            label={type === "NOTE" ? "Text" : "Instructions (optional)"}
+            label={type === "NOTE" ? t("text") : t("instructions")}
             rows={type === "NOTE" ? 6 : 3}
           />
-          {type === "DOCUMENT" && (
-            <p className="text-sm text-muted">
-              After you add the lesson, you can attach PDFs, slides and other files.
-            </p>
-          )}
+          {type === "DOCUMENT" && <p className="text-sm text-muted">{t("filesHelp")}</p>}
         </>
       )}
       <div className="flex flex-wrap gap-2">
         {type !== "VIDEO" && (
           <Button type="submit" disabled={busy}>
-            {busy ? "Adding…" : "Add lesson"}
+            {busy ? t("adding") : t("addLesson")}
           </Button>
         )}
         <Button variant="secondary" onClick={() => setOpen(false)}>
-          Cancel
+          {t("cancel")}
         </Button>
       </div>
     </form>
@@ -613,6 +613,7 @@ function LooseVideo({
   video: { id: string; title: string; status: string };
   modules: EditorModule[];
 }) {
+  const t = useTranslations("CourseEditor");
   const { busy, note, run } = useAction();
   const [moduleId, setModuleId] = useState(modules[0]?.id ?? "");
   const selectId = `loose-${video.id}`;
@@ -621,15 +622,17 @@ function LooseVideo({
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-end">
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{video.title}</p>
-        <p className="text-sm text-muted">{VIDEO_STATUS[video.status] ?? "Ready"}</p>
+        <p className="text-sm text-muted">
+          {hasStatusLabel(video.status) ? t(`videoStatus.${video.status}`) : t("ready")}
+        </p>
       </div>
       {modules.length === 0 ? (
-        <p className="text-sm text-muted">Add a module first.</p>
+        <p className="text-sm text-muted">{t("addModuleFirst")}</p>
       ) : (
         <>
           <div className="flex flex-col gap-1.5">
             <label htmlFor={selectId} className="text-sm font-semibold">
-              Module
+              {t("module")}
             </label>
             <select
               id={selectId}
@@ -654,9 +657,9 @@ function LooseVideo({
                 }),
               )
             }
-            aria-label={`Add ${video.title} as a lesson`}
+            aria-label={t("addAsLessonNamed", { title: video.title })}
           >
-            Add as lesson
+            {t("addAsLesson")}
           </Button>
         </>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export interface LessonFormData {
 const inputCls = "h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]";
 
 export function LessonForm({ lesson }: { lesson: LessonFormData }) {
+  const t = useTranslations("LessonEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ tone: "error" | "success"; text: string } | null>(null);
@@ -46,13 +48,12 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
           published: f.get("published") === "on",
         },
       });
-      setNote({ tone: "success", text: "Saved." });
+      setNote({ tone: "success", text: t("saved") });
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length)
         setFieldErrors(Object.fromEntries(err.fieldErrors.map((x) => [x.path, x.message])));
-      else
-        setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't save. Try again." });
+      else setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("saveFailed") });
     } finally {
       setBusy(false);
     }
@@ -65,7 +66,7 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
       router.push(`/courses/${lesson.courseId}/edit`);
       router.refresh();
     } catch (err) {
-      setNote({ tone: "error", text: err instanceof ApiError ? err.message : "Couldn't delete. Try again." });
+      setNote({ tone: "error", text: err instanceof ApiError ? err.message : t("deleteFailed") });
       setBusy(false);
     }
   }
@@ -82,7 +83,7 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="title" className="text-sm font-semibold">
-          Title
+          {t("titleLabel")}
         </label>
         <input
           id="title"
@@ -99,7 +100,7 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
       {lesson.type === "LINK" && (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="url" className="text-sm font-semibold">
-            Web address
+            {t("url")}
           </label>
           <input
             id="url"
@@ -120,7 +121,7 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
         <MarkdownField
           id="body"
           name="body"
-          label={lesson.type === "NOTE" ? "Text" : "Instructions (optional)"}
+          label={lesson.type === "NOTE" ? t("text") : t("instructions")}
           rows={lesson.type === "NOTE" ? 12 : 4}
           defaultValue={lesson.body}
           error={fieldErrors.body}
@@ -128,7 +129,7 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="moduleId" className="text-sm font-semibold">
-          Module
+          {t("module")}
         </label>
         <select id="moduleId" name="moduleId" defaultValue={lesson.moduleId} className={inputCls}>
           {lesson.modules.map((m) => (
@@ -146,30 +147,26 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
           className="mt-1 size-5 shrink-0"
         />
         <span>
-          <span className="font-semibold">Visible to students</span>
-          <span className="block text-sm text-muted">Untick to hide the lesson while you work on it.</span>
+          <span className="font-semibold">{t("visible")}</span>
+          <span className="block text-sm text-muted">{t("visibleHelp")}</span>
         </span>
       </label>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={busy}>
-          {busy ? "Saving…" : "Save lesson"}
+          {busy ? t("saving") : t("save")}
         </Button>
         {confirmDelete ? (
-          <span
-            role="group"
-            aria-label="Confirm deleting this lesson"
-            className="flex flex-wrap items-center gap-2"
-          >
+          <span role="group" aria-label={t("confirmDelete")} className="flex flex-wrap items-center gap-2">
             <Button variant="live" disabled={busy} onClick={() => void remove()}>
-              Delete lesson
+              {t("deleteLesson")}
             </Button>
             <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
-              Keep
+              {t("keep")}
             </Button>
           </span>
         ) : (
           <Button variant="secondary" onClick={() => setConfirmDelete(true)}>
-            Delete…
+            {t("delete")}
           </Button>
         )}
       </div>

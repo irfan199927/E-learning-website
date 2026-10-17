@@ -45,9 +45,7 @@ export default async function PaymentsPage({
     <div className="flex max-w-5xl flex-col gap-6">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">
-          {t("intro")}
-        </p>
+        <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
 
       <section aria-labelledby="list-h" className={card}>
@@ -74,9 +72,7 @@ export default async function PaymentsPage({
           </ul>
         </nav>
         {payments.length === 0 ? (
-          <p className="text-muted">
-            {status === "PENDING" ? t("emptyPending") : t("emptyOther")}
-          </p>
+          <p className="text-muted">{status === "PENDING" ? t("emptyPending") : t("emptyOther")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {payments.map((p) => (
@@ -131,9 +127,7 @@ export default async function PaymentsPage({
         <h2 id="export-h" className="mb-1 font-display text-xl font-bold">
           {t("exportHeading")}
         </h2>
-        <p className="mb-4 text-sm text-muted">
-          {t("exportHelp")}
-        </p>
+        <p className="mb-4 text-sm text-muted">{t("exportHelp")}</p>
         <PaymentsExportForm defaultFrom={`${today.slice(0, 8)}01`} defaultTo={today} />
       </section>
 

@@ -2,6 +2,7 @@ import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { requirePageActor } from "@/lib/session";
@@ -10,14 +11,14 @@ import { getLessonForEditing } from "@/server/services/course-content";
 import { AttachmentManager } from "./attachment-manager";
 import { LessonForm } from "./lesson-form";
 
-export const metadata: Metadata = { title: "Edit lesson" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("LessonEditor"))("title") };
+}
 
-const TYPE_NAME: Record<string, string> = {
-  VIDEO: "Video lesson",
-  NOTE: "Reading",
-  LINK: "Link",
-  DOCUMENT: "Files",
-};
+/** Lesson types with a name (`LessonEditor.typeName`); anything else shows its raw type. */
+const TYPE_NAME = ["VIDEO", "NOTE", "LINK", "DOCUMENT"] as const;
+const hasTypeName = (type: string): type is (typeof TYPE_NAME)[number] =>
+  (TYPE_NAME as readonly string[]).includes(type);
 
 export default async function EditLessonPage({
   params,
@@ -31,6 +32,7 @@ export default async function EditLessonPage({
     throw err;
   });
   if (lesson.courseId !== courseId) notFound();
+  const t = await getTranslations("LessonEditor");
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -39,38 +41,37 @@ export default async function EditLessonPage({
         className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
       >
         <Icon name="chevronLeft" size={16} />
-        Edit {lesson.courseTitle}
+        {t("backTo", { title: lesson.courseTitle })}
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-muted">{TYPE_NAME[lesson.type] ?? lesson.type}</p>
+          <p className="text-sm font-semibold text-muted">
+            {hasTypeName(lesson.type) ? t(`typeName.${lesson.type}`) : lesson.type}
+          </p>
           <h1 className="font-display text-3xl font-bold tracking-tight">{lesson.title}</h1>
         </div>
         <Link href={`/courses/${courseId}/lessons/${lesson.id}`} className={buttonClasses("secondary")}>
-          See it as a student
+          {t("seeAsStudent")}
         </Link>
       </header>
 
       {lesson.type === "VIDEO" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-line bg-surface px-3 py-2.5 text-sm">
           <p>
-            {lesson.video ? (
-              <>
-                Video: <span className="font-semibold">{lesson.video.title}</span>
-                {lesson.video.status !== "READY" && " · still processing, students see it when it's ready"}
-              </>
-            ) : (
-              "This lesson has no video."
-            )}
+            {lesson.video
+              ? t.rich(lesson.video.status === "READY" ? "video" : "videoProcessing", {
+                  title: lesson.video.title,
+                  b: (chunks) => <span className="font-semibold">{chunks}</span>,
+                })
+              : t("noVideo")}
             {lesson.replacement && (
               <span className="block text-muted">
-                New video “{lesson.replacement.title}” is being prepared; it replaces this one when it&apos;s
-                ready.
+                {t("replacement", { title: lesson.replacement.title })}
               </span>
             )}
           </p>
           <Link href={`/library/upload?replace=${lesson.id}`} className={buttonClasses("secondary")}>
-            Replace video
+            {t("replaceVideo")}
           </Link>
         </div>
       )}
@@ -80,7 +81,7 @@ export default async function EditLessonPage({
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="lesson-h" className="mb-3 font-display text-xl font-bold">
-          Lesson
+          {t("lesson")}
         </h2>
         <LessonForm
           lesson={{
@@ -102,7 +103,7 @@ export default async function EditLessonPage({
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="files-h" className="mb-3 font-display text-xl font-bold">
-          Files ({lesson.attachments.length})
+          {t("files", { count: lesson.attachments.length })}
         </h2>
         <AttachmentManager lessonId={lesson.id} files={lesson.attachments} />
       </section>

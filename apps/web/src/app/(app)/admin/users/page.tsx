@@ -50,9 +50,7 @@ export default async function AdminUsersPage({
     <div className="flex max-w-5xl flex-col gap-6">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">
-          {t("intro")}
-        </p>
+        <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
 
       <AddUsers />
