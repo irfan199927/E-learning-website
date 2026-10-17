@@ -32,6 +32,8 @@ export async function runMaintenance(ctx: JobContext, job: MaintenanceJob): Prom
       return deleteTranscodedRaw(ctx);
     case "prune-notifications":
       return pruneNotifications(ctx);
+    case "sweep-orphan-uploads":
+      return sweepOrphanUploads(ctx);
   }
 }
 
@@ -210,4 +212,40 @@ export async function pruneNotifications(ctx: JobContext) {
     },
   });
   return { deleted: count };
+}
+
+/** Files browsers upload straight to storage are only recorded when the app's "complete" call arrives. */
+export const ORPHAN_UPLOAD_PREFIXES = ["attachments/", "courses/", "submissions/", "payments/"] as const;
+export const ORPHAN_GRACE_MS = 2 * 86_400_000;
+
+/**
+ * Delete uploads nothing in the database points at (the tab closed before "complete", or the record was deleted
+ * and the best-effort delete failed). Only objects older than ORPHAN_GRACE_MS, so uploads in progress and drafts
+ * being written are safe.
+ */
+export async function sweepOrphanUploads(ctx: JobContext) {
+  const [attachments, courses, settings, payments, submissions] = await Promise.all([
+    ctx.db.attachment.findMany({ select: { storageKey: true } }),
+    ctx.db.course.findMany({ where: { coverKey: { not: null } }, select: { coverKey: true } }),
+    ctx.db.paymentSettings.findMany({ where: { qrKey: { not: null } }, select: { qrKey: true } }),
+    ctx.db.manualPayment.findMany({ where: { proofKey: { not: null } }, select: { proofKey: true } }),
+    ctx.db.submission.findMany({ select: { fileKeys: true } }),
+  ]);
+  const used = new Set<string>([
+    ...attachments.map((a) => a.storageKey),
+    ...courses.map((c) => c.coverKey!),
+    ...settings.map((s) => s.qrKey!),
+    ...payments.map((p) => p.proofKey!),
+    ...submissions.flatMap((s) => s.fileKeys),
+  ]);
+  const cutoff = ctx.now().getTime() - ORPHAN_GRACE_MS;
+  let deleted = 0;
+  for (const prefix of ORPHAN_UPLOAD_PREFIXES)
+    for await (const o of ctx.storage.listObjects(prefix))
+      if (!used.has(o.key) && o.lastModified.getTime() < cutoff) {
+        await ctx.storage.deleteObject(o.key);
+        deleted++;
+      }
+  if (deleted) ctx.log.info({ deleted }, "deleted orphaned uploads");
+  return { deleted };
 }

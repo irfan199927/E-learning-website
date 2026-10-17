@@ -51,11 +51,28 @@ export default async function EditLessonPage({
         </Link>
       </header>
 
-      {lesson.video && (
-        <p className="rounded-[var(--radius-control)] border border-line bg-surface px-3 py-2.5 text-sm">
-          Video: <span className="font-semibold">{lesson.video.title}</span>
-          {lesson.video.status !== "READY" && " · still processing, students see it when it's ready"}
-        </p>
+      {lesson.type === "VIDEO" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-line bg-surface px-3 py-2.5 text-sm">
+          <p>
+            {lesson.video ? (
+              <>
+                Video: <span className="font-semibold">{lesson.video.title}</span>
+                {lesson.video.status !== "READY" && " · still processing, students see it when it's ready"}
+              </>
+            ) : (
+              "This lesson has no video."
+            )}
+            {lesson.replacement && (
+              <span className="block text-muted">
+                New video “{lesson.replacement.title}” is being prepared; it replaces this one when it&apos;s
+                ready.
+              </span>
+            )}
+          </p>
+          <Link href={`/library/upload?replace=${lesson.id}`} className={buttonClasses("secondary")}>
+            Replace video
+          </Link>
+        </div>
       )}
 
       <section

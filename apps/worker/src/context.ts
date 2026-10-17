@@ -15,7 +15,7 @@ export type WorkerJobs = Pick<
 >;
 export type WorkerStorage = Pick<
   Storage,
-  "putStream" | "presignGet" | "abortMultipart" | "deleteObject" | "deletePrefix"
+  "putStream" | "presignGet" | "abortMultipart" | "deleteObject" | "deletePrefix" | "listObjects"
 >;
 
 export interface WorkerConfig {

@@ -235,6 +235,13 @@ published at once. A badge on each course, such as "2 students waiting to join",
   **Listed in Find a course**.
 - **Cover image:** upload a JPEG, PNG or WebP (≤ 2 MB) to replace the colour tile everywhere the course appears
   (catalog, My courses, course page, Resume card); **Remove cover** goes back to the tile.
+- **Drag and drop** a lesson onto another to move it there (mouse; the drop is announced). Keyboard and
+  screen-reader users use **Move up** / **Move down**; both save the same way.
+- **Readings and instructions are Markdown** (bold, italics, headings, lists, links, tables). Each text box has a
+  **Preview** toggle and a one-line formatting hint; `components/markdown.tsx` renders it and never renders raw
+  HTML or `javascript:` links.
+- **Replace video** (Edit lesson, video lessons): uploads a new video for the lesson. Students keep the old one
+  until the new one is processed; the old video then appears under "Videos not in a lesson" for deleting.
 - Every control is a labelled button (icon buttons have names like "Move Worksheet up"), 44 px square.
 
 ### Edit lesson (`/courses/:courseId/lessons/:lessonId/edit`)

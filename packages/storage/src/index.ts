@@ -168,6 +168,19 @@ export class Storage {
     await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
+  /** Every object under a prefix (paged), with when it was last written. */
+  async *listObjects(prefix: string): AsyncGenerator<{ key: string; lastModified: Date }> {
+    let token: string | undefined;
+    do {
+      const list = await this.s3.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix, ContinuationToken: token }),
+      );
+      for (const o of list.Contents ?? [])
+        if (o.Key) yield { key: o.Key, lastModified: o.LastModified ?? new Date(0) };
+      token = list.IsTruncated ? list.NextContinuationToken : undefined;
+    } while (token);
+  }
+
   async deletePrefix(prefix: string): Promise<number> {
     let deleted = 0;
     let token: string | undefined;

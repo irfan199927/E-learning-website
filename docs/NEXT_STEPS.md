@@ -60,8 +60,8 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Decide whether Google invites should carry the Meet link (the recording-consent gate can't cover them)
 - [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
       lesson page with Mark as done; course pages follow Module/Lesson order
-- [ ] Rich text for readings (Markdown with a sanitiser); drag-and-drop reordering; video lesson re-upload
-- [ ] Clean up storage for attachment uploads that were never recorded (presigned PUT without the complete call)
+- [x] Markdown readings and instructions, drag-and-drop lesson reordering, video lesson replacement (2026-10-17)
+- [x] Clean up uploads that were never recorded (`sweep-orphan-uploads`, 2026-10-17)
 - [x] Library listing: `/courses` (My courses with All / In progress / Completed) and `/courses/:id` lesson list
 - [x] Learner progress: streak, today's watch time, monthly activity calendar, resume card (`LearningDay` table)
 - [x] Public landing page at `/` (animated, advertises a course, Enroll → sign-in). Copy is SAMPLE content in
@@ -79,7 +79,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
 - [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
 - [x] Gradebook per course and CSV grade reports (2026-10-16): `/courses/:id/grades`
-- [ ] Rich text in assignment instructions; weighted grade categories; excusing a student from one piece of work
+- [ ] Weighted grade categories; excusing a student from one piece of work
 - [x] In-app notifications UI (2026-10-16): bell + `/notifications`
 - [x] Live notification count (polling) and deleting old notifications (2026-10-17)
 - [ ] Email digests of unread notifications

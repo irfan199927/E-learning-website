@@ -124,6 +124,10 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   (`Course.isPaid`/`priceInPaise`, admin-set) blocks join requests; `ManualPayment` PENDING → admin approves
   (enrols) or rejects; `(method, reference)` unique. Images under `keys.paymentQr` / `keys.paymentProof`.
 - Integration tests share one Prisma pool via `globalThis` in `test/fakes.ts` (per-file pools exhaust Postgres).
+- Teacher-written text renders through `components/markdown.tsx` (react-markdown, `skipHtml`); editors use
+  `components/markdown-field.tsx` (Preview toggle). Never render teacher text with `dangerouslySetInnerHTML`.
+- Video replacement: `initUpload({ replaceLessonId })` creates the video without a lesson; `transcode.ts` swaps it
+  into the lesson when READY. Orphaned uploads: worker `sweep-orphan-uploads` (list every new upload prefix there).
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

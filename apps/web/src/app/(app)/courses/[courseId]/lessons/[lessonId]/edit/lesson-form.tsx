@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
+import { MarkdownField } from "@/components/markdown-field";
 
 export interface LessonFormData {
   id: string;
@@ -116,22 +117,14 @@ export function LessonForm({ lesson }: { lesson: LessonFormData }) {
         </div>
       )}
       {lesson.type !== "VIDEO" && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="body" className="text-sm font-semibold">
-            {lesson.type === "NOTE" ? "Text" : "Instructions (optional)"}
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            rows={lesson.type === "NOTE" ? 12 : 4}
-            maxLength={20000}
-            defaultValue={lesson.body ?? ""}
-            aria-invalid={fieldErrors.body ? true : undefined}
-            aria-describedby={fieldErrors.body ? "body-error" : undefined}
-            className="rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-[15px]"
-          />
-          {err("body")}
-        </div>
+        <MarkdownField
+          id="body"
+          name="body"
+          label={lesson.type === "NOTE" ? "Text" : "Instructions (optional)"}
+          rows={lesson.type === "NOTE" ? 12 : 4}
+          defaultValue={lesson.body}
+          error={fieldErrors.body}
+        />
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="moduleId" className="text-sm font-semibold">

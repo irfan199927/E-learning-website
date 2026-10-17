@@ -1,6 +1,7 @@
 import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Markdown } from "@/components/markdown";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icons";
 import { LessonDoneButton } from "@/components/lesson-done-button";
@@ -82,9 +83,7 @@ export default async function LessonPage({
         <h1 className="font-display text-3xl font-bold tracking-tight">{lesson.title}</h1>
       </header>
 
-      {lesson.body && (
-        <div className="max-w-prose whitespace-pre-line text-[16px] leading-relaxed">{lesson.body}</div>
-      )}
+      {lesson.body && <Markdown className="text-[16px]">{lesson.body}</Markdown>}
 
       {lesson.url && (
         <a
