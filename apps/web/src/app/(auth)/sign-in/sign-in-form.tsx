@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ function safeNext(next: string | null): string {
 
 /** `google` is false when the server has no Google credentials (e.g. a LAN-only UAT): password sign-in only. */
 export function SignInForm({ google }: { google: boolean }) {
+  const t = useTranslations("SignIn");
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -31,13 +33,7 @@ export function SignInForm({ google }: { google: boolean }) {
     });
     setPending(false);
     if (error) {
-      setError(
-        error.status === 403
-          ? "Confirm your email first — we've sent you a new link."
-          : error.status === 429
-            ? "Too many attempts. Wait a minute and try again."
-            : "That email and password don't match. Check them and try again.",
-      );
+      setError(error.status === 403 ? t("confirmEmail") : error.status === 429 ? t("tooMany") : t("wrong"));
       return;
     }
     router.replace(next);
@@ -76,39 +72,35 @@ export function SignInForm({ google }: { google: boolean }) {
                 d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"
               />
             </svg>
-            Continue with Google
+            {t("google")}
           </Button>
 
           <div className="flex items-center gap-3 text-xs text-muted" aria-hidden="true">
             <span className="h-px flex-1 bg-line" />
-            or
+            {t("or")}
             <span className="h-px flex-1 bg-line" />
           </div>
         </>
       )}
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        {params.get("error") === "google" && (
-          <FormAlert>
-            Google sign-in didn&apos;t work for this account. Ask your school admin to add you.
-          </FormAlert>
-        )}
+        {params.get("error") === "google" && <FormAlert>{t("googleFailed")}</FormAlert>}
         {error && <FormAlert>{error}</FormAlert>}
-        <Field id="email" name="email" type="email" label="Email" autoComplete="email" required />
+        <Field id="email" name="email" type="email" label={t("email")} autoComplete="email" required />
         <Field
           id="password"
           name="password"
           type="password"
-          label="Password"
+          label={t("password")}
           autoComplete="current-password"
           required
         />
         <Button type="submit" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? t("submitting") : t("submit")}
         </Button>
       </form>
       <Link href="/forgot-password" className="text-sm font-semibold text-primary-fg">
-        Forgot your password?
+        {t("forgot")}
       </Link>
     </div>
   );

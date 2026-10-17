@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { api, ApiError } from "@/lib/api-client";
 
 /** Type DELETE, then delete. The server signs the person out, so we leave for the sign-in page. */
 export function DeleteAccount() {
+  const t = useTranslations("Account");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +21,15 @@ export function DeleteAccount() {
       await api("/api/v1/me/deletion-request", { method: "POST", json: { confirm } });
       window.location.assign("/sign-in?deleted=1");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} aria-label="Delete my account" className="flex flex-col gap-4">
+    <form onSubmit={(e) => void submit(e)} aria-label={t("delete")} className="flex flex-col gap-4">
       <Field
-        label="Type DELETE to confirm"
+        label={t("deleteConfirm")}
         id="confirm-delete"
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
@@ -36,7 +38,7 @@ export function DeleteAccount() {
       />
       {error && <FormAlert>{error}</FormAlert>}
       <Button variant="live" type="submit" disabled={busy || confirm !== "DELETE"} className="w-fit">
-        {busy ? "Deleting…" : "Delete my account"}
+        {busy ? t("deleting") : t("delete")}
       </Button>
     </form>
   );

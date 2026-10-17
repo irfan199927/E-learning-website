@@ -3,12 +3,17 @@
 import type { Role } from "@elearner/core";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import type { Messages } from "@/i18n/messages";
 import { Icon, type IconName } from "./icons";
+
+type NavLabel = keyof Messages["Nav"];
 
 interface NavItem {
   href: string;
-  label: string | (Partial<Record<Role, string>> & { default: string });
+  /** Message key in the "Nav" namespace, or one per role. */
+  label: NavLabel | (Partial<Record<Role, NavLabel>> & { default: NavLabel });
   icon: IconName;
   roles: Role[];
   /** Extra paths that highlight this item (e.g. a lesson page belongs to "My courses"). */
@@ -18,31 +23,31 @@ interface NavItem {
 const NAV: NavItem[] = [
   {
     href: "/dashboard",
-    label: "Overview",
+    label: "overview",
     icon: "overview",
     roles: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
   },
   {
     href: "/courses",
-    label: { default: "Courses", STUDENT: "My courses" },
+    label: { default: "courses", STUDENT: "myCourses" },
     icon: "courses",
     roles: ["ADMIN", "TEACHER", "STUDENT"],
     match: /^\/library\/(?!upload)/,
   },
-  { href: "/children", label: "My children", icon: "users", roles: ["PARENT"] },
+  { href: "/children", label: "children", icon: "users", roles: ["PARENT"] },
   {
     href: "/calendar",
-    label: "Calendar",
+    label: "calendar",
     icon: "calendar",
     roles: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
   },
-  { href: "/library/upload", label: "Upload video", icon: "upload", roles: ["ADMIN", "TEACHER"] },
-  { href: "/admin/users", label: "Users", icon: "users", roles: ["ADMIN"] },
-  { href: "/admin/payments", label: "Payments", icon: "rupee", roles: ["ADMIN"] },
-  { href: "/admin/settings", label: "Settings", icon: "edit", roles: ["ADMIN"] },
+  { href: "/library/upload", label: "upload", icon: "upload", roles: ["ADMIN", "TEACHER"] },
+  { href: "/admin/users", label: "users", icon: "users", roles: ["ADMIN"] },
+  { href: "/admin/payments", label: "payments", icon: "rupee", roles: ["ADMIN"] },
+  { href: "/admin/settings", label: "settings", icon: "edit", roles: ["ADMIN"] },
 ];
 
-function labelFor(item: NavItem, role: Role): string {
+function labelFor(item: NavItem, role: Role): NavLabel {
   return typeof item.label === "string" ? item.label : (item.label[role] ?? item.label.default);
 }
 
@@ -60,6 +65,7 @@ export function ShellFrame({
   topbar: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("Nav");
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -87,7 +93,7 @@ export function ShellFrame({
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-surface focus:p-2"
       >
-        Skip to content
+        {t("skip")}
       </a>
 
       {open && (
@@ -99,7 +105,7 @@ export function ShellFrame({
       )}
       <nav
         id="main-nav"
-        aria-label="Main"
+        aria-label={t("main")}
         className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col gap-8 border-r border-line bg-surface px-4 py-6 transition-transform md:sticky md:top-0 md:z-auto md:h-dvh md:w-auto md:translate-x-0 ${
           open ? "translate-x-0 shadow-xl" : "-translate-x-full max-md:invisible"
         }`}
@@ -126,7 +132,7 @@ export function ShellFrame({
           <button
             type="button"
             className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas md:hidden"
-            aria-label="Close menu"
+            aria-label={t("closeMenu")}
             onClick={() => {
               setOpen(false);
               menuButton.current?.focus();
@@ -151,7 +157,7 @@ export function ShellFrame({
                   }`}
                 >
                   <Icon name={n.icon} size={22} />
-                  {labelFor(n, role)}
+                  {t(labelFor(n, role))}
                 </Link>
               </li>
             );
@@ -165,7 +171,7 @@ export function ShellFrame({
             ref={menuButton}
             type="button"
             className="-ml-2 grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-canvas md:hidden"
-            aria-label="Open menu"
+            aria-label={t("openMenu")}
             aria-expanded={open}
             aria-controls="main-nav"
             onClick={() => setOpen(true)}

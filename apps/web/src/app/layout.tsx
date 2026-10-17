@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import { parseTheme, THEME_COOKIE } from "@/lib/theme";
 import { RegisterServiceWorker } from "@/components/register-sw";
 import { RootHtml, rootMetadata, rootViewport } from "./root-html";
@@ -20,8 +22,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // No cookie → no attribute → the OS preference applies (see globals.css).
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <RootHtml theme={theme}>
-      {children}
+    <RootHtml theme={theme} lang={await getLocale()}>
+      <NextIntlClientProvider>{children}</NextIntlClientProvider>
       <RegisterServiceWorker />
     </RootHtml>
   );

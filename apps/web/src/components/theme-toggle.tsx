@@ -14,8 +14,17 @@ function effectiveTheme(): Theme {
  * whatever theme the visitor ends up with (no hydration mismatch, no flash). The choice is stored in
  * a cookie that the root layout reads. Where supported, the new theme is revealed as a circle growing
  * from the button (View Transitions); with reduced motion it simply switches.
+ * Labels come in as props: the static landing page has no translations (next-intl) to read them from.
  */
-export function ThemeToggle({ className = "" }: { className?: string }) {
+export function ThemeToggle({
+  className = "",
+  label = "Dark mode",
+  title = "Switch between light and dark",
+}: {
+  className?: string;
+  label?: string;
+  title?: string;
+}) {
   const [dark, setDark] = useState<boolean | null>(null);
   useEffect(() => {
     // The static export can't read the cookie on a server; apply a saved choice after load instead.
@@ -48,9 +57,9 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     <button
       type="button"
       onClick={toggle}
-      aria-label="Dark mode"
+      aria-label={label}
       aria-pressed={dark ?? undefined}
-      title="Switch between light and dark"
+      title={title}
       className={`theme-toggle ${className}`}
     >
       <svg data-icon="sun" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">

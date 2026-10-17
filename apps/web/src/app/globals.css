@@ -5,8 +5,8 @@
  * Change colors HERE only; components use the semantic names (bg-surface, text-muted …).
  */
 @theme {
-  --font-sans: var(--font-figtree), "Noto Sans Devanagari", system-ui, sans-serif;
-  --font-display: var(--font-bricolage), var(--font-figtree), sans-serif;
+  --font-sans: var(--font-figtree), var(--font-devanagari), "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-figtree), var(--font-devanagari), sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 
   --color-primary: #2340d9;
