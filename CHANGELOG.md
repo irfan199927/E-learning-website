@@ -5,6 +5,15 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — installable app (PWA) (2026-10-17)
+
+- `app/manifest.ts` (`/manifest.webmanifest`): installable as "E-learner" from the browser ("Add to Home
+  screen"), opening on the Overview, with app icons in `public/icons` (also the favicon and Apple touch icon).
+- `public/sw.js`: pages always come from the network; when it's down, a cached `/offline` page shows instead.
+  Only hashed build assets and icons are cached, never signed-in pages, API responses or videos.
+- CSP adds `worker-src 'self'` and `manifest-src 'self'`; `/sw.js` is served `no-cache`; the web Docker image now
+  copies `apps/web/public`.
+
 ### Added — daily goal setting, questions answered, grade weighting and excusals (2026-10-17)
 
 - **Admin → Settings** (`/admin/settings`): the daily learning goal (5–240 min) behind each student's

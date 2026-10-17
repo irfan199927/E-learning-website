@@ -278,6 +278,12 @@ published at once. A badge on each course, such as "2 students waiting to join",
 - Admins see "Deleting on …" and **Cancel deletion** for such accounts on the Users page (nothing else can be
   changed until it's cancelled).
 
+## Installable app (PWA)
+
+- `app/manifest.ts` + `public/icons/*` make the app installable ("Add to Home screen"); it opens on `/dashboard`.
+- `public/sw.js` (registered by `components/register-sw.tsx` in production) shows `/offline` when a page can't
+  load, and caches only `/_next/static` assets and icons. Bump its `CACHE` name to drop old caches.
+
 ## Landing page (`/`)
 
 The public front page advertises a course. Visitors who click **Enroll now** go to

@@ -129,6 +129,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   `components/markdown-field.tsx` (Preview toggle). Never render teacher text with `dangerouslySetInnerHTML`.
 - Video replacement: `initUpload({ replaceLessonId })` creates the video without a lesson; `transcode.ts` swaps it
   into the lesson when READY. Orphaned uploads: worker `sweep-orphan-uploads` (list every new upload prefix there).
+- PWA: the service worker (`public/sw.js`) must never cache signed-in pages or API responses; Playwright's
+  offline mode doesn't reach service-worker requests, so `e2e/pwa.spec.ts` checks the cache, not a real outage.
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.

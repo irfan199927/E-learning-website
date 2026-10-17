@@ -86,4 +86,5 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Paid courses with manual UPI payments (2026-10-17): Admin → Payments, course price, pay page
 - [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
 - [ ] Export payments as CSV for the school's accounts
-- [ ] i18n (next-intl: en/hi/mr), PWA
+- [x] PWA: installable, offline page (2026-10-17)
+- [ ] i18n (next-intl: en/hi/mr)

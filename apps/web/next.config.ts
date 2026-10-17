@@ -60,7 +60,15 @@ const config: NextConfig = {
   typedRoutes: false,
   eslint: { ignoreDuringBuilds: true }, // lint runs in CI as its own step
   // Static hosts set headers themselves (vercel.json); `headers()` is unsupported with output: export.
-  ...(staticSite ? {} : { headers: async () => [{ source: "/:path*", headers: securityHeaders }] }),
+  ...(staticSite
+    ? {}
+    : {
+        headers: async () => [
+          { source: "/:path*", headers: securityHeaders },
+          // The service worker must be re-checked on every load, or a fixed copy could linger for a day.
+          { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+        ],
+      }),
 };
 
 export default config;
