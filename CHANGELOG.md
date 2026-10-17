@@ -5,6 +5,12 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — live notification count and clean-up (2026-10-17)
+
+- The bell's unread count updates without a reload: on every page change, every minute while the tab is
+  visible, and when the tab comes back (`GET /api/v1/notifications/unread-count`).
+- New daily worker job `prune-notifications`: read notifications go after 90 days, unread ones after a year.
+
 ### Added — paid courses with manual UPI payments (2026-10-17)
 
 - No payment gateway needed. Admins publish the school's **UPI ID and/or UPI number** (plus payee name,

@@ -146,6 +146,11 @@ async function registerSchedules() {
     { name: "watch", data: { task: "renew-watch-channels" } },
   );
   await jobs.maintenance.upsertJobScheduler(
+    "prune-notifications",
+    { pattern: "55 3 * * *", tz },
+    { name: "notifications", data: { task: "prune-notifications" } },
+  );
+  await jobs.maintenance.upsertJobScheduler(
     "purge-deleted-users",
     { pattern: "45 2 * * *", tz },
     { name: "purge", data: { task: "purge-deleted-users" } },

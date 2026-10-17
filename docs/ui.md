@@ -63,12 +63,15 @@ list.
 ### Notifications (bell, `/notifications`)
 
 - Every signed-in page has a bell in the top bar. Its accessible name says "Notifications, 3 unread"; the red
-  badge shows up to "9+". The count is worked out on each page load.
+  badge shows up to "9+". The count comes with the page, then `components/notification-bell.tsx` re-checks it
+  (`/api/v1/notifications/unread-count`) on every page change, every minute while the tab is visible, and when the
+  tab comes back.
 - `/notifications` lists the newest 50 (then **Older**): unread ones are bold with a dot (and "(unread)" for
   screen readers). Opening one marks it read and follows its link; **Mark all as read** clears the rest.
 - What creates them: join requests (to the teacher), approvals and declines, grades, new assignments and quizzes
   (to the course's students, once per item), class reminders, and recording problems (to the
-  host). Links are always same-site paths.
+  host), payments (to admins; approvals and rejections to the student). Links are always same-site paths.
+- Read notifications are deleted after 90 days, unread ones after a year (worker job `prune-notifications`).
 
 ### Assignments (`/assignments/:id`; new at `/courses/:id/assignments/new`)
 

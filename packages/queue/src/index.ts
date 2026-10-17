@@ -46,6 +46,7 @@ export const maintenanceJob = z.object({
     "abort-stale-uploads",
     "reconcile-reminders",
     "delete-transcoded-raw",
+    "prune-notifications",
   ]),
 });
 export type MaintenanceJob = z.infer<typeof maintenanceJob>;
