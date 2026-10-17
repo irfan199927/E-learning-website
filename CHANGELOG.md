@@ -5,6 +5,18 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — daily goal setting, questions answered, grade weighting and excusals (2026-10-17)
+
+- **Admin → Settings** (`/admin/settings`): the daily learning goal (5–240 min) behind each student's
+  Today's progress ring (was a fixed 30 min). Audited `school.settings`.
+- Today's progress (students and parents) shows **Questions answered** today.
+- Gradebook: **Excuse** a student from a missing assignment or quiz (and **Undo**): excused work is left out
+  of totals and averages. **Weighting**: by points (default) or by category (assignments X%, quizzes the
+  rest). Audited `grade.excuse`, `grade.unexcuse`, `grade.weighting`.
+- Migration `learning_extras`: `SchoolSettings`, `GradeExcusal`, `Course.assignmentWeight`.
+- API: `GET|PUT /api/v1/admin/settings`, `PUT /api/v1/courses/:id/gradebook/excusals`,
+  `PUT /api/v1/courses/:id/gradebook/weighting`.
+
 ### Added — Markdown, drag and drop, video replacement, orphan clean-up (2026-10-17)
 
 - Readings, link/file lesson instructions and assignment instructions are **Markdown**, with a **Preview**

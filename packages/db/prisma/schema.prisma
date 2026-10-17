@@ -148,6 +148,7 @@ model User {
   subscriptions    Subscription[]
   payments         Payment[]
   manualPayments   ManualPayment[]   @relation("ManualPayer")
+  gradeExcusals    GradeExcusal[]
   paymentsDecided  ManualPayment[]   @relation("ManualPaymentDecider")
   certificates     Certificate[]
   auditLogs        AuditLog[]
@@ -248,21 +249,23 @@ model ParentLink {
 // ─────────────────────────── Courses & content ───────────────────────────
 
 model Course {
-  id           String    @id @default(cuid())
-  slug         String    @unique
-  title        String
-  description  String?   @db.Text
-  color        String    @default("#2340D9") // calendar color
-  grade        String? // e.g. "9-A"
-  teacherId    String
-  isPaid       Boolean   @default(false)
-  priceInPaise Int?
-  planId       String? // if access comes via a subscription plan
-  publishedAt  DateTime?
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  title            String
+  description      String?   @db.Text
+  color            String    @default("#2340D9") // calendar color
+  grade            String? // e.g. "9-A"
+  teacherId        String
+  isPaid           Boolean   @default(false)
+  priceInPaise     Int?
+  planId           String? // if access comes via a subscription plan
+  publishedAt      DateTime?
   /// Uploaded cover image (storage key); null = the generated CourseTile.
-  coverKey     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  coverKey         String?
+  /// Gradebook weighting: assignments' share of the total in percent (quizzes get the rest); null = by points.
+  assignmentWeight Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   teacher        User            @relation("CourseTeacher", fields: [teacherId], references: [id])
   plan           Plan?           @relation(fields: [planId], references: [id])
@@ -271,6 +274,7 @@ model Course {
   joinRequests   JoinRequest[]
   classes        ClassSession[]
   manualPayments ManualPayment[]
+  gradeExcusals  GradeExcusal[]
   assignments    Assignment[]
   quizzes        Quiz[]
   threads        Thread[]
@@ -440,28 +444,28 @@ model WatchChannel {
 // ─────────────────────────── Video ───────────────────────────
 
 model Video {
-  id              String      @id @default(cuid())
-  title           String
-  source          VideoSource
-  status          VideoStatus @default(PENDING_UPLOAD)
-  uploaderId      String
-  courseId        String // access control: enrolled students + course teacher
-  classSessionId  String?
-  driveFileId     String?     @unique // for Meet recordings
-  uploadId        String? // S3 multipart upload id while PENDING_UPLOAD
-  mimeType        String?
-  rawKey          String? // R2 key of original
-  hlsPrefix       String? // R2 prefix holding master.m3u8
-  thumbnailKey    String?
-  durationSeconds Int?
-  sizeBytes       BigInt?
-  transcriptKey   String? // WebVTT
-  summary         String?     @db.Text // AI summary
-  error           String?
+  id               String      @id @default(cuid())
+  title            String
+  source           VideoSource
+  status           VideoStatus @default(PENDING_UPLOAD)
+  uploaderId       String
+  courseId         String // access control: enrolled students + course teacher
+  classSessionId   String?
+  driveFileId      String?     @unique // for Meet recordings
+  uploadId         String? // S3 multipart upload id while PENDING_UPLOAD
+  mimeType         String?
+  rawKey           String? // R2 key of original
+  hlsPrefix        String? // R2 prefix holding master.m3u8
+  thumbnailKey     String?
+  durationSeconds  Int?
+  sizeBytes        BigInt?
+  transcriptKey    String? // WebVTT
+  summary          String?     @db.Text // AI summary
+  error            String?
   /// A replacement upload: when it's READY, the worker points this lesson at it (the old video stays, lessonless).
   replacesLessonId String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   uploader     User            @relation("VideoUploader", fields: [uploaderId], references: [id])
   course       Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -588,6 +592,22 @@ model QuizAttempt {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([quizId, userId])
+}
+
+/// A teacher excuses a student from one assignment or quiz: it's left out of their gradebook total.
+model GradeExcusal {
+  id          String   @id @default(cuid())
+  courseId    String
+  itemKind    String // "assignment" | "quiz"
+  itemId      String
+  userId      String
+  createdAt   DateTime @default(now())
+  createdById String?
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemKind, itemId, userId])
+  @@index([courseId])
 }
 
 // ─────────────────────────── Discussion ───────────────────────────
@@ -717,6 +737,14 @@ model ManualPayment {
   @@unique([method, reference])
   @@index([status, createdAt])
   @@index([userId, courseId])
+}
+
+/// School-wide settings (one row, id 1), set by an admin on /admin/settings.
+model SchoolSettings {
+  id               Int      @id @default(1)
+  dailyGoalMinutes Int      @default(30)
+  updatedAt        DateTime @updatedAt
+  updatedById      String?
 }
 
 model Coupon {

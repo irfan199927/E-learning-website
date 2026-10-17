@@ -97,6 +97,15 @@ test("a teacher sets an assignment and a quiz; the student does both; grades rea
   const csv = await readFile((await download.path())!, "utf8");
   expect(csv).toContain(`${essay} (assignment, out of 20)`);
   expect(csv).toMatch(/Aanya Sharma,aanya@school\.edu,/);
+  // Weighting by category is saved and explained.
+  await page.getByLabel("By category").check();
+  await page.getByLabel("Assignments", { exact: true }).fill("70");
+  await page.getByRole("button", { name: "Save weighting" }).click();
+  await expect(page.getByText("Saved. Totals use the new weighting.")).toBeVisible();
+  await expect(page.getByText("Weighted: assignments 70%, quizzes 30%.")).toBeVisible();
+  await page.getByLabel("By points (every point counts the same)").check();
+  await page.getByRole("button", { name: "Save weighting" }).click();
+  await expect(page.getByText("Weighted by points.")).toBeVisible();
 
   // ── Student sees the grade; the parent sees both ──
   await signIn(page, "aanya@school.edu");

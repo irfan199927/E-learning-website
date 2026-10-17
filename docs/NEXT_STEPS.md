@@ -73,13 +73,13 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
       parents on the Users page
 - [x] Self-service account deletion (2026-10-17): `/account`, admin cancel, purge deletes submission files
-- [ ] Per-school daily watch goal (now a 30-min constant in `components/learner-progress.tsx`)
-- [ ] "Questions attempted" on Today's progress once MCQ quizzes exist
+- [x] Per-school daily goal (Admin → Settings, 2026-10-17)
+- [x] "Questions answered" on Today's progress (2026-10-17)
 - [x] Course cover images (2026-10-17): Edit course → Cover image; `CourseTile` is the fallback
 - [x] Teacher attendance page with manual override (2026-10-16), and classes without Google (room or pasted link)
 - [x] Assignments & MCQ quizzes (2026-10-16), with grades on the parent view
 - [x] Gradebook per course and CSV grade reports (2026-10-16): `/courses/:id/grades`
-- [ ] Weighted grade categories; excusing a student from one piece of work
+- [x] Grade weighting by category and excusing a student (2026-10-17)
 - [x] In-app notifications UI (2026-10-16): bell + `/notifications`
 - [x] Live notification count (polling) and deleting old notifications (2026-10-17)
 - [ ] Email digests of unread notifications

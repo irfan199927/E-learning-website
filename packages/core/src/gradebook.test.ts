@@ -53,4 +53,21 @@ describe("gradebook", () => {
       ]),
     ).toBe('\uFEFFName,Score\r\n"Rao, ""Ravi""",7\r\n\'=HYPERLINK(1),\r\n\'-2+3,0\r\n');
   });
+
+  it("leaves excused work out, and weighs categories when asked", () => {
+    expect(gradeCell(item("a", 10, past), { status: null, score: null, excused: true }, now).status).toBe(
+      "excused",
+    );
+    const quiz = (id: string, max: number): GradeItem => ({ ...item(id, max, past), kind: "quiz" });
+    const items = [item("a", 10, past), item("b", 10, past), quiz("q", 5)];
+    const cells = [
+      gradeCell(items[0]!, { status: "GRADED", score: 10 }, now), // assignments: 10/10 = 100%
+      gradeCell(items[1]!, { status: null, score: null, excused: true }, now), // excused: left out
+      gradeCell(items[2]!, { status: "GRADED", score: 1 }, now), // quizzes: 1/5 = 20%
+    ];
+    expect(gradeTotal(items, cells)).toEqual({ earned: 11, possible: 15, percent: 73.3 }); // by points
+    expect(gradeTotal(items, cells, 60)).toEqual({ earned: 11, possible: 15, percent: 68 }); // 0.6×100 + 0.4×20
+    expect(gradeTotal(items.slice(0, 1), cells.slice(0, 1), 60).percent).toBe(100); // no quizzes yet: assignments only
+    expect(itemAverage([cells[1]!])).toBeNull();
+  });
 });

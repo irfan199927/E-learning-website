@@ -72,3 +72,23 @@ test("non-admins can't open the users page or its API", async ({ page }) => {
   const res = await page.request.get("/api/v1/admin/users");
   expect(res.status()).toBe(403);
 });
+
+test("an admin sets the daily learning goal; students see it on their Overview", async ({ page }, info) => {
+  // Settings are school-wide: only one project changes them, and puts them back.
+  test.skip(info.project.name !== "desktop", "school-wide setting; checked once");
+  await signIn(page, "admin@school.edu");
+  await page.goto("/admin/settings");
+  await page.getByLabel("Daily learning goal (minutes)").fill("45");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText("Saved. Students see the new goal")).toBeVisible();
+
+  await signIn(page, "aanya@school.edu");
+  await expect(page.getByText("of 45 min")).toBeVisible();
+  await expect(page.getByText("Questions answered")).toBeVisible();
+
+  await signIn(page, "admin@school.edu");
+  await page.goto("/admin/settings");
+  await page.getByLabel("Daily learning goal (minutes)").fill("30");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText("Saved. Students see the new goal")).toBeVisible();
+});

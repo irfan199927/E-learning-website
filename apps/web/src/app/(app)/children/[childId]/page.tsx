@@ -73,6 +73,8 @@ export default async function ChildProgressPage({
       <div className="grid gap-7 md:grid-cols-2">
         <TodayProgress
           seconds={p.overview.todaySeconds}
+          goalMinutes={p.overview.goalMinutes}
+          questions={p.overview.questionsToday}
           lessonsCompleted={p.overview.lessonsCompleted}
           coursesInProgress={p.overview.coursesInProgress}
         />

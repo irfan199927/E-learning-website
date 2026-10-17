@@ -8,6 +8,7 @@ import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getGradebook, getMyGrades } from "@/server/services/gradebook";
+import { ExcuseButton, WeightingForm } from "./grade-controls";
 
 export const metadata: Metadata = { title: "Grades" };
 
@@ -20,7 +21,26 @@ function totalText(t: GradeTotal) {
   return t.percent === null ? "—" : `${t.percent}%`;
 }
 
-function Cell({ cell, item }: { cell: GradeCell; item: GradeItem }) {
+function Cell({
+  cell,
+  item,
+  excuse,
+}: {
+  cell: GradeCell;
+  item: GradeItem;
+  excuse: { courseId: string; userId: string; studentName: string };
+}) {
+  const excuseButton = (excused: boolean) => (
+    <ExcuseButton
+      courseId={excuse.courseId}
+      itemKind={item.kind}
+      itemId={item.id}
+      itemTitle={item.title}
+      userId={excuse.userId}
+      studentName={excuse.studentName}
+      excused={excused}
+    />
+  );
   switch (cell.status) {
     case "graded":
       return (
@@ -36,7 +56,19 @@ function Cell({ cell, item }: { cell: GradeCell; item: GradeItem }) {
         </Link>
       );
     case "missing":
-      return <span className={`${badge} bg-warning-soft text-warning`}>Missing</span>;
+      return (
+        <span className="flex flex-wrap items-center gap-1">
+          <span className={`${badge} bg-warning-soft text-warning`}>Missing</span>
+          {excuseButton(false)}
+        </span>
+      );
+    case "excused":
+      return (
+        <span className="flex flex-wrap items-center gap-1">
+          <span className={`${badge} bg-canvas text-muted`}>Excused</span>
+          {excuseButton(true)}
+        </span>
+      );
     case "open":
       return (
         <span className="text-muted" aria-label="Not due yet">
@@ -47,7 +79,10 @@ function Cell({ cell, item }: { cell: GradeCell; item: GradeItem }) {
 }
 
 const RULES =
-  "Totals count graded work, and overdue work that was never handed in as 0. Work waiting to be graded, and work not due yet, are left out until they are.";
+  "Totals count graded work, and overdue work that was never handed in as 0. Work waiting to be graded, work not due yet and excused work are left out.";
+
+const weightingText = (w: number | null) =>
+  w === null ? "Weighted by points." : `Weighted: assignments ${w}%, quizzes ${100 - w}%.`;
 
 export default async function GradesPage({ params }: { params: Promise<{ courseId: string }> }) {
   const actor = await requirePageActor(["ADMIN", "TEACHER", "STUDENT"]);
@@ -112,7 +147,9 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
           </p>
         ) : (
           <>
-            <p className="mb-4 text-sm text-muted">{RULES}</p>
+            <p className="mb-4 text-sm text-muted">
+              {RULES} {weightingText(book.assignmentWeight)}
+            </p>
             <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Gradebook table">
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">
@@ -147,7 +184,11 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
                       </th>
                       {s.cells.map((c, i) => (
                         <td key={book.items[i]!.id} className="px-3 py-2.5">
-                          <Cell cell={c} item={book.items[i]!} />
+                          <Cell
+                            cell={c}
+                            item={book.items[i]!}
+                            excuse={{ courseId: book.course.id, userId: s.userId, studentName: s.name }}
+                          />
                         </td>
                       ))}
                       <td className="whitespace-nowrap px-3 py-2.5">
@@ -179,6 +220,13 @@ function Gradebook({ book, tz }: { book: Awaited<ReturnType<typeof getGradebook>
           </>
         )}
       </section>
+
+      <section aria-labelledby="weighting-h" className={card}>
+        <h2 id="weighting-h" className="mb-3 font-display text-xl font-bold">
+          Weighting
+        </h2>
+        <WeightingForm courseId={book.course.id} assignmentWeight={book.assignmentWeight} />
+      </section>
     </div>
   );
 }
@@ -192,6 +240,8 @@ function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrad
         return "Handed in, waiting to be graded";
       case "missing":
         return "Missing: counts as 0";
+      case "excused":
+        return "Excused: not counted";
       case "open":
         return i.dueAt ? `Due ${formatInZone(i.dueAt, tz)}` : "Not taken yet";
     }
@@ -214,7 +264,9 @@ function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof getMyGrad
             ? `${view.total.earned} of ${view.total.possible} points`
             : "Nothing has been graded yet."}
         </p>
-        <p className="mt-3 text-sm text-muted">{RULES}</p>
+        <p className="mt-3 text-sm text-muted">
+          {RULES} {weightingText(view.assignmentWeight)}
+        </p>
       </section>
 
       <section aria-labelledby="work-h" className={card}>

@@ -607,3 +607,30 @@ export type ListPaymentsQuery = z.infer<typeof listPaymentsQuerySchema>;
 /** The full new order of a module's lessons (drag and drop). Must list exactly the module's lessons. */
 export const lessonOrderSchema = z.object({ lessonIds: z.array(z.string().min(1).max(64)).min(1).max(500) });
 export type LessonOrderInput = z.infer<typeof lessonOrderSchema>;
+
+// ─────────────────────────── Gradebook extras ───────────────────────────
+
+/** Excuse (or un-excuse) one student from one assignment or quiz. */
+export const gradeExcusalSchema = z.object({
+  itemKind: z.enum(["assignment", "quiz"]),
+  itemId: z.string().min(1).max(64),
+  userId: z.string().min(1).max(64),
+  excused: z.boolean(),
+});
+export type GradeExcusalInput = z.infer<typeof gradeExcusalSchema>;
+
+/** Assignments' share of the total in percent (quizzes get the rest), or null to weigh everything by points. */
+export const gradeWeightingSchema = z.object({
+  assignmentWeight: z.number().int().min(0).max(100).nullable(),
+});
+export type GradeWeightingInput = z.infer<typeof gradeWeightingSchema>;
+
+/** School-wide settings (admin). */
+export const schoolSettingsSchema = z.object({
+  dailyGoalMinutes: z.coerce
+    .number({ invalid_type_error: "Enter minutes." })
+    .int("Use whole minutes.")
+    .min(5, "At least 5 minutes.")
+    .max(240, "At most 240 minutes (4 hours)."),
+});
+export type SchoolSettingsInput = z.infer<typeof schoolSettingsSchema>;
