@@ -9,7 +9,7 @@
  */
 import "server-only";
 import { getDb } from "@elearner/db";
-import { templates } from "@elearner/notify";
+import { mailLocale, templates } from "@elearner/notify";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -41,9 +41,10 @@ function createAuth() {
         const hasPassword = await getDb().account.count({
           where: { userId: user.id, providerId: "credential" },
         });
+        const locale = mailLocale((user as { locale?: string }).locale);
         const message = hasPassword
-          ? templates.resetPassword(user.name, url)
-          : templates.invite(user.name, url);
+          ? templates.resetPassword(user.name, url, locale)
+          : templates.invite(user.name, url, locale);
         await deps.mailer.send(user.email, message);
       },
     },
@@ -52,7 +53,8 @@ function createAuth() {
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url }) => {
-        await deps.mailer.send(user.email, templates.verifyEmail(user.name, url));
+        const locale = mailLocale((user as { locale?: string }).locale);
+        await deps.mailer.send(user.email, templates.verifyEmail(user.name, url, locale));
       },
     },
 
@@ -94,6 +96,7 @@ function createAuth() {
         role: { type: "string", input: false, defaultValue: "STUDENT" },
         timezone: { type: "string", input: false, defaultValue: "Asia/Kolkata" },
         isActive: { type: "boolean", input: false, defaultValue: false },
+        locale: { type: "string", input: false, defaultValue: "en" },
       },
     },
 

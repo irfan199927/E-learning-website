@@ -346,8 +346,11 @@ The projects students build serve as the proof instead.
 - To translate a screen: add its strings to `en.json` under a namespace, use `getTranslations` (server) or
   `useTranslations` (client), then add `hi`/`mr`. Use ICU for counts (`{n, plural, one {…} other {…}}`) and
   role-specific text (`{role, select, …}`), not string concatenation. Dates: `Intl` with `intlLocale(locale)`.
+- Emails: the Account page picker also saves the choice to `User.locale` (`PUT /api/v1/me/locale`), and every
+  email template takes it (`packages/notify/src/copy.ts`: en/hi/mr). Notification titles inside the daily digest
+  are still English, as they are stored.
 - Not translated on purpose: teacher-written content, the static landing page (no cookies there; it uses
-  `ThemeToggle`'s English default labels), the offline page (cached once by the service worker), emails.
+  `ThemeToggle`'s English default labels), the offline page (cached once by the service worker).
 - Devanagari text uses self-hosted Noto Sans Devanagari, limited by `unicode-range`, so English pages never
   download it.
 

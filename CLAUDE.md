@@ -87,7 +87,9 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
   vendored `components/ui/glyph-portal.tsx` must keep its MIT notice; only type-level edits were made to it.
 - i18n (next-intl, no locale URLs): `locale` cookie, else Accept-Language (`src/i18n/request.ts`). New UI text goes in
   `apps/web/messages/en.json` (hi/mr fall back to English per key). The static landing export skips next-intl,
-  so components it shares (`ThemeToggle`) take labels as props instead of calling `useTranslations`.
+  so components it shares (`ThemeToggle`) take labels as props instead of calling `useTranslations`. Emails use
+  `User.locale` (saved by the Account page picker): every template takes `mailLocale(user.locale)`; wording in
+  `packages/notify/src/copy.ts`.
 - Theme: `<html data-theme>` comes from the `theme` cookie (root layout); none = follow the OS. Dark tokens exist twice
   (explicit + media query); change both. Brand blue as text = `text-primary-fg`, never `text-primary`.
 - Static landing export: `STATIC_SITE=1` builds ONLY `*.site.tsx` routes (pageExtensions) into `apps/web/out`. Keep

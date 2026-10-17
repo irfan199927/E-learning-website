@@ -5,6 +5,12 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — emails in Hindi and Marathi (2026-10-17)
+
+- Every email (sign-up, password reset, invite, account deletion, class reminders, the daily digest) is written
+  in the recipient's language: `User.locale`, saved when they choose a language on the Account page
+  (`PUT /api/v1/me/locale`). Wording lives in `packages/notify/src/copy.ts`.
+
 ### Added — daily email of unread notifications (2026-10-17)
 
 - Worker job `send-notification-digest` (18:00 school time): one email per person with the newest unread

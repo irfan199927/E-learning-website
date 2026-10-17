@@ -6,6 +6,7 @@
  * - A request soft-deletes the account (`deletedAt`) and signs the person out everywhere at once; the session
  *   hook in lib/auth.ts keeps them out. The worker purges the user and their data after ERASURE_GRACE_DAYS.
  * - Until the purge, an admin can cancel it from the Users page (`cancelAccountDeletion`).
+ * - The interface language is also stored on the account (`setLocale`), so emails go out in it.
  * - Anyone can switch the daily email of unread notifications off or on (`setEmailDigest`).
  * - Requests and cancellations are audited (`user.delete_request`, `user.restore`); the person gets an email.
  */
@@ -17,9 +18,10 @@ import {
   SELF_DELETE_ROLES,
   type DeleteAccountInput,
   type EmailDigestInput,
+  type LocaleInput,
   type Role,
 } from "@elearner/core";
-import { templates } from "@elearner/notify";
+import { mailLocale, templates } from "@elearner/notify";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 
@@ -64,6 +66,12 @@ export async function getAccount(deps: Deps, actor: Actor): Promise<AccountView>
   };
 }
 
+/** Remember the interface language on the account, for emails (the page itself follows the `locale` cookie). */
+export async function setLocale(deps: Deps, actor: Actor, input: LocaleInput): Promise<{ locale: string }> {
+  await deps.db.user.update({ where: { id: actor.id }, data: { locale: input.locale } });
+  return { locale: input.locale };
+}
+
 /** Switch the daily email of unread notifications on or off (worker `send-notification-digest`). */
 export async function setEmailDigest(
   deps: Deps,
@@ -95,9 +103,17 @@ export async function requestAccountDeletion(
     });
   });
   const purgeOn = erasureDate(now);
+  const { locale } = await deps.db.user.findUniqueOrThrow({
+    where: { id: actor.id },
+    select: { locale: true },
+  });
+  const lang = mailLocale(locale);
   // The request stands even if the email fails; the account is already signed out and scheduled.
   await deps.mailer
-    .send(actor.email, templates.accountDeletion(actor.name, formatInZone(purgeOn, actor.timezone)))
+    .send(
+      actor.email,
+      templates.accountDeletion(actor.name, formatInZone(purgeOn, actor.timezone, `${lang}-IN`), lang),
+    )
     .catch(() => undefined);
   return { purgeOn };
 }

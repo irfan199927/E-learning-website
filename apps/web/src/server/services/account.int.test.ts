@@ -3,7 +3,13 @@ import { erasureDate } from "@elearner/core";
 import type { createMemoryMailer } from "@elearner/notify";
 import { describe, expect, it } from "vitest";
 import { makeDeps, world } from "@/test/fakes";
-import { cancelAccountDeletion, getAccount, requestAccountDeletion, setEmailDigest } from "./account";
+import {
+  cancelAccountDeletion,
+  getAccount,
+  requestAccountDeletion,
+  setEmailDigest,
+  setLocale,
+} from "./account";
 import { listUsers } from "./admin-users";
 
 describe("account deletion (integration)", () => {
@@ -68,5 +74,16 @@ describe("account deletion (integration)", () => {
     expect((await getAccount(deps, w.student)).emailDigest).toBe(true); // only their own
     await setEmailDigest(deps, w.teacher, { enabled: true });
     expect((await getAccount(deps, w.teacher)).emailDigest).toBe(true);
+  });
+
+  it("emails in the language the person chose", async () => {
+    const w = await world();
+    const deps = makeDeps();
+    const mailer = deps.mailer as ReturnType<typeof createMemoryMailer>;
+    expect(await setLocale(deps, w.student, { locale: "hi" })).toEqual({ locale: "hi" });
+    await requestAccountDeletion(deps, w.student, { confirm: "DELETE" });
+    const mail = mailer.sent.find((m) => m.to === w.student.email)!.message;
+    expect(mail.subject).toBe("आपका E-learner खाता हटा दिया जाएगा");
+    expect(mail.text).toMatch(/^नमस्ते /);
   });
 });

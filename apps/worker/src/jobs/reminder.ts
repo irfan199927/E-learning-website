@@ -3,7 +3,7 @@
  * Idempotent: Notification.dedupeKey is unique, so a retried job never double-sends.
  * Stale-safe: if the class moved or was cancelled since the job was queued, it does nothing.
  */
-import { templates } from "@elearner/notify";
+import { mailLocale, templates } from "@elearner/notify";
 import type { ReminderJob } from "@elearner/queue";
 import type { JobContext } from "../context";
 
@@ -25,7 +25,7 @@ export async function sendReminder(
       deletedAt: null,
       enrollments: { some: { courseId: cls.courseId, revokedAt: null } },
     },
-    select: { id: true, email: true, name: true, timezone: true },
+    select: { id: true, email: true, name: true, timezone: true, locale: true },
   });
   // Parents only get the day-before reminder (less noise).
   const parents =
@@ -38,7 +38,7 @@ export async function sendReminder(
               some: { verifiedAt: { not: null }, studentId: { in: students.map((s) => s.id) } },
             },
           },
-          select: { id: true, email: true, name: true, timezone: true },
+          select: { id: true, email: true, name: true, timezone: true, locale: true },
         })
       : [];
 
@@ -73,6 +73,7 @@ export async function sendReminder(
           kind: job.kind,
           url: `${ctx.config.appUrl}/dashboard`,
           location: cls.location,
+          locale: mailLocale(user.locale),
         }),
       );
       await ctx.db.notification.update({ where: { dedupeKey }, data: { sentAt: ctx.now() } });

@@ -92,4 +92,4 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
       translated: app shell, sign-in, account
 - [ ] Translate the remaining screens (move strings into `apps/web/messages/*.json`, see docs/ui.md "Languages")
 - [ ] Native-speaker review of the Hindi and Marathi text (needs the school)
-- [ ] Translated emails (needs a stored language per user)
+- [x] Translated emails (2026-10-17): language saved on the account from the Account page picker

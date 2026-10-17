@@ -55,11 +55,12 @@ course's teacher or an admin.
 
 ### Account
 
-| Method              | Path                           | Who  | What                                                   |
-| ------------------- | ------------------------------ | ---- | ------------------------------------------------------ |
-| POST                | `/api/v1/me/deletion-request`  | S, P | Delete my account (`{ confirm: "DELETE" }`), signs out |
-| GET / POST / DELETE | `/api/v1/me/recording-consent` | S    | Read / agree (`{ version }`) / withdraw                |
-| PUT                 | `/api/v1/me/email-digest`      | any  | `{ enabled }`: the daily email of unread notifications |
+| Method              | Path                           | Who  | What                                                    |
+| ------------------- | ------------------------------ | ---- | ------------------------------------------------------- |
+| POST                | `/api/v1/me/deletion-request`  | S, P | Delete my account (`{ confirm: "DELETE" }`), signs out  |
+| GET / POST / DELETE | `/api/v1/me/recording-consent` | S    | Read / agree (`{ version }`) / withdraw                 |
+| PUT                 | `/api/v1/me/email-digest`      | any  | `{ enabled }`: the daily email of unread notifications  |
+| PUT                 | `/api/v1/me/locale`            | any  | `{ locale: "en" \| "hi" \| "mr" }`: language for emails |
 
 ### Courses, modules, lessons
 
