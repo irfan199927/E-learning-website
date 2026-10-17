@@ -76,6 +76,9 @@ docs/             Spec, system design, UI guide, next steps
 - [`docs/environment.md`](docs/environment.md): every environment variable, key rotation, common config errors.
 - [`docs/google-setup.md`](docs/google-setup.md): Google Cloud project, consent screen, OAuth client, Meet recording policy.
 - [`docs/security.md`](docs/security.md): threat model, controls, audit logging, DPDP handling, known gaps.
+- [`docs/api.md`](docs/api.md): REST API conventions, error codes and every endpoint.
+- [`docs/testing.md`](docs/testing.md): test layers, commands and conventions.
+- [`docs/runbooks/`](docs/runbooks/README.md): what to do when recording sync, transcoding, Google or payments go wrong; restores, secret rotation, incidents.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): branches, commits, PR checks, definition of done.
 - [`SECURITY.md`](SECURITY.md): how to report a vulnerability.
 - [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md): what's left, in priority order.

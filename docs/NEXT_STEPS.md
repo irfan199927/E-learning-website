@@ -46,8 +46,9 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] `docs/environment.md` (every env var — source of truth is apps/web/src/env.ts + apps/worker/src/env.ts)
 - [x] `docs/google-setup.md` (GCP project, Internal consent screen, scopes, Workspace recording policy)
 - [x] `docs/deployment.md` (Vercel, Render, Neon, Redis w/ `noeviction`, R2 bucket + CORS exposing `ETag`, rollback)
-- [ ] `docs/testing.md`, `docs/api.md` (+ OpenAPI), runbooks: recording-sync, transcode-failures, google-reconnect,
-      restore-database, rotate-secrets, incident-response
+- [x] `docs/testing.md`, `docs/api.md`, runbooks (`docs/runbooks/`): recording-sync, transcode-failures,
+      google-reconnect, payments, restore-database, rotate-secrets, incident-response
+- [ ] OpenAPI document generated from the zod schemas
 
 ## 4. Product (MVP backlog from docs/SPEC.md)
 
