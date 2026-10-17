@@ -21,7 +21,7 @@
   "calendar": "कैलेंडर",
   "nothingUpcoming": "{role, select, TEACHER {कुछ भी शेड्यूल नहीं है। कैलेंडर से अपनी पहली क्लास शेड्यूल करें।} other {अभी करने को कुछ बाकी नहीं है।}}",
   "takeAttendance": "हाज़िरी लें",
-  "inPerson": "कक्षा में",
+  "inPerson": "आमने-सामने",
   "yourCourses": "आपके कोर्स",
   "allCourses": "सभी कोर्स",
   "courseCounts": "{students, plural, one {{students} छात्र} other {{students} छात्र}} · {lessons, plural, one {{lessons} पाठ} other {{lessons} पाठ}}",

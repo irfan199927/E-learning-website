@@ -347,6 +347,9 @@ The projects students build serve as the proof instead.
   Still English on purpose: the recording notice's legal text (pending review), CSV column names the importer
   expects, data from the database, and server error messages. FullCalendar uses its own Hindi pack; Marathi has
   none, so its buttons stay English.
+- Glossary (keep new text consistent): live class = Hindi क्लास (plural क्लासें), Marathi वर्ग; lesson = Hindi
+  पाठ, Marathi पाठ; course = Hindi कोर्स, Marathi अभ्यासक्रम. Hindi कक्षा means only a school grade/standard
+  (the course's "Grade" field), never a live class.
 - Digits stay Western: dates use `intlLocale(locale)` (`hi-IN-u-nu-latn`); Marathi plural messages use `{count}`
   instead of `#` (ICU's `#` would print Devanagari digits).
 - To translate a screen: add its strings to `en.json` under a namespace, use `getTranslations` (server) or
