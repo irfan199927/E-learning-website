@@ -343,11 +343,10 @@ The projects students build serve as the proof instead.
   a new namespace needs an `en` import there and `hi`/`mr` files). English is the source: a key missing (or
   empty) in Hindi or Marathi shows in English (`withFallback`). Keys are type-checked from English.
   `src/i18n/messages.test.ts` fails on missing files, keys English doesn't have and arguments English doesn't pass.
-- Translated: the app shell, sign-in and password reset, Account, Overview, notifications, class recordings
-  (except the legal notice text, pending review), My children, My courses and the catalog, course, lesson and
-  video pages, paying, assignments and quizzes (taking and grading), grades, the calendar (FullCalendar's own
-  Hindi pack; Marathi has none). Still English: staff editors and admin pages (course/lesson editors, schedule
-  form, attendance sheet, upload, Users, Payments, Settings).
+- Translated: every signed-in screen (students, parents, teachers and admins), sign-in and password reset.
+  Still English on purpose: the recording notice's legal text (pending review), CSV column names the importer
+  expects, data from the database, and server error messages. FullCalendar uses its own Hindi pack; Marathi has
+  none, so its buttons stay English.
 - Digits stay Western: dates use `intlLocale(locale)` (`hi-IN-u-nu-latn`); Marathi plural messages use `{count}`
   instead of `#` (ICU's `#` would print Devanagari digits).
 - To translate a screen: add its strings to `en.json` under a namespace, use `getTranslations` (server) or

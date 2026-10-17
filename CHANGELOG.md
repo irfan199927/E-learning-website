@@ -5,6 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — whole app in Hindi and Marathi, OpenAPI, loading skeletons (2026-10-17)
+
+- Teacher and admin screens are translated too: course and lesson editors, video upload, assignment and quiz
+  editors, scheduling, attendance, Users, Payments and Settings.
+- `GET /api/v1/openapi.json`: an OpenAPI 3.0 document, request bodies and query parameters generated from the
+  zod schemas (`apps/web/src/server/openapi.ts`; a test fails when a route is missing from it).
+- The Overview shows a skeleton while it loads; My courses and Notifications have friendlier empty states.
+
 ### Added — student and parent screens in Hindi and Marathi (2026-10-17)
 
 - Translated: Overview, notifications, class recordings, My children, My courses and the catalog, course, lesson

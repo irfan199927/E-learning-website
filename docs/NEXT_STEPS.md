@@ -70,7 +70,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [ ] Replace the sample landing copy with a real course, or render it from a published `Course` once course CRUD
       exists; add real (consented) student work or testimonials if the school has them
 - [x] Light/dark theme switch (cookie, no flash) across landing, sign-in and app; light "product launch" landing theme
-- [ ] Apply the same polish pass (motion tokens, skeleton loaders, empty-state illustrations) to the signed-in app
+- [x] Polish pass on the signed-in app (2026-10-17): Overview loading skeleton, empty states with icons
 - [x] Parent view of a child's progress (2026-10-16): `/children`, read-only, per verified ParentLink; admins link
       parents on the Users page
 - [x] Self-service account deletion (2026-10-17): `/account`, admin cancel, purge deletes submission files
@@ -91,6 +91,6 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] i18n plumbing (next-intl: en/hi/mr, 2026-10-17): language picker, cookie + Accept-Language, Devanagari font;
       translated: app shell, sign-in, account
 - [x] Translate the student and parent screens (2026-10-17)
-- [ ] Translate the staff and admin screens (editors, schedule form, attendance, upload, Users, Payments, Settings)
+- [x] Translate the staff and admin screens (2026-10-17)
 - [ ] Native-speaker review of the Hindi and Marathi text (needs the school)
 - [x] Translated emails (2026-10-17): language saved on the account from the Account page picker
