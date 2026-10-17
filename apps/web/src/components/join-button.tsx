@@ -1,6 +1,7 @@
 "use client";
 
 import { joinWindow } from "@elearner/core/time";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { buttonClasses } from "./ui/button";
 
@@ -14,6 +15,7 @@ export function JoinButton({
   endsAt,
   opensMinutesBefore = 10,
   timeZone,
+  needsConsent = false,
 }: {
   classId: string;
   startsAt: string;
@@ -21,6 +23,8 @@ export function JoinButton({
   opensMinutesBefore?: number;
   /** Show "Opens 3:50 pm" on the school's clock, not the browser's. */
   timeZone?: string;
+  /** The student hasn't agreed to the class-recording notice: send them there instead of to Meet. */
+  needsConsent?: boolean;
 }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -32,6 +36,12 @@ export function JoinButton({
 
   const w = joinWindow(new Date(startsAt), new Date(endsAt), now, opensMinutesBefore);
   if (w.state === "ended") return <span className="text-sm text-muted">Ended</span>;
+  if (needsConsent)
+    return (
+      <Link href="/recording-consent" className={buttonClasses("secondary")}>
+        Agree to recording to join
+      </Link>
+    );
   if (w.state === "not-yet") {
     const mins = Math.ceil((w.opensAt.getTime() - now.getTime()) / 60_000);
     const label =

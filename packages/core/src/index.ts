@@ -7,6 +7,7 @@ export * from "./hls";
 export * from "./ics";
 export * from "./learning";
 export * from "./rbac";
+export * from "./recording";
 export * from "./rrule";
 export * from "./schemas";
 export * from "./time";

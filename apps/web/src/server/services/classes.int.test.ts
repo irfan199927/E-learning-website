@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { AppError } from "@elearner/core";
+import { AppError, RECORDING_NOTICE_VERSION } from "@elearner/core";
 import { describe, expect, it } from "vitest";
 import { fakeGoogle, fakeJobs, makeDeps, world } from "@/test/fakes";
 import { cancelClass, getJoinUrl, listClasses, rescheduleClass, scheduleClass } from "./classes";
+import { agreeToRecording } from "./recording-consent";
 
 const inHours = (h: number) => new Date(Date.now() + h * 3600_000);
 const range = { from: inHours(-24), to: inHours(24 * 30) };
@@ -149,6 +150,9 @@ describe("classes service (integration)", () => {
     const early = makeDeps({ now: () => new Date(startsAt.getTime() - 30 * 60_000) });
     await expect(getJoinUrl(early, w.student, cls!.id)).rejects.toMatchObject({ code: "CONFLICT" });
     const onTime = makeDeps({ now: () => new Date(startsAt.getTime() - 5 * 60_000) });
+    // Students must agree to the class-recording notice first.
+    await expect(getJoinUrl(onTime, w.student, cls!.id)).rejects.toThrow(/recording notice/);
+    await agreeToRecording(onTime, w.student, { version: RECORDING_NOTICE_VERSION });
     await expect(getJoinUrl(onTime, w.student, cls!.id)).resolves.toMatch(/^https:\/\/meet\.google\.com/);
     await expect(getJoinUrl(onTime, w.outsider, cls!.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getJoinUrl(early, w.teacher, cls!.id)).resolves.toBeTruthy(); // host can open early

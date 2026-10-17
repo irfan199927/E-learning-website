@@ -18,6 +18,7 @@ export default async function AttendancePage({ params }: { params: Promise<{ cla
     throw err;
   });
   const c = sheet.class;
+  const notAgreed = sheet.rows.filter((r) => r.enrolled && !r.recordingConsent).length;
   const where = [c.location, c.fromGoogle ? "Google Meet" : c.online ? "Online link" : null].filter(Boolean);
 
   return (
@@ -53,6 +54,13 @@ export default async function AttendancePage({ params }: { params: Promise<{ cla
               ? "Google Meet fills this in after the class. You can change any mark."
               : "Nobody is marked yet."}{" "}
           Parents see these marks.
+          {c.online && notAgreed > 0 && (
+            <>
+              {" "}
+              {notAgreed === 1 ? "1 student hasn't" : `${notAgreed} students haven't`} agreed to class
+              recordings, so they can't join from E-learner.
+            </>
+          )}
         </p>
         {c.status === "CANCELLED" ? (
           <p className="text-muted">This class was cancelled, so there's no attendance to take.</p>

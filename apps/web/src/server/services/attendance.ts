@@ -11,6 +11,7 @@ import { AttendanceSource, ClassStatus } from "@elearner/db";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 import { assertCourseAccess, hasCourseAccess } from "../policies";
+import { recordingConsentFor } from "./recording-consent";
 
 async function managedClass(deps: Deps, actor: Actor, classId: string) {
   assertCan(actor.role, "attendance:write");
@@ -46,6 +47,8 @@ export interface AttendanceSheetRow {
   minutes: number;
   /** Still in the course (false: removed after the class, but has a mark). */
   enrolled: boolean;
+  /** Has agreed to the current class-recording notice. */
+  recordingConsent: boolean;
 }
 
 export interface AttendanceSheet {
@@ -90,6 +93,9 @@ export async function getAttendanceSheet(
     }),
   ]);
   const byUser = new Map(records.map((r) => [r.user.id, r]));
+  const consent = await recordingConsentFor(deps.db, [
+    ...new Set([...enrollments.map((e) => e.user.id), ...records.map((r) => r.user.id)]),
+  ]);
   const enrolled = new Set(enrollments.map((e) => e.user.id));
   const people = new Map(
     [...enrollments.map((e) => e.user), ...records.map((r) => r.user)].map((u) => [u.id, u]),
@@ -105,6 +111,7 @@ export async function getAttendanceSheet(
         source: r?.source ?? null,
         minutes: r ? Math.round(r.durationSeconds / 60) : 0,
         enrolled: enrolled.has(u.id),
+        recordingConsent: consent.get(u.id) === "agreed",
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

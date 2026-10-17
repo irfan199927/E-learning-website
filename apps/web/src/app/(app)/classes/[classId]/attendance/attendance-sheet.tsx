@@ -14,6 +14,7 @@ export interface SheetRow {
   source: "MEET_API" | "MANUAL" | null;
   minutes: number;
   enrolled: boolean;
+  recordingConsent: boolean;
 }
 
 /** One Present / Absent choice per student, "Mark everyone present", and Save. */
@@ -78,6 +79,11 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
                   {r.name}
                   {!r.enrolled && (
                     <span className="ml-2 text-sm font-normal text-muted">(left the course)</span>
+                  )}
+                  {!r.recordingConsent && (
+                    <span className="ml-2 inline-block rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
+                      Not agreed to recording
+                    </span>
                   )}
                 </p>
                 <p className="truncate text-sm text-muted">

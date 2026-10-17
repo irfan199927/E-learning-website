@@ -196,6 +196,7 @@ All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.t
 - `assignment.create`, `assignment.update`, `assignment.delete`, `assignment.submit`, `grade.edit` (with the
   previous and new score), `quiz.create`, `quiz.update`, `quiz.delete`
 - `grade.export` (a teacher or admin downloads a course gradebook as CSV: names, emails and marks)
+- `consent.grant`, `consent.withdraw` (a student agrees to or withdraws from the class-recording notice)
 - `parent.link`, `parent.unlink` (an admin links a parent account to a student, or removes it)
 - `course.update`, `module.create`, `module.delete`, `lesson.create`, `lesson.update`, `lesson.delete`,
   `attachment.create`, `attachment.delete` (course editing)
@@ -212,15 +213,15 @@ data, verifiable parental consent) does not apply; the parental-consent flow was
 (dates of birth, parent links and names) dropped by migration `remove_parental_consent`. If the school ever admits
 under-18s, that flow has to come back first (see git history).
 
-| Requirement                       | How we meet it                                                                                                                                    | Status                                |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| No tracking or targeted ads       | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                    | Built                                 |
-| Data minimisation                 | No date of birth, phone numbers or addresses.                                                                                                     | Built                                 |
-| Consent to be recorded in classes | `ConsentType.RECORDING`, accepted at onboarding                                                                                                   | Planned                               |
-| Erasure on request                | Soft-delete (`deletedAt`) blocks sign-in immediately. After 30 days the worker purges the user and their data (cascade), and writes an audit row. | Built (purge job); request UI planned |
-| Grievance officer                 | Contact details in the site footer                                                                                                                | Planned                               |
-| Data location                     | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                              | To decide (architecture.md G7)        |
-| Breach notification               | Tell the Data Protection Board and affected users without delay                                                                                   | Process: see below                    |
+| Requirement                       | How we meet it                                                                                                                                        | Status                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| No tracking or targeted ads       | No analytics, ad or tracking scripts anywhere. The CSP would block third-party scripts anyway.                                                        | Built                                 |
+| Data minimisation                 | No date of birth, phone numbers or addresses.                                                                                                         | Built                                 |
+| Consent to be recorded in classes | Students agree to the recording notice (`/recording-consent`, versioned `Consent` rows) before joining live classes from E-learner; withdraw any time | Built (see known gaps)                |
+| Erasure on request                | Soft-delete (`deletedAt`) blocks sign-in immediately. After 30 days the worker purges the user and their data (cascade), and writes an audit row.     | Built (purge job); request UI planned |
+| Grievance officer                 | Contact details in the site footer                                                                                                                    | Planned                               |
+| Data location                     | Choose India or nearby regions for Vercel functions, Postgres and R2                                                                                  | To decide (architecture.md G7)        |
+| Breach notification               | Tell the Data Protection Board and affected users without delay                                                                                       | Process: see below                    |
 
 Known erasure limits:
 
@@ -248,7 +249,9 @@ The full incident-response runbook is still to be written (NEXT_STEPS §3).
 
 The security-relevant gaps, most important first:
 
-- **Recording consent isn't built yet.**
+- **The recording-consent gate only covers joining from E-learner.** Students are Google Calendar guests of the
+  class event, so the Meet link is also in their Google invite. Teachers see "Not agreed to recording" on the
+  attendance sheet. Closing this needs classes without per-student Google invites (a product decision).
 - **Age is not checked.** Students are adults by school policy; the app takes that on trust.
 - **Audit coverage is partial.** See [Audit logging](#audit-logging).
 - **The general API rate limit (120/min/user in the spec) isn't applied to every route.** Only the routes in the

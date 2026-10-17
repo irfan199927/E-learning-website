@@ -52,6 +52,20 @@ async function main() {
     create: { parentId: parent.id, studentId: aanya.id, verifiedAt: new Date() },
   });
 
+  // Aanya has agreed to the class-recording notice; Rohan and Kabir haven't answered yet (they see the banner;
+  // re-seeding resets them, for the e2e test).
+  // Keep the version in step with RECORDING_NOTICE_VERSION in packages/core/src/recording.ts.
+  const RECORDING_NOTICE_VERSION = "2026-10-17";
+  const agreed = await db.consent.count({
+    where: { userId: aanya.id, type: "RECORDING", version: RECORDING_NOTICE_VERSION, withdrawnAt: null },
+  });
+  if (agreed === 0)
+    await db.consent.create({
+      data: { userId: aanya.id, type: "RECORDING", version: RECORDING_NOTICE_VERSION, method: "seed" },
+    });
+  const kabir = await db.user.findUniqueOrThrow({ where: { email: "kabir@school.edu" } });
+  await db.consent.deleteMany({ where: { userId: { in: [rohan.id, kabir.id] }, type: "RECORDING" } });
+
   const course = await db.course.upsert({
     where: { slug: "maths-9a" },
     update: {},

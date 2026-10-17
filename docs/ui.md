@@ -109,6 +109,17 @@ list.
 - Entry points: **Gradebook** button on the course page header (staff); **My grades** link under the progress bar
   (students, once the course has work).
 
+### Class recordings (`/recording-consent`, students)
+
+- The recording notice (`RECORDING_NOTICE` in `packages/core/src/recording.ts`), the student's answer, and **I agree**
+  or **Withdraw my agreement**.
+- Until a student answers (or after the notice text changes) a banner above every page says "Live classes are
+  recorded" with **Read the notice**. It isn't shown on the notice page itself, or after they withdraw.
+- Without an agreement, the dashboard's Join button reads **Agree to recording to join** and goes to the notice;
+  the server refuses the join too. A **Recordings** link in the Upcoming classes header leads back to the page.
+- Teachers see a "Not agreed to recording" badge per student on the attendance sheet, and a count above it for
+  online classes.
+
 ### Calendar: scheduling without Google
 
 - **Schedule class** is always there for teachers. With Google connected, the form asks **Where**: Google Meet
