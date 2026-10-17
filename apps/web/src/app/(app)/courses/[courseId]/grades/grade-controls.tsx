@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
 import { api, ApiError } from "@/lib/api-client";
@@ -26,6 +27,7 @@ export function ExcuseButton({
   studentName: string;
   excused: boolean;
 }) {
+  const t = useTranslations("Grades");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -50,9 +52,9 @@ export function ExcuseButton({
       onClick={() => void toggle()}
       disabled={busy}
       className={small}
-      aria-label={`${excused ? "Undo excuse for" : "Excuse"} ${studentName} from ${itemTitle}`}
+      aria-label={t(excused ? "undoExcuseLabel" : "excuseLabel", { student: studentName, item: itemTitle })}
     >
-      {error ? "Try again" : excused ? "Undo" : "Excuse"}
+      {error ? t("tryAgain") : excused ? t("undo") : t("excuse")}
     </button>
   );
 }
@@ -65,6 +67,7 @@ export function WeightingForm({
   courseId: string;
   assignmentWeight: number | null;
 }) {
+  const t = useTranslations("Grades");
   const router = useRouter();
   const [mode, setMode] = useState<"points" | "weighted">(assignmentWeight === null ? "points" : "weighted");
   const [weight, setWeight] = useState(String(assignmentWeight ?? 50));
@@ -80,12 +83,12 @@ export function WeightingForm({
         method: "PUT",
         json: { assignmentWeight: mode === "points" ? null : Number(weight) },
       });
-      setNote({ tone: "success", text: "Saved. Totals use the new weighting." });
+      setNote({ tone: "success", text: t("weightingSaved") });
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
     } finally {
       setBusy(false);
@@ -94,9 +97,9 @@ export function WeightingForm({
 
   const w = Math.min(100, Math.max(0, Number(weight) || 0));
   return (
-    <form onSubmit={(e) => void save(e)} aria-label="Grade weighting" className="flex flex-col gap-3">
+    <form onSubmit={(e) => void save(e)} aria-label={t("weightingForm")} className="flex flex-col gap-3">
       <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <legend className="mb-1 text-sm font-semibold">How the total is worked out</legend>
+        <legend className="mb-1 text-sm font-semibold">{t("howTotal")}</legend>
         <label className="flex h-11 items-center gap-2">
           <input
             type="radio"
@@ -104,7 +107,7 @@ export function WeightingForm({
             checked={mode === "points"}
             onChange={() => setMode("points")}
           />
-          By points (every point counts the same)
+          {t("byPoints")}
         </label>
         <label className="flex h-11 items-center gap-2">
           <input
@@ -113,13 +116,13 @@ export function WeightingForm({
             checked={mode === "weighted"}
             onChange={() => setMode("weighted")}
           />
-          By category
+          {t("byCategory")}
         </label>
       </fieldset>
       {mode === "weighted" && (
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="assignment-weight" className="text-sm font-semibold">
-            Assignments
+            {t("assignments")}
           </label>
           <input
             id="assignment-weight"
@@ -130,7 +133,7 @@ export function WeightingForm({
             onChange={(e) => setWeight(e.target.value)}
             className="h-11 w-20 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3"
           />
-          <span className="text-sm">% · quizzes {100 - w}%</span>
+          <span className="text-sm">{t("quizzesRest", { percent: 100 - w })}</span>
         </div>
       )}
       <div className="flex flex-wrap items-center gap-3">
@@ -139,7 +142,7 @@ export function WeightingForm({
           disabled={busy}
           className="inline-flex h-11 items-center rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 text-[15px] font-semibold hover:bg-canvas disabled:opacity-60"
         >
-          {busy ? "Saving…" : "Save weighting"}
+          {busy ? t("saving") : t("saveWeighting")}
         </button>
         <div aria-live="polite">{note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}</div>
       </div>

@@ -28,9 +28,10 @@ test("a student switches the interface to Hindi and back", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
   await expect(page.locator("#main-nav")).toContainText("अवलोकन"); // hidden in the mobile drawer
 
-  // The choice sticks across pages, and screens not translated yet still work (in English).
+  // The choice sticks across pages, and student screens are translated too.
   await page.goto("/courses");
   await expect(page.locator("#main-nav")).toContainText("मेरे कोर्स");
+  await expect(page.getByRole("heading", { name: "मेरे कोर्स", level: 1 })).toBeVisible();
 
   await page.goto("/account");
   await page.getByLabel("भाषा").selectOption("en");

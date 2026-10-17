@@ -2,22 +2,27 @@ import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Icon } from "@/components/icons";
 import { MonthlyProgress, TodayProgress } from "@/components/learner-progress";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { ATTENDANCE_DAYS, getChildProgress } from "@/server/services/parents";
 
-export const metadata: Metadata = { title: "Child's progress" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Children"))("progressTitle") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface";
 const pill = "rounded-full px-2 py-0.5 text-xs font-semibold";
 
-const STATE: Record<string, string> = {
-  "not-started": "Not started",
-  "in-progress": "In progress",
-  completed: "Completed",
-};
+/** Message key for each course state. */
+const STATE = {
+  "not-started": "notStarted",
+  "in-progress": "inProgress",
+  completed: "completed",
+} as const;
 
 export default async function ChildProgressPage({
   params,
@@ -35,8 +40,9 @@ export default async function ChildProgressPage({
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
-  const first = p.child.name.split(" ")[0];
-  const day = new Intl.DateTimeFormat("en-IN", {
+  const [t, locale] = await Promise.all([getTranslations("Children"), getLocale()]);
+  const first = p.child.name.split(" ")[0] ?? "";
+  const day = new Intl.DateTimeFormat(intlLocale(locale), {
     timeZone: actor.timezone,
     weekday: "short",
     day: "numeric",
@@ -44,28 +50,28 @@ export default async function ChildProgressPage({
     hour: "numeric",
     minute: "2-digit",
   });
-  const date = new Intl.DateTimeFormat("en-IN", { timeZone: actor.timezone, day: "numeric", month: "short" });
+  const date = new Intl.DateTimeFormat(intlLocale(locale), {
+    timeZone: actor.timezone,
+    day: "numeric",
+    month: "short",
+  });
 
   return (
     <div className="flex max-w-6xl flex-col gap-7">
       <Link href="/children" className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg">
         <Icon name="chevronLeft" size={16} />
-        My children
+        {t("title")}
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">{p.child.name}</h1>
-          <p className="mt-1 text-muted">
-            The same progress {first} sees in their own Overview. You can&apos;t change anything here.
-          </p>
+          <p className="mt-1 text-muted">{t("sameProgress", { name: first })}</p>
         </div>
-        <p className="flex items-center gap-2" aria-label={`Streak: ${p.overview.streak} days in a row`}>
+        <p className="flex items-center gap-2" aria-label={t("streakLabel", { count: p.overview.streak })}>
           <Icon name="flame" size={28} />
           <span className="flex flex-col leading-tight">
             <b className="text-lg">{p.overview.streak}</b>
-            <span className="text-xs text-muted">
-              {p.overview.streak === 1 ? "Day streak" : "Days streak"}
-            </span>
+            <span className="text-xs text-muted">{t("streakUnit", { count: p.overview.streak })}</span>
           </span>
         </p>
       </header>
@@ -83,10 +89,10 @@ export default async function ChildProgressPage({
 
       <section aria-labelledby="courses-h">
         <h2 id="courses-h" className="mb-3 font-display text-xl font-bold">
-          Courses ({p.courses.length})
+          {t("coursesCount", { count: p.courses.length })}
         </h2>
         {p.courses.length === 0 ? (
-          <p className={`p-5 text-muted ${card}`}>{first} isn&apos;t in any course yet.</p>
+          <p className={`p-5 text-muted ${card}`}>{t("noCourses", { name: first })}</p>
         ) : (
           <ul className="grid gap-4 md:grid-cols-2">
             {p.courses.map((c) => (
@@ -99,19 +105,17 @@ export default async function ChildProgressPage({
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <h3 className="truncate font-bold">{c.title}</h3>
                   <p className="text-sm text-muted">
-                    With {c.teacherName} · {STATE[c.state]}
-                    {c.lastActivityAt && ` · last active ${date.format(c.lastActivityAt)}`}
+                    {t("withTeacher", { teacher: c.teacherName, state: t(STATE[c.state]) })}
+                    {c.lastActivityAt && t("lastActive", { date: date.format(c.lastActivityAt) })}
                   </p>
                   <div className="mt-auto flex justify-between text-sm">
-                    <span>
-                      {c.completedCount}/{c.lessonCount} lessons
-                    </span>
+                    <span>{t("lessons", { done: c.completedCount, total: c.lessonCount })}</span>
                     <span className="text-muted">{c.percent}%</span>
                   </div>
                   <div
                     className="h-2 overflow-hidden rounded-full bg-line"
                     role="progressbar"
-                    aria-label={`${c.title} progress`}
+                    aria-label={t("courseProgress", { course: c.title })}
                     aria-valuenow={c.percent}
                     aria-valuemin={0}
                     aria-valuemax={100}
@@ -127,26 +131,26 @@ export default async function ChildProgressPage({
 
       <section aria-labelledby="grades-h" className={`p-5 ${card}`}>
         <h2 id="grades-h" className="mb-3 font-display text-xl font-bold">
-          Grades
+          {t("grades")}
         </h2>
         {p.grades.length === 0 ? (
-          <p className="text-muted">No graded work or quizzes yet.</p>
+          <p className="text-muted">{t("noGrades")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-muted">
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    Work
+                    {t("work")}
                   </th>
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    Course
+                    {t("course")}
                   </th>
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    Score
+                    {t("score")}
                   </th>
                   <th scope="col" className="py-2 font-semibold">
-                    When
+                    {t("when")}
                   </th>
                 </tr>
               </thead>
@@ -156,7 +160,7 @@ export default async function ChildProgressPage({
                     <td className="py-2.5 pr-3">
                       <span className="font-semibold">{g.title}</span>
                       <span className="block text-muted">
-                        {g.kind === "quiz" ? "Quiz (best attempt)" : "Assignment"}
+                        {g.kind === "quiz" ? t("quiz") : t("assignment")}
                       </span>
                     </td>
                     <td className="py-2.5 pr-3">{g.courseTitle}</td>
@@ -174,31 +178,31 @@ export default async function ChildProgressPage({
 
       <section aria-labelledby="attendance-h" className={`p-5 ${card}`}>
         <h2 id="attendance-h" className="font-display text-xl font-bold">
-          Live classes, last {ATTENDANCE_DAYS} days
+          {t("liveClasses", { days: ATTENDANCE_DAYS })}
         </h2>
         <p className="mb-3 text-sm text-muted">
           {p.attendance.recorded > 0
-            ? `Attended ${p.attendance.attended} of ${p.attendance.recorded} classes with attendance recorded.`
-            : "Attendance is recorded from Google Meet after each class."}
+            ? t("attendedOf", { attended: p.attendance.attended, recorded: p.attendance.recorded })
+            : t("fromMeet")}
         </p>
         {p.attendance.rows.length === 0 ? (
-          <p className="text-muted">No classes in this period.</p>
+          <p className="text-muted">{t("noClasses")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-muted">
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    Class
+                    {t("class")}
                   </th>
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    Course
+                    {t("course")}
                   </th>
                   <th scope="col" className="py-2 pr-3 font-semibold">
-                    When
+                    {t("when")}
                   </th>
                   <th scope="col" className="py-2 font-semibold">
-                    Attendance
+                    {t("attendance")}
                   </th>
                 </tr>
               </thead>
@@ -210,13 +214,14 @@ export default async function ChildProgressPage({
                     <td className="py-2.5 pr-3">{day.format(r.startsAt)}</td>
                     <td className="py-2.5">
                       {r.present === null ? (
-                        <span className="text-muted">Not recorded</span>
+                        <span className="text-muted">{t("notRecorded")}</span>
                       ) : r.present ? (
                         <span className={`${pill} bg-success-soft text-[#0C6447]`}>
-                          Attended{r.minutes > 0 && ` · ${r.minutes} min`}
+                          {t("attended")}
+                          {r.minutes > 0 && t("attendedMinutes", { minutes: r.minutes })}
                         </span>
                       ) : (
-                        <span className={`${pill} bg-live-soft text-[#A11C14]`}>Missed</span>
+                        <span className={`${pill} bg-live-soft text-[#A11C14]`}>{t("missed")}</span>
                       )}
                     </td>
                   </tr>

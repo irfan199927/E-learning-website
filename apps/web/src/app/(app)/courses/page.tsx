@@ -1,23 +1,25 @@
 import { formatRupees } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
 import { JoinCourseButton } from "@/components/join-course-button";
 import { ProgressRing } from "@/components/progress-ring";
 import { buttonClasses } from "@/components/ui/button";
-import { plural } from "@/lib/format";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listCatalog, pendingJoinCounts, type CatalogCourse } from "@/server/services/join-requests";
 import { listMyCourses, type CourseCard } from "@/server/services/learning";
 
-export const metadata: Metadata = { title: "Courses" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Courses"))("title") };
+}
 
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "in-progress", label: "In progress" },
-  { key: "completed", label: "Completed" },
+  { key: "all", label: "all" },
+  { key: "in-progress", label: "inProgress" },
+  { key: "completed", label: "completed" },
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
@@ -31,10 +33,11 @@ export default async function CoursesPage({
   const q = typeof rawQ === "string" ? rawQ.trim().slice(0, 100) : "";
   const filter: FilterKey = FILTERS.some((f) => f.key === raw) ? (raw as FilterKey) : "all";
   const learner = actor.role === "STUDENT";
-  const [all, catalog, pending] = await Promise.all([
+  const [all, catalog, pending, t] = await Promise.all([
     listMyCourses(deps(), actor),
     listCatalog(deps(), actor, { q }),
     pendingJoinCounts(deps(), actor),
+    getTranslations("Courses"),
   ]);
   const courses = learner && filter !== "all" ? all.filter((c) => c.state === filter) : all;
 
@@ -43,22 +46,20 @@ export default async function CoursesPage({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            {learner ? "My courses" : "Courses"}
+            {learner ? t("myCourses") : t("title")}
           </h1>
-          <p className="mt-1 text-muted">
-            {learner ? "Pick up where you left off." : "Courses you teach, with their lessons and students."}
-          </p>
+          <p className="mt-1 text-muted">{learner ? t("introLearner") : t("introStaff")}</p>
         </div>
         {!learner && (
           <Link href="/courses/new" className={buttonClasses("primary")}>
             <Icon name="plus" size={18} />
-            New course
+            {t("newCourse")}
           </Link>
         )}
       </header>
 
       {learner && (
-        <nav aria-label="Filter courses">
+        <nav aria-label={t("filterLabel")}>
           <ul className="flex flex-wrap gap-2">
             {FILTERS.map((f) => {
               const active = f.key === filter;
@@ -74,7 +75,7 @@ export default async function CoursesPage({
                         : "border-line-strong bg-surface text-muted hover:text-ink"
                     }`}
                   >
-                    {f.label}
+                    {t(`filters.${f.label}`)}
                     <span className="text-xs opacity-70">{count}</span>
                   </Link>
                 </li>
@@ -88,11 +89,11 @@ export default async function CoursesPage({
         <p className="rounded-[var(--radius-card)] border border-line bg-surface p-8 text-center text-muted">
           {all.length === 0
             ? learner
-              ? "You aren't in any courses yet. Ask to join one below. Your teacher approves it."
-              : "You don't teach any courses yet. Create one to get started."
+              ? t("emptyLearner")
+              : t("emptyStaff")
             : filter === "completed"
-              ? "No completed courses yet. Keep going!"
-              : "Nothing in progress. Start a course from the All tab."}
+              ? t("emptyCompleted")
+              : t("emptyInProgress")}
         </p>
       ) : (
         <ul className="flex flex-col gap-5">
@@ -108,39 +109,37 @@ export default async function CoursesPage({
         <section aria-labelledby="find-h" className="flex flex-col gap-4">
           <div>
             <h2 id="find-h" className="font-display text-2xl font-bold tracking-tight">
-              Find a course
+              {t("findTitle")}
             </h2>
-            <p className="mt-1 text-muted">Ask to join. The course opens once your teacher approves.</p>
+            <p className="mt-1 text-muted">{t("findIntro")}</p>
           </div>
           <form role="search" action="/courses#find-h" className="flex flex-wrap items-end gap-2">
             {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
             <label className="flex min-w-60 flex-1 flex-col gap-1.5 text-sm font-semibold">
-              Search courses
+              {t("searchLabel")}
               <input
                 type="search"
                 name="q"
                 defaultValue={q}
-                placeholder="Subject, topic or teacher"
+                placeholder={t("searchPlaceholder")}
                 className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] font-normal"
               />
             </label>
             <button type="submit" className={buttonClasses("secondary")}>
-              Search
+              {t("search")}
             </button>
             {q && (
               <Link
                 href={filter === "all" ? "/courses#find-h" : `/courses?filter=${filter}#find-h`}
                 className={buttonClasses("ghost")}
               >
-                Clear
+                {t("clear")}
               </Link>
             )}
           </form>
           {catalog.length === 0 ? (
             <p className="rounded-[var(--radius-card)] border border-line bg-surface p-6 text-center text-muted">
-              {q
-                ? `No open courses match “${q}”.`
-                : "No courses are open for you to join right now. Check back soon."}
+              {q ? t("noMatch", { q }) : t("catalogEmpty")}
             </p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2">
@@ -157,7 +156,8 @@ export default async function CoursesPage({
   );
 }
 
-function CatalogCard({ course: c }: { course: CatalogCourse }) {
+async function CatalogCard({ course: c }: { course: CatalogCourse }) {
+  const t = await getTranslations("Courses");
   return (
     <article className="flex h-full flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-5">
       <CourseTile
@@ -169,17 +169,17 @@ function CatalogCard({ course: c }: { course: CatalogCourse }) {
       />
       <div>
         <h3 className="text-lg font-semibold">{c.title}</h3>
-        <p className="text-sm text-muted">With {c.teacherName}</p>
+        <p className="text-sm text-muted">{t("withTeacher", { name: c.teacherName })}</p>
       </div>
       {c.description && <p className="line-clamp-3 text-sm">{c.description}</p>}
       {c.priceInPaise ? (
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
           <span className="font-display text-xl font-bold">{formatRupees(c.priceInPaise)}</span>
           {c.payment === "PENDING" ? (
-            <span className="text-sm text-muted">Payment sent. Waiting for the school to confirm.</span>
+            <span className="text-sm text-muted">{t("paymentPending")}</span>
           ) : (
             <Link href={`/courses/${c.id}/pay`} className={buttonClasses("primary")}>
-              {c.payment === "REJECTED" ? "Payment not confirmed: try again" : "Pay and join"}
+              {c.payment === "REJECTED" ? t("paymentRetry") : t("payAndJoin")}
               <span className="sr-only">: {c.title}</span>
             </Link>
           )}
@@ -193,7 +193,7 @@ function CatalogCard({ course: c }: { course: CatalogCourse }) {
   );
 }
 
-function CourseRow({
+async function CourseRow({
   course: c,
   learner,
   pendingRequests,
@@ -202,14 +202,15 @@ function CourseRow({
   learner: boolean;
   pendingRequests: number;
 }) {
+  const t = await getTranslations("Courses");
   const cta = !learner
-    ? { href: `/courses/${c.id}`, label: "Open course", variant: "secondary" as const }
+    ? { href: `/courses/${c.id}`, label: t("openCourse"), variant: "secondary" as const }
     : c.state === "completed"
-      ? { href: `/courses/${c.id}`, label: "Review course", variant: "secondary" as const }
+      ? { href: `/courses/${c.id}`, label: t("reviewCourse"), variant: "secondary" as const }
       : c.next
         ? {
             href: `/courses/${c.id}/lessons/${c.next.lessonId}`,
-            label: c.next.resume ? "Resume learning" : "Start learning",
+            label: c.next.resume ? t("resumeLearning") : t("startLearning"),
             variant: c.next.resume ? ("primary" as const) : ("secondary" as const),
           }
         : null;
@@ -234,24 +235,28 @@ function CourseRow({
               </Link>
             </h2>
             <p className="mt-1 text-sm text-muted">
-              {learner ? `With ${c.teacherName}` : `${plural(c.studentCount, "student")} enrolled`}
+              {learner
+                ? t("withTeacher", { name: c.teacherName })
+                : t("studentsEnrolled", { count: c.studentCount })}
             </p>
             {pendingRequests > 0 && (
               <Link
                 href={`/courses/${c.id}#join-requests`}
                 className="mt-2 inline-flex rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary-fg"
               >
-                {plural(pendingRequests, "student")} waiting to join
+                {t("waitingToJoin", { count: pendingRequests })}
               </Link>
             )}
-            {learner && c.next && <p className="mt-2 font-bold">Lesson: {c.next.title}</p>}
+            {learner && c.next && (
+              <p className="mt-2 font-bold">{t("nextLesson", { title: c.next.title })}</p>
+            )}
           </div>
           {learner && (
             <ProgressRing
               value={c.percent}
               size={52}
               stroke={5}
-              label={`${c.completedCount} of ${c.lessonCount} lessons completed`}
+              label={t("lessonsCompletedOf", { done: c.completedCount, total: c.lessonCount })}
             >
               {c.state === "completed" ? (
                 <Icon name="check" size={18} className="text-success" />
@@ -264,15 +269,15 @@ function CourseRow({
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
           <p className="text-sm text-muted">
             {learner
-              ? `${c.completedCount}/${c.lessonCount} lessons completed`
-              : `${plural(c.lessonCount, "lesson")} ready`}
+              ? t("lessonsCompleted", { done: c.completedCount, total: c.lessonCount })
+              : t("lessonsReady", { count: c.lessonCount })}
           </p>
           {cta ? (
             <Link href={cta.href} className={buttonClasses(cta.variant, "min-w-44")}>
               {cta.label}
             </Link>
           ) : (
-            <span className="text-sm text-muted">Lessons appear after the first class.</span>
+            <span className="text-sm text-muted">{t("lessonsAfterFirstClass")}</span>
           )}
         </div>
       </div>

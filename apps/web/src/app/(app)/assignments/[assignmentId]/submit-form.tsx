@@ -3,6 +3,7 @@
 import { ATTACHMENT_MIME_TYPES } from "@elearner/core/schemas";
 import { MAX_SUBMISSION_FILES, SUBMISSION_FILE_MAX_BYTES } from "@elearner/core/grading";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { FormAlert } from "@/components/form";
 import { Icon } from "@/components/icons";
@@ -42,6 +43,7 @@ export function SubmitForm({
   initialFiles: FileItem[];
   again: boolean;
 }) {
+  const t = useTranslations("Assignments");
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(initialText);
@@ -54,17 +56,17 @@ export function SubmitForm({
     setNote(null);
     for (const file of Array.from(list)) {
       if (files.length >= MAX_SUBMISSION_FILES) {
-        setNote({ tone: "error", text: `You can add at most ${MAX_SUBMISSION_FILES} files.` });
+        setNote({ tone: "error", text: t("tooManyFiles", { max: MAX_SUBMISSION_FILES }) });
         break;
       }
       if (file.size > SUBMISSION_FILE_MAX_BYTES) {
         setNote({
           tone: "error",
-          text: `${file.name} is larger than ${SUBMISSION_FILE_MAX_BYTES / 1024 ** 2} MB.`,
+          text: t("tooLarge", { name: file.name, mb: SUBMISSION_FILE_MAX_BYTES / 1024 ** 2 }),
         });
         continue;
       }
-      setBusy(`Uploading ${file.name}…`);
+      setBusy(t("uploading", { name: file.name }));
       try {
         const mimeType = mimeOf(file);
         const { fileKey, uploadUrl } = await api<{ fileKey: string; uploadUrl: string }>(
@@ -76,12 +78,12 @@ export function SubmitForm({
           body: file,
           headers: { "content-type": mimeType },
         });
-        if (!put.ok) throw new Error(`Upload of ${file.name} failed.`);
+        if (!put.ok) throw new Error(t("uploadFileFailed", { name: file.name }));
         setFiles((f) => [...f, { key: fileKey, name: file.name }]);
       } catch (err) {
         setNote({
           tone: "error",
-          text: err instanceof ApiError || err instanceof Error ? err.message : "Upload failed.",
+          text: err instanceof ApiError || err instanceof Error ? err.message : t("uploadFailed"),
         });
       }
     }
@@ -90,19 +92,19 @@ export function SubmitForm({
   }
 
   async function submit() {
-    setBusy("Handing in…");
+    setBusy(t("handingIn"));
     setNote(null);
     try {
       await api(`/api/v1/assignments/${assignmentId}/submission`, {
         method: "PUT",
         json: { text: allowText ? text : undefined, fileKeys: files.map((f) => f.key) },
       });
-      setNote({ tone: "success", text: "Handed in. Your teacher will grade it." });
+      setNote({ tone: "success", text: t("handedIn") });
       router.refresh();
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "Couldn't hand in. Try again.",
+        text: err instanceof ApiError ? err.message : t("handInFailed"),
       });
     } finally {
       setBusy(null);
@@ -114,7 +116,7 @@ export function SubmitForm({
       {allowText && (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="answer" className="text-sm font-semibold">
-            Your answer
+            {t("yourAnswer")}
           </label>
           <textarea
             id="answer"
@@ -138,16 +140,16 @@ export function SubmitForm({
                     variant="ghost"
                     className="h-9 px-2 text-sm"
                     onClick={() => setFiles((all) => all.filter((x) => x.key !== f.key))}
-                    aria-label={`Remove ${f.name}`}
+                    aria-label={t("removeFile", { name: f.name })}
                   >
-                    Remove
+                    {t("remove")}
                   </Button>
                 </li>
               ))}
             </ul>
           )}
           <label htmlFor="files" className="text-sm font-semibold">
-            Add files
+            {t("addFiles")}
           </label>
           <input
             ref={input}
@@ -160,8 +162,7 @@ export function SubmitForm({
             className="text-sm file:mr-3 file:h-11 file:rounded-[var(--radius-control)] file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-primary-fg-strong"
           />
           <p id="files-hint" className="text-[13px] text-muted">
-            Up to {MAX_SUBMISSION_FILES} files: PDF, Office, images, text or zip,{" "}
-            {SUBMISSION_FILE_MAX_BYTES / 1024 ** 2} MB each.
+            {t("filesHint", { max: MAX_SUBMISSION_FILES, mb: SUBMISSION_FILE_MAX_BYTES / 1024 ** 2 })}
           </p>
         </div>
       )}
@@ -174,7 +175,7 @@ export function SubmitForm({
         onClick={() => void submit()}
         className="w-fit"
       >
-        {again ? "Hand in again" : "Hand in"}
+        {again ? t("handInAgain") : t("handIn")}
       </Button>
     </div>
   );

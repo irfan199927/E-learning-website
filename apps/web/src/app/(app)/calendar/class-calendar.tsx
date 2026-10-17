@@ -1,15 +1,18 @@
 "use client";
 
 import type { EventDropArg, EventInput, EventSourceFuncArg } from "@fullcalendar/core";
+import hiLocale from "@fullcalendar/core/locales/hi";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction";
 import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 import { FormAlert } from "@/components/form";
 import { buttonClasses } from "@/components/ui/button";
+import { intlLocale } from "@/i18n/locales";
 import { api, ApiError } from "@/lib/api-client";
 import type { ClassDto } from "@/server/services/classes";
 import { ScheduleClassForm, type CourseOption } from "./schedule-class-form";
@@ -24,6 +27,8 @@ interface Props {
 }
 
 export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAvailable, courses }: Props) {
+  const t = useTranslations("Calendar");
+  const locale = useLocale();
   const router = useRouter();
   const ref = useRef<FullCalendar>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +60,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
       });
     } catch (e) {
       arg.revert();
-      setError(e instanceof ApiError ? e.message : "Couldn't move the class. Try again.");
+      setError(e instanceof ApiError ? e.message : t("moveFailed"));
     }
   }
 
@@ -67,14 +72,14 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
     <div className="flex flex-wrap items-start gap-6">
       <section className="min-w-0 flex-[999_1_560px] rounded-[var(--radius-card)] border border-line bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted">Times in {timeZone}</span>
+          <span className="text-sm text-muted">{t("timesIn", { zone: timeZone })}</span>
           <span className="ml-auto" />
           {range && (
             <a
               href={`/api/v1/calendar.ics?${new URLSearchParams(range)}`}
               className={buttonClasses("secondary", "h-10")}
             >
-              Export .ics
+              {t("exportIcs")}
             </a>
           )}
           {canSchedule && googleAvailable && !googleConnected && (
@@ -82,7 +87,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
               href="/api/v1/google/connect?returnTo=/calendar"
               className={buttonClasses("secondary", "h-10")}
             >
-              Connect Google for Meet
+              {t("connectGoogle")}
             </a>
           )}
           {canSchedule && (
@@ -91,7 +96,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
               className={buttonClasses("primary", "h-10")}
               onClick={() => setDraftStart(nextHalfHour())}
             >
-              Schedule class
+              {t("schedule")}
             </button>
           )}
         </div>
@@ -100,6 +105,9 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
           ref={ref}
           // luxonPlugin makes the named `timeZone` real; without it FullCalendar silently renders UTC.
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
+          // Hindi has FullCalendar button labels; Marathi gets Marathi dates with English buttons.
+          locales={[hiLocale]}
+          locale={locale === "en" ? "en" : intlLocale(locale)}
           initialView="timeGridWeek"
           headerToolbar={{
             left: "prev,next today",
@@ -127,12 +135,7 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
             if (link) window.open(link, "_blank", "noopener");
           }}
         />
-        {canSchedule && (
-          <p className="mt-3 text-[13px] text-muted">
-            Drag a class to reschedule it (Google classes also update students&apos; Calendar invites). Click
-            a class that has started to take attendance.
-          </p>
-        )}
+        {canSchedule && <p className="mt-3 text-[13px] text-muted">{t("dragHint")}</p>}
       </section>
 
       {draftStart && (

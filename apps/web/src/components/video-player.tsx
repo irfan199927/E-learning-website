@@ -1,6 +1,7 @@
 "use client";
 
 import type Hls from "hls.js";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
@@ -21,9 +22,11 @@ export function VideoPlayer({
   poster: string | null;
   resumeAt: number;
 }) {
+  const t = useTranslations("Lesson");
   const ref = useRef<HTMLVideoElement>(null);
   const [speed, setSpeed] = useState(1);
-  const [error, setError] = useState<string | null>(null);
+  // The message key, so the effect doesn't depend on `t`.
+  const [error, setError] = useState<"unsupported" | "stopped" | null>(null);
   const watched = useRef(0);
   const lastTick = useRef<number | null>(null);
 
@@ -40,10 +43,7 @@ export function VideoPlayer({
       video.addEventListener("loadedmetadata", seekToResume, { once: true });
     } else {
       void import("hls.js").then(({ default: HlsCtor }) => {
-        if (!HlsCtor.isSupported())
-          return setError(
-            "Your browser can't play this video. Try the latest Chrome, Edge, Firefox or Safari.",
-          );
+        if (!HlsCtor.isSupported()) return setError("unsupported");
         hls = new HlsCtor({
           xhrSetup: (xhr, url) => {
             xhr.withCredentials = url.startsWith("/");
@@ -51,7 +51,7 @@ export function VideoPlayer({
         });
         hls.on(HlsCtor.Events.MANIFEST_PARSED, seekToResume);
         hls.on(HlsCtor.Events.ERROR, (_e, data) => {
-          if (data.fatal) setError("Playback stopped. Reload the page to continue where you left off.");
+          if (data.fatal) setError("stopped");
         });
         hls.loadSource(src);
         hls.attachMedia(video);
@@ -111,11 +111,11 @@ export function VideoPlayer({
       </div>
       {error && (
         <p role="alert" className="text-sm text-live">
-          {error}
+          {t(error)}
         </p>
       )}
-      <div role="group" aria-label="Playback speed" className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted">Speed</span>
+      <div role="group" aria-label={t("speedGroup")} className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted">{t("speed")}</span>
         {SPEEDS.map((s) => (
           <button
             key={s}
@@ -128,7 +128,7 @@ export function VideoPlayer({
           </button>
         ))}
         {resumeAt > 5 && (
-          <span className="ml-auto text-sm text-muted">Resumed at {formatTime(resumeAt)}</span>
+          <span className="ml-auto text-sm text-muted">{t("resumedAt", { time: formatTime(resumeAt) })}</span>
         )}
       </div>
     </div>

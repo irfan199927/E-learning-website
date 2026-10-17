@@ -38,5 +38,5 @@ export function negotiateLocale(header: string | null | undefined): Locale {
   return DEFAULT_LOCALE;
 }
 
-/** BCP 47 tag for Intl date and number formatting (Indian conventions in every language). */
-export const intlLocale = (locale: Locale) => `${locale}-IN`;
+/** BCP 47 tag for Intl date and number formatting: Indian conventions, Western digits (mr-IN defaults to Devanagari). */
+export const intlLocale = (locale: Locale) => `${locale}-IN-u-nu-latn`;

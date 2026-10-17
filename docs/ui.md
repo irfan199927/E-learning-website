@@ -339,10 +339,17 @@ The projects students build serve as the proof instead.
 - next-intl without locale URLs: `src/i18n/request.ts` picks the language from the `locale` cookie, else the
   browser's Accept-Language, else English. `<html lang>` follows it. Pickers: Account page, and the corner of the
   sign-in screens.
-- Messages: `apps/web/messages/{en,hi,mr}.json`, grouped by screen. English is the source: a key missing (or
-  empty) in Hindi or Marathi shows in English (`withFallback`). Keys are type-checked from `en.json`.
-  `src/i18n/messages.test.ts` fails on keys English doesn't have and on arguments English doesn't pass.
-- Translated so far: the app shell (nav, top bar), sign-in, Account. Other screens are still English.
+- Messages: `apps/web/messages/<locale>/<Namespace>.json`, one file per screen (`src/i18n/catalog.ts` lists them;
+  a new namespace needs an `en` import there and `hi`/`mr` files). English is the source: a key missing (or
+  empty) in Hindi or Marathi shows in English (`withFallback`). Keys are type-checked from English.
+  `src/i18n/messages.test.ts` fails on missing files, keys English doesn't have and arguments English doesn't pass.
+- Translated: the app shell, sign-in and password reset, Account, Overview, notifications, class recordings
+  (except the legal notice text, pending review), My children, My courses and the catalog, course, lesson and
+  video pages, paying, assignments and quizzes (taking and grading), grades, the calendar (FullCalendar's own
+  Hindi pack; Marathi has none). Still English: staff editors and admin pages (course/lesson editors, schedule
+  form, attendance sheet, upload, Users, Payments, Settings).
+- Digits stay Western: dates use `intlLocale(locale)` (`hi-IN-u-nu-latn`); Marathi plural messages use `{count}`
+  instead of `#` (ICU's `#` would print Devanagari digits).
 - To translate a screen: add its strings to `en.json` under a namespace, use `getTranslations` (server) or
   `useTranslations` (client), then add `hi`/`mr`. Use ICU for counts (`{n, plural, one {…} other {…}}`) and
   role-specific text (`{role, select, …}`), not string concatenation. Dates: `Intl` with `intlLocale(locale)`.

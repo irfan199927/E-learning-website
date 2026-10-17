@@ -2,15 +2,19 @@ import { formatInZone, formatRupees, isAppError, upiPayLink } from "@elearner/co
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { FormAlert } from "@/components/form";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getCoursePayment } from "@/server/services/payments";
 import { PayForm } from "./pay-form";
 
-export const metadata: Metadata = { title: "Pay for a course" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Pay"))("title") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface p-5";
 
@@ -24,6 +28,7 @@ export default async function PayPage({ params }: { params: Promise<{ courseId: 
   const { course, settings, latest } = page;
   const amount = formatRupees(course.priceInPaise);
   const pending = latest?.status === "PENDING";
+  const [t, locale] = await Promise.all([getTranslations("Pay"), getLocale()]);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -32,65 +37,66 @@ export default async function PayPage({ params }: { params: Promise<{ courseId: 
         className="flex w-fit items-center gap-1 text-sm font-semibold text-primary-fg"
       >
         <Icon name="chevronLeft" size={16} />
-        Find a course
+        {t("findCourse")}
       </Link>
       <header>
-        <p className="text-sm font-semibold text-muted">Pay to join</p>
+        <p className="text-sm font-semibold text-muted">{t("payToJoin")}</p>
         <h1 className="font-display text-3xl font-bold tracking-tight">{course.title}</h1>
         <p className="mt-1 font-display text-2xl font-bold">{amount}</p>
       </header>
 
       {page.enrolled ? (
         <section className={card}>
-          <p className="mb-3 font-semibold">You&apos;re in this course.</p>
+          <p className="mb-3 font-semibold">{t("enrolled")}</p>
           <Link href={`/courses/${course.id}`} className={buttonClasses("primary")}>
-            Open the course
+            {t("openCourse")}
           </Link>
         </section>
       ) : !settings.ready ? (
         <section className={card}>
-          <p>Payments aren&apos;t set up yet. Ask your school how to pay for this course.</p>
+          <p>{t("notSetUp")}</p>
         </section>
       ) : (
         <>
           {latest?.status === "REJECTED" && (
             <FormAlert>
-              The school couldn&apos;t confirm your payment (reference {latest.reference})
-              {latest.decisionNote ? `: ${latest.decisionNote}` : "."} Check the details and report it again.
+              {latest.decisionNote
+                ? t("rejectedNote", { reference: latest.reference, note: latest.decisionNote })
+                : t("rejected", { reference: latest.reference })}
             </FormAlert>
           )}
 
           <section aria-labelledby="pay-h" className={`flex flex-col gap-4 ${card}`}>
             <h2 id="pay-h" className="font-display text-xl font-bold">
-              1. Pay {amount} by UPI
+              {t("step1", { amount })}
             </h2>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
               {settings.upiId && (
                 <>
-                  <dt className="text-muted">UPI ID</dt>
+                  <dt className="text-muted">{t("upiId")}</dt>
                   <dd className="break-all font-mono text-lg font-semibold">{settings.upiId}</dd>
                 </>
               )}
               {settings.phone && (
                 <>
-                  <dt className="text-muted">UPI number</dt>
+                  <dt className="text-muted">{t("upiNumber")}</dt>
                   <dd className="font-mono text-lg font-semibold">{settings.phone}</dd>
                 </>
               )}
               {settings.payeeName && (
                 <>
-                  <dt className="text-muted">Name</dt>
+                  <dt className="text-muted">{t("name")}</dt>
                   <dd className="font-semibold">{settings.payeeName}</dd>
                 </>
               )}
-              <dt className="text-muted">Amount</dt>
+              <dt className="text-muted">{t("amount")}</dt>
               <dd className="font-semibold">{amount}</dd>
             </dl>
             {settings.qrVersion && (
               // eslint-disable-next-line @next/next/no-img-element -- a signed storage redirect
               <img
                 src={`/api/v1/payment-qr?v=${settings.qrVersion}`}
-                alt={`UPI QR code for ${settings.payeeName ?? settings.upiId ?? "the school"}`}
+                alt={t("qrAlt", { name: settings.payeeName ?? settings.upiId ?? t("theSchool") })}
                 className="size-56 rounded-xl border border-line bg-white object-contain p-2"
               />
             )}
@@ -104,7 +110,7 @@ export default async function PayPage({ params }: { params: Promise<{ courseId: 
                 })}
                 className={`${buttonClasses("secondary")} w-fit`}
               >
-                Open my UPI app
+                {t("openUpi")}
               </a>
             )}
             {settings.instructions && <p className="whitespace-pre-line text-sm">{settings.instructions}</p>}
@@ -112,20 +118,19 @@ export default async function PayPage({ params }: { params: Promise<{ courseId: 
 
           <section aria-labelledby="report-h" className={`flex flex-col gap-3 ${card}`}>
             <h2 id="report-h" className="font-display text-xl font-bold">
-              2. Tell us the payment reference
+              {t("step2")}
             </h2>
             {pending ? (
               <p>
-                Payment reported on {formatInZone(latest.createdAt, actor.timezone)} (reference{" "}
-                <span className="font-mono">{latest.reference}</span>). The school checks it and you&apos;ll
-                get a notification. The course opens as soon as it&apos;s confirmed.
+                {t.rich("reported", {
+                  date: formatInZone(latest.createdAt, actor.timezone, intlLocale(locale)),
+                  reference: latest.reference,
+                  ref: (chunks) => <span className="font-mono">{chunks}</span>,
+                })}
               </p>
             ) : (
               <>
-                <p className="text-sm text-muted">
-                  After paying, your UPI app shows a 12-digit reference (UTR or UPI transaction ID). Enter it
-                  here so the school can find your payment. A screenshot helps but isn&apos;t required.
-                </p>
+                <p className="text-sm text-muted">{t("help")}</p>
                 <PayForm courseId={course.id} />
               </>
             )}

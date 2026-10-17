@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
 import type { ChildSummary } from "@/server/services/parents";
 
 /** One linked child on a parent's Overview and on /children. */
 export function ChildCard({ child }: { child: ChildSummary }) {
+  const t = useTranslations("Children");
   const minutes = Math.floor(child.todaySeconds / 60);
   return (
     <article
@@ -29,31 +31,31 @@ export function ChildCard({ child }: { child: ChildSummary }) {
       </div>
       <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         <div>
-          <dt className="text-muted">Streak</dt>
+          <dt className="text-muted">{t("streak")}</dt>
           <dd className="flex items-center gap-1 text-xl font-bold">
             <Icon name="flame" size={20} />
-            {child.streak} {child.streak === 1 ? "day" : "days"}
+            {t("days", { count: child.streak })}
           </dd>
         </div>
         <div>
-          <dt className="text-muted">Today</dt>
-          <dd className="text-xl font-bold">{minutes} min</dd>
+          <dt className="text-muted">{t("today")}</dt>
+          <dd className="text-xl font-bold">{t("minutes", { minutes })}</dd>
         </div>
         <div>
-          <dt className="text-muted">Lessons done</dt>
+          <dt className="text-muted">{t("lessonsDone")}</dt>
           <dd className="text-xl font-bold">{child.lessonsCompleted}</dd>
         </div>
         <div>
-          <dt className="text-muted">Courses</dt>
+          <dt className="text-muted">{t("courses")}</dt>
           <dd className="text-xl font-bold">{child.courseCount}</dd>
         </div>
       </dl>
       <Link
         href={`/children/${child.id}`}
         className={buttonClasses("secondary", "w-fit")}
-        aria-label={`See ${child.name}'s progress`}
+        aria-label={t("seeProgressLabel", { name: child.name })}
       >
-        See progress
+        {t("seeProgress")}
         <Icon name="arrowRight" size={18} />
       </Link>
     </article>
@@ -61,10 +63,8 @@ export function ChildCard({ child }: { child: ChildSummary }) {
 }
 
 export function NoChildren() {
+  const t = useTranslations("Children");
   return (
-    <p className="rounded-[var(--radius-card)] border border-line bg-surface p-5 text-muted">
-      No children are linked to your account yet. When you approve your child&apos;s account from the
-      school&apos;s email, they appear here. You can also ask the school to link you.
-    </p>
+    <p className="rounded-[var(--radius-card)] border border-line bg-surface p-5 text-muted">{t("none")}</p>
   );
 }

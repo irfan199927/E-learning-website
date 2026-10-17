@@ -1,13 +1,16 @@
-import type en from "../../messages/en.json";
+import type { Messages } from "./catalog";
 
-export type Messages = typeof en;
+export type { Messages } from "./catalog";
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends string ? string : DeepPartial<T[K]> };
 
 /**
  * A translation may lag behind English: any message it lacks shows in English rather than as a raw key.
- * (`messages.test.ts` lists what each language is missing and fails on keys English doesn't have.)
+ * (`messages.test.ts` fails on keys English doesn't have and on arguments English doesn't pass.)
  */
-export function withFallback(partial: DeepPartial<Messages>, base: Messages): Messages {
+export function withFallback(
+  partial: DeepPartial<Messages> | Record<string, unknown>,
+  base: Messages,
+): Messages {
   const merge = (
     p: Record<string, unknown> | undefined,
     b: Record<string, unknown>,

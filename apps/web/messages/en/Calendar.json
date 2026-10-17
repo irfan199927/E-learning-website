@@ -1,0 +1,16 @@
+{
+  "title": "Calendar",
+  "googleConnected": "Google connected. You can now schedule classes with Meet links.",
+  "googleError": "Could not connect Google.",
+  "timesIn": "Times in {zone}",
+  "exportIcs": "Export .ics",
+  "connectGoogle": "Connect Google for Meet",
+  "schedule": "Schedule class",
+  "moveFailed": "Couldn't move the class. Try again.",
+  "dragHint": "Drag a class to reschedule it (Google classes also update students' Calendar invites). Click a class that has started to take attendance.",
+  "ended": "Ended",
+  "agreeToJoin": "Agree to recording to join",
+  "opensAt": "Opens {time}",
+  "opensIn": "Opens in {minutes} min",
+  "join": "Join class"
+}

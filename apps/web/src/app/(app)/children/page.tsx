@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ChildCard, NoChildren } from "@/components/child-card";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listChildren } from "@/server/services/parents";
 
-export const metadata: Metadata = { title: "My children" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Children"))("title") };
+}
 
 export default async function ChildrenPage() {
   const actor = await requirePageActor(["PARENT"]);
-  const children = await listChildren(deps(), actor);
+  const [children, t] = await Promise.all([listChildren(deps(), actor), getTranslations("Children")]);
   return (
     <div className="flex max-w-4xl flex-col gap-6">
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">My children</h1>
-        <p className="mt-1 text-muted">See how each child is getting on. This view is read-only.</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
       {children.length === 0 ? (
         <NoChildren />

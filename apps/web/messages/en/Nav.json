@@ -1,0 +1,15 @@
+{
+  "main": "Main",
+  "skip": "Skip to content",
+  "openMenu": "Open menu",
+  "closeMenu": "Close menu",
+  "overview": "Overview",
+  "courses": "Courses",
+  "myCourses": "My courses",
+  "children": "My children",
+  "calendar": "Calendar",
+  "upload": "Upload video",
+  "users": "Users",
+  "payments": "Payments",
+  "settings": "Settings"
+}

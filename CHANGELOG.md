@@ -5,6 +5,14 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — student and parent screens in Hindi and Marathi (2026-10-17)
+
+- Translated: Overview, notifications, class recordings, My children, My courses and the catalog, course, lesson
+  and video pages, paying, assignments, quizzes, grades, the calendar, and password reset. Staff editors and
+  admin pages are still English.
+- Messages are now one file per screen and language (`apps/web/messages/<locale>/<Namespace>.json`).
+- Dates keep Western digits in every language (Marathi defaulted to Devanagari digits).
+
 ### Added — emails in Hindi and Marathi (2026-10-17)
 
 - Every email (sign-up, password reset, invite, account deletion, class reminders, the daily digest) is written

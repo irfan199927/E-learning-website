@@ -1,0 +1,19 @@
+{
+  "title": "Class recordings",
+  "noticeHeading": "Recording notice",
+  "version": "Notice version {version}.",
+  "agreedOn": "You agreed on {date}.",
+  "outdated": "The notice has changed since you last agreed. Please read it and agree again to keep joining live classes.",
+  "withdrawn": "You withdrew your agreement, so you can't join live classes from E-learner.",
+  "none": "You haven't answered yet. You need to agree before you can join live classes.",
+  "thanks": "Thanks. You can join live classes now.",
+  "withdrawnNote": "Withdrawn. You can't join live classes from E-learner until you agree again.",
+  "failed": "That didn't work. Try again.",
+  "withdrawing": "Withdrawing…",
+  "withdraw": "Withdraw my agreement",
+  "saving": "Saving…",
+  "agree": "I agree",
+  "bannerOutdated": "<b>Live classes are recorded.</b> The recording notice has changed. Read it and agree again to keep joining live classes.",
+  "bannerNew": "<b>Live classes are recorded.</b> Read the recording notice and agree to it to join live classes.",
+  "readNotice": "Read the notice"
+}

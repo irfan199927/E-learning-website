@@ -2,6 +2,7 @@
 
 import { PROOF_MAX_BYTES } from "@elearner/core/payments";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /** The UTR, an optional screenshot (straight to storage) and a note. */
 export function PayForm({ courseId }: { courseId: string }) {
+  const t = useTranslations("Pay");
   const router = useRouter();
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
@@ -21,10 +23,9 @@ export function PayForm({ courseId }: { courseId: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (file && !IMAGE_TYPES.includes(file.type))
-      return setError({ text: "The screenshot must be a JPEG, PNG or WebP image." });
+    if (file && !IMAGE_TYPES.includes(file.type)) return setError({ text: t("badType") });
     if (file && file.size > PROOF_MAX_BYTES)
-      return setError({ text: `The screenshot can be at most ${PROOF_MAX_BYTES / 1024 ** 2} MB.` });
+      return setError({ text: t("tooBig", { mb: PROOF_MAX_BYTES / 1024 ** 2 }) });
     setBusy(true);
     try {
       let proof: { proofId: string; mimeType: string } | undefined;
@@ -50,16 +51,16 @@ export function PayForm({ courseId }: { courseId: string }) {
       setError(
         err instanceof ApiError
           ? { text: err.message, field: err.fieldErrors.find((f) => f.path === "reference")?.message }
-          : { text: "That didn't work. Try again." },
+          : { text: t("failed") },
       );
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} aria-label="Report your payment" className="flex flex-col gap-4">
+    <form onSubmit={(e) => void submit(e)} aria-label={t("formLabel")} className="flex flex-col gap-4">
       <Field
-        label="UPI reference (UTR)"
+        label={t("utr")}
         id="utr"
         value={reference}
         onChange={(e) => setReference(e.target.value)}
@@ -67,10 +68,10 @@ export function PayForm({ courseId }: { courseId: string }) {
         autoComplete="off"
         required
         error={error?.field}
-        hint="Usually 12 digits, under the payment in your UPI app's history."
+        hint={t("utrHint")}
       />
       <label className="flex flex-col gap-1.5 text-sm font-semibold">
-        Screenshot of the payment (optional)
+        {t("screenshot")}
         <input
           type="file"
           accept={IMAGE_TYPES.join(",")}
@@ -79,7 +80,7 @@ export function PayForm({ courseId }: { courseId: string }) {
         />
       </label>
       <Field
-        label="Note for the school (optional)"
+        label={t("note")}
         id="pay-note"
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -87,7 +88,7 @@ export function PayForm({ courseId }: { courseId: string }) {
       />
       {error && !error.field && <FormAlert>{error.text}</FormAlert>}
       <Button type="submit" disabled={busy || reference.trim().length < 6} className="w-fit">
-        {busy ? "Sending…" : "I've paid: send for checking"}
+        {busy ? t("sending") : t("submit")}
       </Button>
     </form>
   );

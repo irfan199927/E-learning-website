@@ -1,6 +1,8 @@
 import { formatInZone } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
 import { Icon } from "@/components/icons";
 import { ChildCard, NoChildren } from "@/components/child-card";
@@ -8,7 +10,7 @@ import { JoinButton } from "@/components/join-button";
 import { MonthlyProgress, TodayProgress } from "@/components/learner-progress";
 import { ProgressRing } from "@/components/progress-ring";
 import { buttonClasses } from "@/components/ui/button";
-import { plural } from "@/lib/format";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import type { Actor } from "@/server/deps";
@@ -18,7 +20,9 @@ import { listChildren } from "@/server/services/parents";
 import { mayJoinRecordedClasses } from "@/server/services/recording-consent";
 import { getLearnerOverview, listMyCourses, type CourseCard } from "@/server/services/learning";
 
-export const metadata: Metadata = { title: "Overview" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Dashboard"))("title") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface";
 
@@ -31,7 +35,7 @@ export default async function DashboardPage({
   const { month } = await searchParams;
   const d = deps();
   const now = d.now();
-  const [classes, googleOk, overview, courses, children, mayJoin] = await Promise.all([
+  const [classes, googleOk, overview, courses, children, mayJoin, t] = await Promise.all([
     listClasses(d, actor, {
       from: new Date(now.getTime() - 3 * 3600_000),
       to: new Date(now.getTime() + 7 * 86_400_000),
@@ -43,6 +47,7 @@ export default async function DashboardPage({
     actor.role === "TEACHER" || actor.role === "ADMIN" ? listMyCourses(d, actor) : Promise.resolve([]),
     actor.role === "PARENT" ? listChildren(d, actor) : Promise.resolve(null),
     mayJoinRecordedClasses(d.db, actor),
+    getTranslations("Dashboard"),
   ]);
   const upcoming = classes.filter((c) => new Date(c.endsAt) > now).slice(0, 8);
   const hour = Number(
@@ -60,22 +65,18 @@ export default async function DashboardPage({
     <div className="flex max-w-6xl flex-col gap-7">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-          Good {part}, {actor.name.split(" ")[0]}
+          {t("greeting", { part, name: actor.name.split(" ")[0] ?? "" })}
         </h1>
         <p className="mt-1 text-muted">
-          {upcoming.length
-            ? `${upcoming.length} upcoming ${upcoming.length === 1 ? "class" : "classes"} this week`
-            : "No classes in the next 7 days"}
+          {upcoming.length ? t("upcomingCount", { count: upcoming.length }) : t("noClasses")}
         </p>
       </header>
 
       {!googleOk && (
-        <section className={`flex flex-wrap items-center gap-4 p-5 ${card}`} aria-label="Google connection">
-          <p className="flex-1">
-            <b>Connect Google</b> to schedule classes with Meet links and get recordings automatically.
-          </p>
+        <section className={`flex flex-wrap items-center gap-4 p-5 ${card}`} aria-label={t("googleLabel")}>
+          <p className="flex-1">{t.rich("googleText", { b: (chunks) => <b>{chunks}</b> })}</p>
           <a href="/api/v1/google/connect?returnTo=/dashboard" className={buttonClasses("primary")}>
-            Connect Google
+            {t("connectGoogle")}
           </a>
         </section>
       )}
@@ -102,7 +103,7 @@ export default async function DashboardPage({
           {children && (
             <section aria-labelledby="children-h">
               <h2 id="children-h" className="mb-3 font-display text-xl font-bold">
-                Your children
+                {t("yourChildren")}
               </h2>
               {children.length === 0 ? (
                 <NoChildren />
@@ -133,9 +134,12 @@ function SectionTitle({ id, children, info }: { id: string; children: React.Reac
 }
 
 function ResumeLearning({ course }: { course: CourseCard | null }) {
+  const t = useTranslations("Dashboard");
   return (
     <section aria-labelledby="resume-h">
-      <SectionTitle id="resume-h">{course?.next?.resume ? "Resume learning" : "Start learning"}</SectionTitle>
+      <SectionTitle id="resume-h">
+        {course?.next?.resume ? t("resumeLearning") : t("startLearning")}
+      </SectionTitle>
       {course?.next ? (
         <article className={`flex flex-col gap-5 p-4 sm:flex-row sm:items-stretch ${card}`}>
           <CourseTile
@@ -149,26 +153,26 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm text-muted">{course.title}</p>
-                <h3 className="mt-1 text-lg font-bold">Lesson: {course.next.title}</h3>
+                <h3 className="mt-1 text-lg font-bold">{t("lesson", { title: course.next.title })}</h3>
               </div>
               <ProgressRing
                 value={course.percent}
                 size={48}
                 stroke={5}
-                label={`${course.completedCount} of ${course.lessonCount} lessons completed`}
+                label={t("lessonsRing", { done: course.completedCount, total: course.lessonCount })}
               >
                 <span className="text-[11px] font-bold">{course.percent}%</span>
               </ProgressRing>
             </div>
             <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted">
-                {course.completedCount}/{course.lessonCount} lessons completed
+                {t("lessonsDone", { done: course.completedCount, total: course.lessonCount })}
               </p>
               <Link
                 href={`/courses/${course.id}/lessons/${course.next.lessonId}`}
                 className={buttonClasses("primary", "min-w-48")}
               >
-                {course.next.resume ? "Continue learning" : "Start learning"}
+                {course.next.resume ? t("continueLearning") : t("startLearning")}
                 <Icon name="arrowRight" size={18} />
               </Link>
             </div>
@@ -176,11 +180,9 @@ function ResumeLearning({ course }: { course: CourseCard | null }) {
         </article>
       ) : (
         <div className={`p-6 text-muted ${card}`}>
-          {course === null
-            ? "No lessons yet. Join a course, or check back after your first class."
-            : "You've finished every lesson so far. New recordings will show up here."}
+          {course === null ? t("noLessons") : t("allDone")}
           <Link href="/courses" className="ml-1 font-semibold text-primary-fg">
-            See my courses
+            {t("seeCourses")}
           </Link>
         </div>
       )}
@@ -202,29 +204,27 @@ function UpcomingClasses({
   /** Students: agreed to the class-recording notice. */
   mayJoin: boolean;
 }) {
+  const t = useTranslations("Dashboard");
+  const locale = intlLocale(useLocale());
   return (
     <section className={`p-6 ${card}`} aria-labelledby="upcoming-h">
       <div className="mb-3 flex items-center justify-between">
         <h2 id="upcoming-h" className="font-display text-xl font-bold">
-          Upcoming classes
+          {t("upcoming")}
         </h2>
         <span className="flex gap-4">
           {actor.role === "STUDENT" && (
             <Link href="/recording-consent" className="text-sm font-semibold text-primary-fg">
-              Recordings
+              {t("recordings")}
             </Link>
           )}
           <Link href="/calendar" className="text-sm font-semibold text-primary-fg">
-            Calendar
+            {t("calendar")}
           </Link>
         </span>
       </div>
       {upcoming.length === 0 ? (
-        <p className="py-6 text-muted">
-          {actor.role === "TEACHER"
-            ? "Nothing scheduled. Schedule your first class from the Calendar."
-            : "You're all caught up."}
-        </p>
+        <p className="py-6 text-muted">{t("nothingUpcoming", { role: actor.role })}</p>
       ) : (
         <ul className="divide-y divide-line">
           {upcoming.map((c) => (
@@ -237,13 +237,13 @@ function UpcomingClasses({
               <span className={`flex flex-1 flex-col ${compact ? "min-w-40" : "min-w-48"}`}>
                 <b className="text-[15px]">{c.title}</b>
                 <span className="text-sm text-muted">
-                  {c.course.title} · {formatInZone(new Date(c.startsAt), actor.timezone)}
+                  {c.course.title} · {formatInZone(new Date(c.startsAt), actor.timezone, locale)}
                   {c.location && ` · ${c.location}`}
                 </span>
               </span>
               {c.canManage && new Date(c.startsAt) <= new Date() && (
                 <Link href={`/classes/${c.id}/attendance`} className={buttonClasses("secondary")}>
-                  Take attendance
+                  {t("takeAttendance")}
                 </Link>
               )}
               {actor.role !== "PARENT" &&
@@ -256,7 +256,7 @@ function UpcomingClasses({
                     needsConsent={!mayJoin}
                   />
                 ) : (
-                  <span className="text-sm text-muted">In person</span>
+                  <span className="text-sm text-muted">{t("inPerson")}</span>
                 ))}
             </li>
           ))}
@@ -267,14 +267,15 @@ function UpcomingClasses({
 }
 
 function TeachingCourses({ courses }: { courses: CourseCard[] }) {
+  const t = useTranslations("Dashboard");
   return (
     <section className={`p-6 ${card}`} aria-labelledby="teaching-h">
       <div className="mb-3 flex items-center justify-between">
         <h2 id="teaching-h" className="font-display text-xl font-bold">
-          Your courses
+          {t("yourCourses")}
         </h2>
         <Link href="/courses" className="text-sm font-semibold text-primary-fg">
-          All courses
+          {t("allCourses")}
         </Link>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
@@ -292,7 +293,7 @@ function TeachingCourses({ courses }: { courses: CourseCard[] }) {
               <span className="flex min-w-0 flex-col">
                 <b className="truncate text-[15px]">{c.title}</b>
                 <span className="text-sm text-muted">
-                  {plural(c.studentCount, "student")} · {plural(c.lessonCount, "lesson")}
+                  {t("courseCounts", { students: c.studentCount, lessons: c.lessonCount })}
                 </span>
               </span>
             </Link>

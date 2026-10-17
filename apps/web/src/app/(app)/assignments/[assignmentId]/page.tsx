@@ -1,27 +1,33 @@
 import { formatInZone, isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Markdown } from "@/components/markdown";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/button";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getAssignment, type SubmissionView } from "@/server/services/assignments";
 import { GradeForm } from "./grade-form";
 import { SubmitForm } from "./submit-form";
 
-export const metadata: Metadata = { title: "Assignment" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("Assignments"))("title") };
+}
 
 const card = "rounded-[var(--radius-card)] border border-line bg-surface p-5";
 const pill = "rounded-full px-2 py-0.5 text-xs font-semibold";
 
-function StatusPill({ s }: { s: SubmissionView | null }) {
-  if (!s) return <span className={`${pill} bg-canvas text-muted`}>Not handed in</span>;
-  if (s.status === "GRADED") return <span className={`${pill} bg-success-soft text-[#0C6447]`}>Graded</span>;
+async function StatusPill({ s }: { s: SubmissionView | null }) {
+  const t = await getTranslations("Assignments");
+  if (!s) return <span className={`${pill} bg-canvas text-muted`}>{t("statusNone")}</span>;
+  if (s.status === "GRADED")
+    return <span className={`${pill} bg-success-soft text-[#0C6447]`}>{t("statusGraded")}</span>;
   if (s.status === "LATE")
-    return <span className={`${pill} bg-live-soft text-[#A11C14]`}>Handed in late</span>;
-  return <span className={`${pill} bg-primary-soft text-primary-fg-strong`}>Handed in</span>;
+    return <span className={`${pill} bg-live-soft text-[#A11C14]`}>{t("statusLate")}</span>;
+  return <span className={`${pill} bg-primary-soft text-primary-fg-strong`}>{t("statusHandedIn")}</span>;
 }
 
 function Files({ s }: { s: SubmissionView }) {
@@ -50,8 +56,9 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
+  const [t, locale] = await Promise.all([getTranslations("Assignments"), getLocale()]);
+  const when = (d: Date) => formatInZone(d, actor.timezone, intlLocale(locale));
   const a = view.assignment;
-  const due = formatInZone(a.dueAt, actor.timezone);
   const mine = view.mine;
 
   return (
@@ -65,24 +72,23 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-muted">Assignment{a.published ? "" : " · Draft"}</p>
+          <p className="text-sm font-semibold text-muted">{t(a.published ? "title" : "titleDraft")}</p>
           <h1 className="font-display text-3xl font-bold tracking-tight">{a.title}</h1>
           <p className="mt-1 text-muted">
-            Due {due} · {a.maxPoints} points
-            {a.allowLate ? " · late work accepted" : ""}
+            {t("meta", { due: when(a.dueAt), points: a.maxPoints, late: a.allowLate ? "yes" : "no" })}
           </p>
         </div>
         {view.canManage && (
           <Link href={`/assignments/${a.id}/edit`} className={buttonClasses("secondary")}>
             <Icon name="edit" size={18} />
-            Edit
+            {t("edit")}
           </Link>
         )}
       </header>
 
       <section aria-labelledby="instructions-h" className={card}>
         <h2 id="instructions-h" className="mb-2 font-display text-xl font-bold">
-          Instructions
+          {t("instructions")}
         </h2>
         <Markdown>{a.instructions}</Markdown>
       </section>
@@ -91,7 +97,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
         <section aria-labelledby="work-h" className={card}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <h2 id="work-h" className="font-display text-xl font-bold">
-              Your work
+              {t("yourWork")}
             </h2>
             <StatusPill s={mine} />
           </div>
@@ -114,23 +120,14 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
             </div>
           ) : view.timing === "closed" ? (
             <div className="flex flex-col gap-3">
-              <p className="text-muted">
-                The due date has passed and this assignment doesn&apos;t take late work.
-              </p>
+              <p className="text-muted">{t("closed")}</p>
               {mine && <Files s={mine} />}
             </div>
           ) : (
             <>
-              {view.timing === "late" && (
-                <p className="mb-3 text-sm text-[#A11C14]">
-                  The due date has passed. What you hand in now is marked late.
-                </p>
-              )}
+              {view.timing === "late" && <p className="mb-3 text-sm text-[#A11C14]">{t("lateNow")}</p>}
               {mine?.submittedAt && (
-                <p className="mb-3 text-sm text-muted">
-                  Handed in {formatInZone(mine.submittedAt, actor.timezone)}. You can change it until
-                  it&apos;s graded.
-                </p>
+                <p className="mb-3 text-sm text-muted">{t("handedInAt", { when: when(mine.submittedAt) })}</p>
               )}
               <SubmitForm
                 assignmentId={a.id}
@@ -150,14 +147,16 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
       {view.roster && (
         <section aria-labelledby="subs-h" className={card}>
           <h2 id="subs-h" className="font-display text-xl font-bold">
-            Students ({view.roster.length})
+            {t("students", { count: view.roster.length })}
           </h2>
           <p className="mb-3 text-sm text-muted">
-            {view.roster.filter((r) => r.submission).length} handed in ·{" "}
-            {view.roster.filter((r) => r.submission?.status === "GRADED").length} graded
+            {t("rosterSummary", {
+              handedIn: view.roster.filter((r) => r.submission).length,
+              graded: view.roster.filter((r) => r.submission?.status === "GRADED").length,
+            })}
           </p>
           {view.roster.length === 0 ? (
-            <p className="text-muted">No students in this course yet.</p>
+            <p className="text-muted">{t("noStudents")}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
               {view.roster.map((r) => (
@@ -166,16 +165,16 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
                     <p className="font-semibold">{r.name}</p>
                     <StatusPill s={r.submission} />
                     {r.submission?.submittedAt && (
-                      <span className="text-sm text-muted">
-                        {formatInZone(r.submission.submittedAt, actor.timezone)}
-                      </span>
+                      <span className="text-sm text-muted">{when(r.submission.submittedAt)}</span>
                     )}
                   </div>
                   {r.submission && (
                     <>
                       {r.submission.text && (
                         <details className="rounded-[var(--radius-control)] bg-canvas p-3">
-                          <summary className="cursor-pointer text-sm font-semibold">Written answer</summary>
+                          <summary className="cursor-pointer text-sm font-semibold">
+                            {t("writtenAnswer")}
+                          </summary>
                           <div className="mt-2 whitespace-pre-line">{r.submission.text}</div>
                         </details>
                       )}

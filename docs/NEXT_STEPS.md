@@ -90,6 +90,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] PWA: installable, offline page (2026-10-17)
 - [x] i18n plumbing (next-intl: en/hi/mr, 2026-10-17): language picker, cookie + Accept-Language, Devanagari font;
       translated: app shell, sign-in, account
-- [ ] Translate the remaining screens (move strings into `apps/web/messages/*.json`, see docs/ui.md "Languages")
+- [x] Translate the student and parent screens (2026-10-17)
+- [ ] Translate the staff and admin screens (editors, schedule form, attendance, upload, Users, Payments, Settings)
 - [ ] Native-speaker review of the Hindi and Marathi text (needs the school)
 - [x] Translated emails (2026-10-17): language saved on the account from the Account page picker
