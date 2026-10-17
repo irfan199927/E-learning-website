@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export function ParentChildren({
   parentName: string;
   links: ChildLink[];
 }) {
+  const t = useTranslations("AdminUsers");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -38,7 +40,7 @@ export function ParentChildren({
     } catch (err) {
       setNote({
         tone: "error",
-        text: err instanceof ApiError ? err.message : "That didn't work. Try again.",
+        text: err instanceof ApiError ? err.message : t("failed"),
       });
       return false;
     } finally {
@@ -52,7 +54,7 @@ export function ParentChildren({
     const studentEmail = String(new FormData(form).get("studentEmail") ?? "").trim();
     const ok = await run(
       () => api(`/api/v1/admin/users/${parentId}/children`, { method: "POST", json: { studentEmail } }),
-      `Linked ${studentEmail}. ${parentName} can now see their progress.`,
+      t("linked", { email: studentEmail, parent: parentName }),
     );
     if (ok) {
       form.reset();
@@ -63,7 +65,7 @@ export function ParentChildren({
   const inputId = `child-email-${parentId}`;
   return (
     <div className="mt-2 flex flex-col gap-2 text-sm">
-      <p className="text-muted">{links.length === 0 ? "Not linked to a student." : "Can see:"}</p>
+      <p className="text-muted">{links.length === 0 ? t("notLinked") : t("canSee")}</p>
       {links.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {links.map((l) => (
@@ -79,12 +81,12 @@ export function ParentChildren({
                 onClick={() =>
                   void run(
                     () => api(`/api/v1/admin/parent-links/${l.id}`, { method: "DELETE" }),
-                    `${parentName} no longer sees ${l.name}.`,
+                    t("unlinked", { parent: parentName, child: l.name }),
                   )
                 }
-                aria-label={`Unlink ${l.name} from ${parentName}`}
+                aria-label={t("unlinkLabel", { parent: parentName, child: l.name })}
               >
-                Unlink
+                {t("unlink")}
               </Button>
             </li>
           ))}
@@ -94,7 +96,7 @@ export function ParentChildren({
         <form onSubmit={link} className="flex flex-wrap items-end gap-2" noValidate>
           <div className="flex flex-col gap-1">
             <label htmlFor={inputId} className="font-semibold">
-              Student&apos;s email
+              {t("studentEmail")}
             </label>
             <input
               id={inputId}
@@ -106,10 +108,10 @@ export function ParentChildren({
             />
           </div>
           <Button type="submit" disabled={busy}>
-            Link
+            {t("link")}
           </Button>
           <Button variant="secondary" onClick={() => setAdding(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
         </form>
       ) : (
@@ -117,9 +119,9 @@ export function ParentChildren({
           variant="ghost"
           className="w-fit px-2"
           onClick={() => setAdding(true)}
-          aria-label={`Link a student to ${parentName}`}
+          aria-label={t("linkLabel", { parent: parentName })}
         >
-          Link a student
+          {t("linkStudent")}
         </Button>
       )}
       {note && <FormAlert tone={note.tone}>{note.text}</FormAlert>}

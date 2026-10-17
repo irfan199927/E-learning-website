@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { api, ApiError } from "@/lib/api-client";
 
 /** Approve (enrols the student) or reject with a reason the student sees. */
 export function DecidePayment({ paymentId, student }: { paymentId: string; student: string }) {
+  const t = useTranslations("AdminPayments");
   const router = useRouter();
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
@@ -24,7 +26,7 @@ export function DecidePayment({ paymentId, student }: { paymentId: string; stude
       });
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't work. Try again.");
+      setError(err instanceof ApiError ? err.message : t("failed"));
       setBusy(false);
     }
   }
@@ -34,7 +36,7 @@ export function DecidePayment({ paymentId, student }: { paymentId: string; stude
       {rejecting ? (
         <div className="flex flex-col gap-2">
           <Field
-            label={`Why it can't be confirmed (${student} sees this)`}
+            label={t("rejectReason", { student })}
             id={`reason-${paymentId}`}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -42,10 +44,10 @@ export function DecidePayment({ paymentId, student }: { paymentId: string; stude
           />
           <div className="flex flex-wrap gap-2">
             <Button variant="live" disabled={busy || !reason.trim()} onClick={() => void decide("reject")}>
-              Reject payment
+              {t("rejectPayment")}
             </Button>
             <Button variant="ghost" disabled={busy} onClick={() => setRejecting(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         </div>
@@ -54,17 +56,17 @@ export function DecidePayment({ paymentId, student }: { paymentId: string; stude
           <Button
             disabled={busy}
             onClick={() => void decide("approve")}
-            aria-label={`Approve payment from ${student}`}
+            aria-label={t("approveLabel", { student })}
           >
-            Approve
+            {t("approve")}
           </Button>
           <Button
             variant="secondary"
             disabled={busy}
             onClick={() => setRejecting(true)}
-            aria-label={`Reject payment from ${student}`}
+            aria-label={t("rejectLabel", { student })}
           >
-            Reject
+            {t("reject")}
           </Button>
         </div>
       )}

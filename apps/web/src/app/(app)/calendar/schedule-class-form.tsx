@@ -3,11 +3,12 @@
 import { createClassSchema } from "@elearner/core/schemas";
 import { WEEKDAYS, type Weekday } from "@elearner/core/rrule";
 import { utcToZonedInput as toLocalInput, zonedInputToUtc as fromLocalInput } from "@elearner/core/time";
-import { useState, type FormEvent } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useMemo, useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
+import { intlLocale, type Locale } from "@/i18n/locales";
 import { api, ApiError } from "@/lib/api-client";
-import { plural } from "@/lib/format";
 
 export interface CourseOption {
   id: string;
@@ -25,15 +26,13 @@ interface Props {
   onScheduled(): void;
 }
 
-const DAY_LABEL: Record<Weekday, string> = {
-  MO: "Mon",
-  TU: "Tue",
-  WE: "Wed",
-  TH: "Thu",
-  FR: "Fri",
-  SA: "Sat",
-  SU: "Sun",
-};
+/** Short weekday names in the interface language ("Mon" in English); 2024-01-01 was a Monday. */
+function dayLabels(locale: Locale): Record<Weekday, string> {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short", timeZone: "UTC" });
+  return Object.fromEntries(
+    WEEKDAYS.map((d, i) => [d, fmt.format(new Date(Date.UTC(2024, 0, 1 + i)))]),
+  ) as Record<Weekday, string>;
+}
 
 export function ScheduleClassForm({
   courses,
@@ -43,6 +42,9 @@ export function ScheduleClassForm({
   onClose,
   onScheduled,
 }: Props) {
+  const t = useTranslations("Schedule");
+  const locale = useLocale() as Locale;
+  const DAY_LABEL = useMemo(() => dayLabels(locale), [locale]);
   const [meeting, setMeeting] = useState<"google" | "none">(googleConnected ? "google" : "none");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function ScheduleClassForm({
       if (err instanceof ApiError && err.code === "GOOGLE_RECONNECT_REQUIRED") setNeedsGoogle(true);
       if (err instanceof ApiError && err.fieldErrors.length)
         setErrors(Object.fromEntries(err.fieldErrors.map((x) => [x.path, x.message])));
-      setFormError(err instanceof ApiError ? err.message : "Couldn't schedule the class. Try again.");
+      setFormError(err instanceof ApiError ? err.message : t("scheduleFailed"));
     } finally {
       setPending(false);
     }
@@ -105,11 +107,11 @@ export function ScheduleClassForm({
     >
       <div className="flex items-center justify-between">
         <h2 id="schedule-h" className="font-display text-[22px] font-bold">
-          Schedule a class
+          {t("heading")}
         </h2>
         <button
           type="button"
-          aria-label="Close"
+          aria-label={t("close")}
           onClick={onClose}
           className="grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-canvas"
         >
@@ -121,16 +123,16 @@ export function ScheduleClassForm({
           {formError}{" "}
           {needsGoogle && (
             <a className="font-semibold underline" href="/api/v1/google/connect?returnTo=/calendar">
-              Reconnect Google
+              {t("reconnect")}
             </a>
           )}
         </FormAlert>
       )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <Field id="title" name="title" label="Title" required error={errors.title} />
+        <Field id="title" name="title" label={t("title")} required error={errors.title} />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="courseId" className="text-sm font-semibold">
-            Class
+            {t("class")}
           </label>
           <select
             id="courseId"
@@ -139,7 +141,7 @@ export function ScheduleClassForm({
           >
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.title} ({plural(c.students, "student")})
+                {t("courseOption", { title: c.title, count: c.students })}
               </option>
             ))}
           </select>
@@ -149,14 +151,14 @@ export function ScheduleClassForm({
             id="start"
             name="start"
             type="datetime-local"
-            label="Starts"
+            label={t("starts")}
             defaultValue={toLocalInput(initialStart, timeZone)}
             error={errors.startsAt}
             required
           />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="duration" className="text-sm font-semibold">
-              Length
+              {t("length")}
             </label>
             <select
               id="duration"
@@ -166,7 +168,7 @@ export function ScheduleClassForm({
             >
               {[30, 45, 60, 90, 120].map((m) => (
                 <option key={m} value={m}>
-                  {m} min
+                  {t("minutes", { count: m })}
                 </option>
               ))}
             </select>
@@ -181,11 +183,11 @@ export function ScheduleClassForm({
             onChange={(e) => setRepeat(e.target.checked)}
             className="size-5 accent-[var(--color-primary)]"
           />
-          Repeat weekly
+          {t("repeatWeekly")}
         </label>
         {repeat && (
           <fieldset className="flex flex-col gap-3 rounded-[var(--radius-control)] bg-canvas p-3">
-            <legend className="sr-only">Repeat on</legend>
+            <legend className="sr-only">{t("repeatOn")}</legend>
             <div className="flex flex-wrap gap-1.5">
               {WEEKDAYS.map((d) => (
                 <label
@@ -209,7 +211,7 @@ export function ScheduleClassForm({
               id="until"
               name="until"
               type="date"
-              label="Until"
+              label={t("until")}
               defaultValue={untilDefault}
               error={errors["recurrence.until"]}
             />
@@ -218,15 +220,11 @@ export function ScheduleClassForm({
 
         {googleConnected && (
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1.5 text-sm font-semibold">Where</legend>
+            <legend className="mb-1.5 text-sm font-semibold">{t("where")}</legend>
             {(
               [
-                [
-                  "google",
-                  "Google Meet",
-                  "Calendar invite and a Meet link; the recording is added afterwards.",
-                ],
-                ["none", "A room or another link", "No Google. You take attendance yourself."],
+                ["google", "Google Meet", t("googleMeetHint")],
+                ["none", t("noneLabel"), t("noneHint")],
               ] as const
             ).map(([value, label, hint]) => (
               <label key={value} className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm">
@@ -251,9 +249,9 @@ export function ScheduleClassForm({
             <Field
               id="location"
               name="location"
-              label="Room or place (optional)"
+              label={t("location")}
               maxLength={120}
-              placeholder="Room 4"
+              placeholder={t("locationPlaceholder")}
               error={errors.location}
             />
             <Field
@@ -261,9 +259,9 @@ export function ScheduleClassForm({
               name="meetingUrl"
               type="url"
               inputMode="url"
-              label="Meeting link (optional)"
+              label={t("meetingUrl")}
               placeholder="https://"
-              hint="Zoom, Teams, Jitsi or any https link. Students can open it from 10 minutes before the class."
+              hint={t("meetingUrlHint")}
               error={errors.meetingUrl}
             />
           </>
@@ -271,7 +269,7 @@ export function ScheduleClassForm({
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="agenda" className="text-sm font-semibold">
-            Agenda <span className="font-normal text-muted">(optional)</span>
+            {t("agenda")} <span className="font-normal text-muted">{t("optional")}</span>
           </label>
           <textarea
             id="agenda"
@@ -284,17 +282,13 @@ export function ScheduleClassForm({
         <Button type="submit" disabled={pending}>
           {meeting === "google"
             ? pending
-              ? "Creating Meet link…"
-              : "Schedule + create Meet link"
+              ? t("creatingMeet")
+              : t("scheduleWithMeet")
             : pending
-              ? "Scheduling…"
-              : "Schedule class"}
+              ? t("scheduling")
+              : t("schedule")}
         </Button>
-        <p className="text-[13px] text-muted">
-          {meeting === "google"
-            ? "Enrolled students get a Google Calendar invite and reminders 24 h and 15 min before."
-            : "Enrolled students see the class in their calendar here and get reminders 24 h and 15 min before."}
-        </p>
+        <p className="text-[13px] text-muted">{meeting === "google" ? t("noteGoogle") : t("noteNone")}</p>
       </form>
     </aside>
   );

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
+import { EmptyState } from "@/components/empty-state";
 import { Icon } from "@/components/icons";
 import { JoinCourseButton } from "@/components/join-course-button";
 import { ProgressRing } from "@/components/progress-ring";
@@ -86,7 +87,7 @@ export default async function CoursesPage({
       )}
 
       {courses.length === 0 ? (
-        <p className="rounded-[var(--radius-card)] border border-line bg-surface p-8 text-center text-muted">
+        <EmptyState icon={filter === "completed" ? "check" : "courses"}>
           {all.length === 0
             ? learner
               ? t("emptyLearner")
@@ -94,7 +95,7 @@ export default async function CoursesPage({
             : filter === "completed"
               ? t("emptyCompleted")
               : t("emptyInProgress")}
-        </p>
+        </EmptyState>
       ) : (
         <ul className="flex flex-col gap-5">
           {courses.map((c) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { utcToZonedInput, zonedInputToUtc } from "@elearner/core/time";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
@@ -41,6 +42,7 @@ export function QuizEditor({
   initial?: QuizEditorValues;
   timeZone: string;
 }) {
+  const t = useTranslations("WorkEditor");
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [timeLimit, setTimeLimit] = useState(
@@ -89,8 +91,8 @@ export function QuizEditor({
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length) {
         setErrors(Object.fromEntries(err.fieldErrors.map((x) => [x.path, x.message])));
-        setError("Some fields need fixing. They're marked below.");
-      } else setError(err instanceof ApiError ? err.message : "Couldn't save. Try again.");
+        setError(t("fixFields"));
+      } else setError(err instanceof ApiError ? err.message : t("saveFailed"));
       setBusy(false);
     }
   }
@@ -106,11 +108,11 @@ export function QuizEditor({
         className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="settings-h" className="font-display text-xl font-bold">
-          Settings
+          {t("settings")}
         </h2>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="quiz-title" className="text-sm font-semibold">
-            Title
+            {t("title")}
           </label>
           <input
             id="quiz-title"
@@ -124,7 +126,7 @@ export function QuizEditor({
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="quiz-time" className="text-sm font-semibold">
-              Time limit (minutes)
+              {t("timeLimit")}
             </label>
             <input
               id="quiz-time"
@@ -132,7 +134,7 @@ export function QuizEditor({
               inputMode="numeric"
               min={1}
               max={300}
-              placeholder="No limit"
+              placeholder={t("noLimit")}
               value={timeLimit}
               onChange={(e) => setTimeLimit(e.target.value)}
               className={inputCls}
@@ -141,7 +143,7 @@ export function QuizEditor({
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="quiz-attempts" className="text-sm font-semibold">
-              Attempts allowed
+              {t("attempts")}
             </label>
             <input
               id="quiz-attempts"
@@ -157,7 +159,7 @@ export function QuizEditor({
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="quiz-due" className="text-sm font-semibold">
-              Closes (optional)
+              {t("closes")}
             </label>
             <input
               id="quiz-due"
@@ -176,7 +178,7 @@ export function QuizEditor({
             onChange={(e) => setShuffle(e.target.checked)}
             className="size-5"
           />
-          <span>Shuffle the question order for each attempt</span>
+          <span>{t("shuffle")}</span>
         </label>
         <label className="flex min-h-11 items-center gap-3">
           <input
@@ -185,23 +187,22 @@ export function QuizEditor({
             onChange={(e) => setPublished(e.target.checked)}
             className="size-5"
           />
-          <span>Visible to students</span>
+          <span>{t("visible")}</span>
         </label>
       </section>
 
       <section aria-labelledby="questions-h" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="questions-h" className="font-display text-xl font-bold">
-            Questions ({questions.length})
+            {t("questions", { count: questions.length })}
           </h2>
           <span className="text-sm text-muted">
-            {questions.reduce((n, q) => n + (Number(q.points) || 0), 0)} points in total
+            {t("pointsTotal", { count: questions.reduce((n, q) => n + (Number(q.points) || 0), 0) })}
           </span>
         </div>
         {locked && (
           <p role="status" className="rounded-[var(--radius-control)] bg-canvas px-3 py-2.5 text-sm">
-            Students have taken this quiz, so its questions can&apos;t change. You can still change the
-            settings.
+            {t("locked")}
           </p>
         )}
         {err("questions")}
@@ -211,17 +212,17 @@ export function QuizEditor({
             disabled={locked}
             className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-5"
           >
-            <legend className="sr-only">Question {i + 1}</legend>
+            <legend className="sr-only">{t("questionN", { n: i + 1 })}</legend>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-bold">Question {i + 1}</p>
+              <p className="font-bold">{t("questionN", { n: i + 1 })}</p>
               {!locked && (
-                <div className="flex gap-1.5" role="group" aria-label={`Question ${i + 1} actions`}>
+                <div className="flex gap-1.5" role="group" aria-label={t("questionActions", { n: i + 1 })}>
                   <Button
                     variant="secondary"
                     className={iconBtn}
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
-                    aria-label={`Move question ${i + 1} up`}
+                    aria-label={t("moveUp", { n: i + 1 })}
                   >
                     <Icon name="arrowUp" size={18} />
                   </Button>
@@ -230,7 +231,7 @@ export function QuizEditor({
                     className={iconBtn}
                     disabled={i === questions.length - 1}
                     onClick={() => move(i, 1)}
-                    aria-label={`Move question ${i + 1} down`}
+                    aria-label={t("moveDown", { n: i + 1 })}
                   >
                     <Icon name="arrowDown" size={18} />
                   </Button>
@@ -239,7 +240,7 @@ export function QuizEditor({
                     className={iconBtn}
                     disabled={questions.length === 1}
                     onClick={() => setQuestions((qs) => qs.filter((_, j) => j !== i))}
-                    aria-label={`Delete question ${i + 1}`}
+                    aria-label={t("deleteQuestion", { n: i + 1 })}
                   >
                     <Icon name="trash" size={18} />
                   </Button>
@@ -248,7 +249,7 @@ export function QuizEditor({
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`q${i}-prompt`} className="text-sm font-semibold">
-                Question
+                {t("question")}
               </label>
               <textarea
                 id={`q${i}-prompt`}
@@ -262,7 +263,7 @@ export function QuizEditor({
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-sm font-semibold" id={`q${i}-options`}>
-                Options <span className="font-normal text-muted">(tick the correct ones)</span>
+                {t("options")} <span className="font-normal text-muted">{t("optionsHint")}</span>
               </p>
               {q.options.map((o, k) => (
                 <div key={k} className="flex items-center gap-2">
@@ -274,7 +275,7 @@ export function QuizEditor({
                         correct: e.target.checked ? [...q.correct, k] : q.correct.filter((c) => c !== k),
                       })
                     }
-                    aria-label={`Option ${k + 1} is correct`}
+                    aria-label={t("optionCorrect", { k: k + 1 })}
                     className="size-5 shrink-0"
                   />
                   <input
@@ -283,7 +284,7 @@ export function QuizEditor({
                       update(i, { options: q.options.map((x, j) => (j === k ? e.target.value : x)) })
                     }
                     maxLength={500}
-                    aria-label={`Question ${i + 1}, option ${k + 1}`}
+                    aria-label={t("optionLabel", { n: i + 1, k: k + 1 })}
                     className={`${inputCls} min-w-0 flex-1`}
                   />
                   {!locked && q.options.length > 2 && (
@@ -296,7 +297,7 @@ export function QuizEditor({
                           correct: q.correct.filter((c) => c !== k).map((c) => (c > k ? c - 1 : c)),
                         })
                       }
-                      aria-label={`Remove option ${k + 1}`}
+                      aria-label={t("removeOption", { k: k + 1 })}
                     >
                       <Icon name="close" size={18} />
                     </Button>
@@ -312,13 +313,13 @@ export function QuizEditor({
                   onClick={() => update(i, { options: [...q.options, ""] })}
                 >
                   <Icon name="plus" size={18} />
-                  Add option
+                  {t("addOption")}
                 </Button>
               )}
             </div>
             <div className="flex w-32 flex-col gap-1.5">
               <label htmlFor={`q${i}-points`} className="text-sm font-semibold">
-                Points
+                {t("points")}
               </label>
               <input
                 id={`q${i}-points`}
@@ -340,13 +341,13 @@ export function QuizEditor({
             onClick={() => setQuestions((qs) => [...qs, blank()])}
           >
             <Icon name="plus" size={18} />
-            Add question
+            {t("addQuestion")}
           </Button>
         )}
       </section>
 
       <Button disabled={busy} onClick={() => void save()} className="w-fit">
-        {busy ? "Saving…" : initial?.id ? "Save quiz" : "Create quiz"}
+        {busy ? t("saving") : initial?.id ? t("saveQuiz") : t("createQuiz")}
       </Button>
     </div>
   );

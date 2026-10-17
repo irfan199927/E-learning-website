@@ -1,21 +1,17 @@
 import { ROLES, listUsersQuerySchema } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { plural } from "@/lib/format";
+import { getLocale, getTranslations } from "next-intl/server";
+import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listUsers } from "@/server/services/admin-users";
 import { AddUsers } from "./add-users";
 import { UserRow } from "./user-row";
 
-export const metadata: Metadata = { title: "Users" };
-
-const ROLE_LABEL: Record<(typeof ROLES)[number], string> = {
-  ADMIN: "Admins",
-  TEACHER: "Teachers",
-  STUDENT: "Students",
-  PARENT: "Parents",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("AdminUsers"))("title") };
+}
 
 export default async function AdminUsersPage({
   searchParams,
@@ -30,7 +26,11 @@ export default async function AdminUsersPage({
     page: raw.page,
   });
   const query = parsed.success ? parsed.data : { page: 1 };
-  const result = await listUsers(deps(), actor, query);
+  const [result, t, locale] = await Promise.all([
+    listUsers(deps(), actor, query),
+    getTranslations("AdminUsers"),
+    getLocale(),
+  ]);
   const pageHref = (page: number) => {
     const sp = new URLSearchParams();
     if (query.q) sp.set("q", query.q);
@@ -39,7 +39,7 @@ export default async function AdminUsersPage({
     const s = sp.toString();
     return s ? `/admin/users?${s}` : "/admin/users";
   };
-  const fmt = new Intl.DateTimeFormat("en-IN", {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     timeZone: actor.timezone,
     day: "numeric",
     month: "short",
@@ -49,10 +49,9 @@ export default async function AdminUsersPage({
   return (
     <div className="flex max-w-5xl flex-col gap-6">
       <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Users</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted">
-          Add people, change what they can do, or switch an account off. New people get an email to choose
-          their password.
+          {t("intro")}
         </p>
       </header>
 
@@ -63,25 +62,25 @@ export default async function AdminUsersPage({
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="list-h" className="sr-only">
-          All users
+          {t("allUsers")}
         </h2>
         <form method="get" className="flex flex-col gap-3 sm:flex-row sm:items-end" role="search">
           <div className="flex flex-1 flex-col gap-1.5">
             <label htmlFor="q" className="text-sm font-semibold">
-              Search
+              {t("search")}
             </label>
             <input
               id="q"
               name="q"
               type="search"
               defaultValue={query.q ?? ""}
-              placeholder="Name or email"
+              placeholder={t("searchPlaceholder")}
               className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]"
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="role" className="text-sm font-semibold">
-              Role
+              {t("role")}
             </label>
             <select
               id="role"
@@ -89,10 +88,10 @@ export default async function AdminUsersPage({
               defaultValue={query.role ?? ""}
               className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]"
             >
-              <option value="">Everyone</option>
+              <option value="">{t("everyone")}</option>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {ROLE_LABEL[r]}
+                  {t("roleFilter", { role: r })}
                 </option>
               ))}
             </select>
@@ -101,15 +100,16 @@ export default async function AdminUsersPage({
             type="submit"
             className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 font-semibold hover:bg-canvas"
           >
-            Search
+            {t("search")}
           </button>
         </form>
 
         <p className="mt-4 text-sm text-muted" role="status">
           {result.total === 0
-            ? "No one matches."
-            : `${result.total} ${result.total === 1 ? "person" : "people"}`}
-          {result.pages > 1 && ` · page ${result.page} of ${result.pages}`}
+            ? t("noMatch")
+            : result.pages > 1
+              ? t("totalPaged", { count: result.total, page: result.page, pages: result.pages })
+              : t("total", { count: result.total })}
         </p>
         <ul className="mt-2 flex flex-col divide-y divide-line">
           {result.users.map((u) => (
@@ -126,9 +126,9 @@ export default async function AdminUsersPage({
                   children: u.children,
                   deletesOn: u.purgeOn ? fmt.format(u.purgeOn) : null,
                   meta: [
-                    u.role === "TEACHER" && `${plural(u.courseCount, "course")} taught`,
-                    u.role === "STUDENT" && plural(u.courseCount, "course"),
-                    `added ${fmt.format(u.createdAt)}`,
+                    u.role === "TEACHER" && t("coursesTaught", { count: u.courseCount }),
+                    u.role === "STUDENT" && t("courses", { count: u.courseCount }),
+                    t("addedOn", { date: fmt.format(u.createdAt) }),
                   ]
                     .filter(Boolean)
                     .join(" · "),
@@ -138,17 +138,17 @@ export default async function AdminUsersPage({
           ))}
         </ul>
         {result.pages > 1 && (
-          <nav aria-label="Pages" className="mt-4 flex justify-between">
+          <nav aria-label={t("pages")} className="mt-4 flex justify-between">
             {result.page > 1 ? (
               <Link href={pageHref(result.page - 1)} className="font-semibold text-primary-fg">
-                ← Previous
+                {t("previous")}
               </Link>
             ) : (
               <span />
             )}
             {result.page < result.pages && (
               <Link href={pageHref(result.page + 1)} className="font-semibold text-primary-fg">
-                Next →
+                {t("next")}
               </Link>
             )}
           </nav>

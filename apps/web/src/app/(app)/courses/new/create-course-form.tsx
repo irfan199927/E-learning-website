@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api-client";
 
 export function CreateCourseForm() {
+  const t = useTranslations("CourseEditor");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function CreateCourseForm() {
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length)
         setFieldErrors(Object.fromEntries(err.fieldErrors.map((f) => [f.path, f.message])));
-      else setError(err instanceof ApiError ? err.message : "Couldn't create the course. Try again.");
+      else setError(err instanceof ApiError ? err.message : t("createFailed"));
       setBusy(false);
     }
   }
@@ -40,7 +42,7 @@ export function CreateCourseForm() {
       <Field
         id="title"
         name="title"
-        label="Course title"
+        label={t("courseTitle")}
         required
         maxLength={120}
         error={fieldErrors.title}
@@ -48,14 +50,14 @@ export function CreateCourseForm() {
       <Field
         id="grade"
         name="grade"
-        label="Class or grade (optional)"
+        label={t("grade")}
         maxLength={20}
-        hint="For example 9-A. Shown on the course card."
+        hint={t("gradeHint")}
         error={fieldErrors.grade}
       />
       <div className="flex flex-col gap-1.5">
         <label htmlFor="description" className="text-sm font-semibold">
-          What students will learn (optional)
+          {t("description")}
         </label>
         <textarea
           id="description"
@@ -66,7 +68,7 @@ export function CreateCourseForm() {
         />
       </div>
       <Button type="submit" disabled={busy} className="w-fit">
-        {busy ? "Creating…" : "Create course"}
+        {busy ? t("creating") : t("create")}
       </Button>
     </form>
   );

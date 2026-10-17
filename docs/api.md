@@ -163,7 +163,9 @@ course's teacher or an admin.
 | PATCH      | `/api/v1/notifications/:id`          | any | Mark read; returns its link                      |
 | POST       | `/api/v1/notifications/read-all`     | any | Mark all read                                    |
 
-## Not done yet
+## OpenAPI
 
-- An OpenAPI document generated from the zod schemas (so clients can be generated). Until then this page and
-  the handler doc comments are the reference.
+`GET /api/v1/openapi.json` serves an OpenAPI 3.0 document (public). Request bodies and query parameters are
+generated from the same zod schemas the routes validate with; `x-roles` lists who may call each operation.
+Response bodies are described as `{ data }`: the service return types are the reference. The operation list is
+`apps/web/src/server/openapi.ts`; its test fails when a route handler is missing, so add new endpoints there.

@@ -1,6 +1,7 @@
 import { isAppError } from "@elearner/core";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icons";
 import { QuizEditor } from "@/components/quiz-editor";
@@ -8,7 +9,9 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getQuizForEditing } from "@/server/services/quizzes";
 
-export const metadata: Metadata = { title: "Edit quiz" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("WorkEditor"))("editQuiz") };
+}
 
 export default async function EditQuizPage({ params }: { params: Promise<{ quizId: string }> }) {
   const actor = await requirePageActor(["TEACHER", "ADMIN"]);
@@ -17,6 +20,7 @@ export default async function EditQuizPage({ params }: { params: Promise<{ quizI
     if (isAppError(err) && (err.status === 404 || err.status === 403)) notFound();
     throw err;
   });
+  const t = await getTranslations("WorkEditor");
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <Link
@@ -26,7 +30,7 @@ export default async function EditQuizPage({ params }: { params: Promise<{ quizI
         <Icon name="chevronLeft" size={16} />
         {quiz.title}
       </Link>
-      <h1 className="font-display text-3xl font-bold tracking-tight">Edit quiz</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">{t("editQuiz")}</h1>
       <QuizEditor
         courseId={quiz.courseId}
         timeZone={actor.timezone}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
+import { EmptyState } from "@/components/empty-state";
 import { buttonClasses } from "@/components/ui/button";
 import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
@@ -52,9 +53,7 @@ export default async function NotificationsPage({
         <p className="mt-1 text-muted">{t("intro")}</p>
       </header>
       {page.items.length === 0 ? (
-        <p className="rounded-[var(--radius-card)] border border-line bg-surface p-5 text-muted">
-          {before ? t("noOlder") : t("empty")}
-        </p>
+        <EmptyState icon="bell">{before ? t("noOlder") : t("empty")}</EmptyState>
       ) : (
         <NotificationList
           unread={page.unread}

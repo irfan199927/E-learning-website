@@ -48,7 +48,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] `docs/deployment.md` (Vercel, Render, Neon, Redis w/ `noeviction`, R2 bucket + CORS exposing `ETag`, rollback)
 - [x] `docs/testing.md`, `docs/api.md`, runbooks (`docs/runbooks/`): recording-sync, transcode-failures,
       google-reconnect, payments, restore-database, rotate-secrets, incident-response
-- [ ] OpenAPI document generated from the zod schemas
+- [x] OpenAPI document generated from the zod schemas (2026-10-17): `GET /api/v1/openapi.json`
 
 ## 4. Product (MVP backlog from docs/SPEC.md)
 
