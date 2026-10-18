@@ -1,8 +1,10 @@
 import type { Role } from "@elearner/core";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import { Icon } from "./icons";
 import { NotificationBell } from "./notification-bell";
+import { SIDEBAR_COOKIE } from "@/lib/sidebar";
 import { ShellFrame } from "./shell-frame";
 import { ThemeToggle } from "./theme-toggle";
 import { SignOutButton } from "./sign-out-button";
@@ -22,6 +24,7 @@ export async function AppShell({
 }) {
   const t = await getTranslations("Shell");
   const roles = await getTranslations("Roles");
+  const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
   const initials = user.name
     .split(" ")
     .map((p) => p[0])
@@ -31,6 +34,7 @@ export async function AppShell({
   return (
     <ShellFrame
       role={user.role}
+      initialCollapsed={collapsed}
       topbar={
         <>
           {streak !== null && (

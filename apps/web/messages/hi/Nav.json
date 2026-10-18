@@ -12,5 +12,7 @@
   "users": "उपयोगकर्ता",
   "payments": "भुगतान",
   "settings": "सेटिंग्स",
-  "adminSection": "प्रशासन"
+  "adminSection": "प्रशासन",
+  "collapseSidebar": "साइडबार छोटा करें",
+  "expandSidebar": "साइडबार बड़ा करें"
 }

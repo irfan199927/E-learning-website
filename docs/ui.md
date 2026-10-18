@@ -51,6 +51,11 @@ list.
 Admin-only items are a separate list with its own heading (`NavItem.admin`), so school administration doesn't
 mix with teaching.
 
+The desktop sidebar collapses to an 80px icon rail (button at its foot: "Collapse sidebar" / "Expand sidebar").
+The choice is kept in the `sidebar` cookie (`lib/sidebar.ts`), which AppShell reads on the server. Collapsed
+labels stay in the DOM as `sr-only` text and show as `title` tooltips; the Administration heading becomes a
+rule. Phones are unaffected (drawer).
+
 ## Screens
 
 ### Overview (`/dashboard`)
