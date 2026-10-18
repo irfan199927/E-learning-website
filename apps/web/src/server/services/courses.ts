@@ -1,3 +1,4 @@
+import { missingScopes } from "@elearner/google";
 import type { Actor, Deps } from "../deps";
 
 /** Courses the actor can schedule classes / upload videos for. */
@@ -17,6 +18,10 @@ export async function listManageableCourses(deps: Deps, actor: Actor) {
 }
 
 export async function isGoogleConnected(deps: Deps, userId: string): Promise<boolean> {
-  const row = await deps.db.googleCredential.findUnique({ where: { userId }, select: { revokedAt: true } });
-  return !!row && !row.revokedAt;
+  const row = await deps.db.googleCredential.findUnique({
+    where: { userId },
+    select: { revokedAt: true, scopes: true },
+  });
+  // A grant from before a scope was added counts as not connected, so the teacher is asked to reconnect.
+  return !!row && !row.revokedAt && missingScopes(row.scopes).length === 0;
 }

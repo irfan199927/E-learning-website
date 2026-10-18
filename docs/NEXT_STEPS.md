@@ -22,8 +22,9 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Static landing site: `pnpm build:site` + root `vercel.json` (docs/deployment.md "Static landing site")
 - [x] Import the repo in Vercel to publish the static landing site
 - [x] UAT stack for a home-lab VM (`deploy/uat/`, docs/uat.md): Compose, auto-deploy of green `main`, user tools
-- [ ] Set up the UAT VM: `sudo bash bootstrap.sh <LAN IP>`, then create the first users (docs/uat.md)
-- [ ] Public HTTPS for UAT (Cloudflare Tunnel) so Google sign-in works; then `SITE_APP_URL` on the landing page
+- [x] Set up the UAT VM (2026-10-18): Rocky Linux 10 on VMware Workstation, 4 vCPU / 6 GB, LAN-only, demo data
+- [ ] Public HTTPS for UAT (Cloudflare Tunnel) so Google sign-in works; then `SITE_APP_URL` on the landing page.
+      On hold (2026-10-18): no domain yet, UAT stays LAN-only with password sign-in
 - [ ] Production on AWS (docs/deployment.md "Production on AWS"): IaC, ECR, ECS, RDS, ElastiCache, S3+CloudFront,
       SES, OIDC deploy role; ADR for the choices
 - [ ] Protect `main` with the required CI checks (docs/deployment.md, "Branch protection")
@@ -58,7 +59,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] ~~Parental consent~~: removed (2026-10-16). Students are all 18+, so no date of birth or parent approval
 - [x] Recording consent (2026-10-17): `/recording-consent`, join gate, attendance badge
 - [x] A search box for long course catalogs (2026-10-17)
-- [ ] Decide whether Google invites should carry the Meet link (the recording-consent gate can't cover them)
+- [x] Google invites carry no Meet link (decided 2026-10-18): a separate Meet room, students join from the app
 - [x] Courses/modules/lessons CRUD + attachments (2026-10-16): `/courses/:id/edit`, lesson editor with files,
       lesson page with Mark as done; course pages follow Module/Lesson order
 - [x] Markdown readings and instructions, drag-and-drop lesson reordering, video lesson replacement (2026-10-17)
@@ -87,6 +88,7 @@ Ordered by priority. Each item is self-contained enough to hand to Claude Code a
 - [x] Paid courses with manual UPI payments (2026-10-17): Admin → Payments, course price, pay page
 - [ ] Razorpay checkout + webhooks (optional now; needs Razorpay keys)
 - [x] Export payments as CSV for the school's accounts (2026-10-17)
+- [x] Payment records kept forever, also after account erasure (decided 2026-10-18)
 - [x] PWA: installable, offline page (2026-10-17)
 - [x] i18n plumbing (next-intl: en/hi/mr, 2026-10-17): language picker, cookie + Accept-Language, Devanagari font;
       translated: app shell, sign-in, account

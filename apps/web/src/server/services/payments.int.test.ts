@@ -140,6 +140,28 @@ describe("manual UPI payments (integration)", () => {
     await expect(requestToJoin(deps, w.student, w.course.id, {})).resolves.toEqual({ status: "pending" });
   });
 
+  it("keeps a payment record after the student's account is deleted, with their name copied", async () => {
+    const w = await world();
+    const deps = makeDeps();
+    const db = deps.db;
+    await db.course.update({ where: { id: w.course.id }, data: { publishedAt: new Date() } });
+    await updatePaymentSettings(deps, w.admin, { upiId: "school@okaxis" });
+    await setCoursePrice(deps, w.admin, w.course.id, { priceRupees: 900 });
+    const paid = await submitPayment(deps, w.outsider, w.course.id, { reference: utr() });
+
+    await db.user.delete({ where: { id: w.outsider.id } }); // what the erasure job does after the grace period
+
+    const row = (await listPayments(deps, w.admin, { status: "PENDING" })).find((p) => p.id === paid.id);
+    expect(row).toMatchObject({
+      student: { id: null, name: w.outsider.name, email: w.outsider.email },
+      course: { id: w.course.id, title: w.course.title },
+      amountInPaise: 90_000,
+    });
+    await expect(decidePayment(deps, w.admin, paid.id, { decision: "approve" })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+  });
+
   it("exports payments in a date range as CSV, by the admin's local dates", async () => {
     const w = await world();
     const deps = makeDeps();

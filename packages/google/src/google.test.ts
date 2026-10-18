@@ -63,7 +63,15 @@ describe("oauth", () => {
     expect(url.searchParams.get("scope")?.split(" ")).toEqual([...TEACHER_SCOPES]);
   });
   it("reports missing scopes", () => {
-    expect(missingScopes(["https://www.googleapis.com/auth/calendar.events"])).toHaveLength(2);
+    expect(missingScopes(["https://www.googleapis.com/auth/calendar.events"])).toHaveLength(3);
+    // A grant from before Meet room creation was added is incomplete: the teacher must reconnect.
+    expect(
+      missingScopes([
+        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/meetings.space.readonly",
+        "https://www.googleapis.com/auth/drive.meet.readonly",
+      ]),
+    ).toEqual(["https://www.googleapis.com/auth/meetings.space.created"]);
     expect(missingScopes([...TEACHER_SCOPES])).toEqual([]);
   });
 });

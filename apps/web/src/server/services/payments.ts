@@ -266,6 +266,9 @@ export async function submitPayment(
       data: {
         userId: actor.id,
         courseId,
+        payerName: actor.name,
+        payerEmail: actor.email,
+        courseTitle: course.title,
         amountInPaise: course.priceInPaise,
         reference: input.reference,
         note: input.note ?? null,
@@ -318,8 +321,9 @@ export async function submitPayment(
 // ── Admins: check and decide ──
 
 export interface AdminPaymentRow extends PaymentView {
-  student: { id: string; name: string; email: string };
-  course: { id: string; title: string };
+  /** `id` is null once the student's account was deleted (the record is kept for the accounts). */
+  student: { id: string | null; name: string; email: string };
+  course: { id: string | null; title: string };
   note: string | null;
   hasProof: boolean;
   decidedAt: Date | null;
@@ -347,8 +351,11 @@ export async function listPayments(
       proofKey: true,
       decidedAt: true,
       decidedBy: { select: { name: true } },
-      user: { select: { id: true, name: true, email: true } },
-      course: { select: { id: true, title: true } },
+      userId: true,
+      payerName: true,
+      payerEmail: true,
+      courseId: true,
+      courseTitle: true,
     },
   });
   return rows.map((r) => ({
@@ -362,8 +369,8 @@ export async function listPayments(
     hasProof: r.proofKey !== null,
     decidedAt: r.decidedAt,
     decidedBy: r.decidedBy?.name ?? null,
-    student: r.user,
-    course: r.course,
+    student: { id: r.userId, name: r.payerName, email: r.payerEmail },
+    course: { id: r.courseId, title: r.courseTitle },
   }));
 }
 
@@ -390,10 +397,15 @@ export async function decidePayment(
       userId: true,
       courseId: true,
       amountInPaise: true,
-      course: { select: { title: true } },
+      courseTitle: true,
     },
   });
   if (!payment) throw Errors.notFound("Payment");
+  const { userId, courseId } = payment;
+  if (!userId || !courseId)
+    throw Errors.conflict(
+      "The student's account or the course was deleted, so this payment can't be decided.",
+    );
   const status = input.decision === "approve" ? ManualPaymentStatus.APPROVED : ManualPaymentStatus.REJECTED;
   const now = deps.now();
   await deps.db.$transaction(async (tx) => {
@@ -404,8 +416,8 @@ export async function decidePayment(
     if (count === 0) throw Errors.conflict("This payment was already decided.");
     if (status === ManualPaymentStatus.APPROVED)
       await tx.enrollment.upsert({
-        where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } },
-        create: { userId: payment.userId, courseId: payment.courseId, enrolledAt: now },
+        where: { userId_courseId: { userId, courseId } },
+        create: { userId, courseId, enrolledAt: now },
         update: { revokedAt: null, enrolledAt: now },
       });
   });
@@ -414,24 +426,24 @@ export async function decidePayment(
     actor,
     status === ManualPaymentStatus.APPROVED ? "payment.approve" : "payment.reject",
     { type: "ManualPayment", id: payment.id },
-    { courseId: payment.courseId, amountInPaise: payment.amountInPaise },
+    { courseId, amountInPaise: payment.amountInPaise },
   );
   await notifyUsers(
     deps,
-    [payment.userId],
+    [userId],
     status === ManualPaymentStatus.APPROVED
       ? {
           type: "payment.approved",
-          title: `Payment confirmed: you're in ${payment.course.title}`,
+          title: `Payment confirmed: you're in ${payment.courseTitle}`,
           body: "Your lessons and classes are open now.",
-          link: `/courses/${payment.courseId}`,
+          link: `/courses/${courseId}`,
           dedupeKey: `payment_decided_${payment.id}`,
         }
       : {
           type: "payment.rejected",
-          title: `We couldn't confirm your payment for ${payment.course.title}`,
+          title: `We couldn't confirm your payment for ${payment.courseTitle}`,
           body: input.note ?? "",
-          link: `/courses/${payment.courseId}/pay`,
+          link: `/courses/${courseId}/pay`,
           dedupeKey: `payment_decided_${payment.id}`,
         },
   );
@@ -481,8 +493,9 @@ export async function paymentsCsv(
       decidedAt: true,
       decisionNote: true,
       decidedBy: { select: { name: true } },
-      user: { select: { name: true, email: true } },
-      course: { select: { title: true } },
+      payerName: true,
+      payerEmail: true,
+      courseTitle: true,
     },
   });
   if (rows.length > EXPORT_LIMIT) throw Errors.validation("Too many payments: export a shorter period.");
@@ -505,9 +518,9 @@ export async function paymentsCsv(
     STATUS_TEXT[r.status],
     r.amountInPaise / 100,
     r.reference,
-    r.user.name,
-    r.user.email,
-    r.course.title,
+    r.payerName,
+    r.payerEmail,
+    r.courseTitle,
     r.note,
     when(r.decidedAt),
     r.decidedBy?.name ?? null,

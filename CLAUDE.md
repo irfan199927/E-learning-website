@@ -130,6 +130,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Payments (`services/payments.ts`): manual UPI, no gateway. `PaymentSettings` is one row (id 1); a price
   (`Course.isPaid`/`priceInPaise`, admin-set) blocks join requests; `ManualPayment` PENDING → admin approves
   (enrols) or rejects; `(method, reference)` unique. Images under `keys.paymentQr` / `keys.paymentProof`.
+  Payment rows are kept forever: user/course links are `SetNull` and `payerName`/`payerEmail`/`courseTitle` are
+  copied at submission, so read those, not the relations; erasure only drops the screenshot.
 - Integration tests share one Prisma pool via `globalThis` in `test/fakes.ts` (per-file pools exhaust Postgres).
 - Teacher-written text renders through `components/markdown.tsx` (react-markdown, `skipHtml`); editors use
   `components/markdown-field.tsx` (Preview toggle). Never render teacher text with `dangerouslySetInnerHTML`.

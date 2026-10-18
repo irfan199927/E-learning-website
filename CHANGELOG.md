@@ -5,6 +5,25 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — Google invites no longer carry the Meet link (2026-10-18)
+
+- Each class gets its own Meet room (Meet API `spaces.create`, access `TRUSTED`) instead of a Calendar conference,
+  so the Google invite has no join link and says to join from E-learner. Students therefore pass the
+  recording-consent check before they get the link. Recordings and attendance still match by meeting code.
+- Teachers grant one more Google permission (`meetings.space.created`). A teacher connected before this change
+  is shown "Connect Google" again until they reconnect.
+
+### Changed — payment records are kept forever (2026-10-18)
+
+- Deleting a student's account (erasure) or a course no longer deletes their payment records: the row stays,
+  unlinked, with the payer's name, email and course title copied at submission (migration
+  `20261018060000_keep_payment_records` backfills them). Payment screenshots still go with the account.
+
+### Added — UAT on Rocky Linux (2026-10-18)
+
+- `deploy/uat/bootstrap-vm.sh` also supports Rocky Linux, AlmaLinux and RHEL (dnf, Docker's RHEL repository,
+  firewalld). UAT runs on a Rocky Linux 10 VM in the home lab.
+
 ### Added — whole app in Hindi and Marathi, OpenAPI, loading skeletons (2026-10-17)
 
 - Teacher and admin screens are translated too: course and lesson editors, video upload, assignment and quiz

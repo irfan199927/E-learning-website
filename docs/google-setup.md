@@ -61,11 +61,12 @@ Go to **APIs & Services → OAuth consent screen** (shown as **Google Auth Platf
 | Scope                                                     | Who asks for it | Why                                                                         |
 | --------------------------------------------------------- | --------------- | --------------------------------------------------------------------------- |
 | `openid`, `email`, `profile`                              | everyone        | Sign in with Google                                                         |
-| `https://www.googleapis.com/auth/calendar.events`         | teachers        | Create, move and cancel class events with a Meet link                       |
+| `https://www.googleapis.com/auth/calendar.events`         | teachers        | Create, move and cancel class events (invites carry no Meet link)           |
+| `https://www.googleapis.com/auth/meetings.space.created`  | teachers        | Create the Meet room for each class                                         |
 | `https://www.googleapis.com/auth/meetings.space.readonly` | teachers        | Read Meet conference records, participants (attendance) and recordings      |
 | `https://www.googleapis.com/auth/drive.meet.readonly`     | teachers        | Download the recording files Meet saved. It can't see any other Drive files |
 
-Students and parents are only ever asked for the sign-in scopes. Teachers grant the other three separately, the
+Students and parents are only ever asked for the sign-in scopes. Teachers grant the other four separately, the
 first time they schedule a class. They can remove the access at any time in their Google Account
 (**Security → Your connections to third-party apps**); E-learner then asks them to reconnect.
 
@@ -115,7 +116,9 @@ If recording is off or fails, teachers can still upload a video by hand from **L
    should be refused with "Use your @school.edu school account".
 2. Schedule a test class. On the first one, Google asks the teacher to allow Calendar, Meet and Drive access.
    Allow it.
-3. The class appears in the teacher's Google Calendar with a Meet link. Students on the class are invited.
+3. The class appears in the teacher's Google Calendar, and students on the class are invited. The invite has no
+   Meet link on purpose: it says to join from E-learner, which shows the Join button to students who agreed to
+   the recording notice. People in the school's Workspace join the Meet directly; anyone else has to knock.
 4. Hold a short recorded Meet. Within a few minutes of the class ending, the recording appears in the library
    (after transcoding) and attendance is filled in.
 

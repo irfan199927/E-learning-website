@@ -396,6 +396,19 @@ describe("maintenance", () => {
     await db.submission.create({
       data: { assignmentId: assignment.id, userId: w.student.id, status: "SUBMITTED", fileKeys: [fileKey] },
     });
+    const payment = await db.manualPayment.create({
+      data: {
+        userId: w.student.id,
+        courseId: w.course.id,
+        payerName: "Purged Student",
+        payerEmail: w.student.email,
+        courseTitle: "Maths",
+        amountInPaise: 50_000,
+        reference: `UTR-${w.student.id}`,
+        proofKey: `payments/proofs/${w.student.id}/p.png`,
+        status: "APPROVED",
+      },
+    });
     const longAgo = new Date(Date.now() - 31 * 86_400_000);
     await db.user.updateMany({
       where: { id: { in: [w.student.id, w.teacher.id] } },
@@ -409,6 +422,13 @@ describe("maintenance", () => {
     expect(await db.submission.count({ where: { userId: w.student.id } })).toBe(0);
     expect(storage.deleted).toContain(fileKey);
     expect(storage.prefixes).toContain(`payments/proofs/${w.student.id}/`);
+    // The payment record stays for the school's accounts, unlinked and without the screenshot.
+    expect(await db.manualPayment.findUnique({ where: { id: payment.id } })).toMatchObject({
+      userId: null,
+      payerName: "Purged Student",
+      amountInPaise: 50_000,
+      proofKey: null,
+    });
     expect(await db.user.findUnique({ where: { id: w.teacher.id } })).not.toBeNull(); // owns the course
     expect(await db.user.findUnique({ where: { id: w.parent.id } })).not.toBeNull();
     expect(await db.auditLog.count({ where: { action: "user.purge", targetId: w.student.id } })).toBe(1);
