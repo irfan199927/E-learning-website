@@ -46,5 +46,19 @@
   },
   "dayToday": " (आज)",
   "dayWatched": ": {minutes} मिनट देखा",
-  "activeDays": "इस महीने {count, plural, one {{count} दिन} other {{count} दिन}} पढ़ाई की"
+  "activeDays": "इस महीने {count, plural, one {{count} दिन} other {{count} दिन}} पढ़ाई की",
+  "attentionTitle": "आपके ध्यान के लिए",
+  "allCaughtUp": "सब काम पूरा है: आपके लिए कुछ भी बाकी नहीं है।",
+  "attention": {
+    "grade": "{count, plural, one {काम ग्रेड करना है} other {काम ग्रेड करने हैं}}",
+    "joinRequests": "{count, plural, one {विद्यार्थी जुड़ना चाहता है} other {विद्यार्थी जुड़ना चाहते हैं}}",
+    "attendance": "{count, plural, one {क्लास की हाज़िरी बाकी है} other {क्लासों की हाज़िरी बाकी है}}",
+    "payments": "{count, plural, one {भुगतान जाँचना है} other {भुगतान जाँचने हैं}}",
+    "deletions": "{count, plural, one {खाता हटाया जा रहा है} other {खाते हटाए जा रहे हैं}}"
+  },
+  "stats": {
+    "students": "विद्यार्थी",
+    "teachers": "शिक्षक",
+    "courses": "कोर्स"
+  }
 }

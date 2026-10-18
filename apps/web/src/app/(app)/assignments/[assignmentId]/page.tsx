@@ -26,7 +26,7 @@ async function StatusPill({ s }: { s: SubmissionView | null }) {
   if (s.status === "GRADED")
     return <span className={`${pill} bg-success-soft text-[#0C6447]`}>{t("statusGraded")}</span>;
   if (s.status === "LATE")
-    return <span className={`${pill} bg-live-soft text-[#A11C14]`}>{t("statusLate")}</span>;
+    return <span className={`${pill} bg-live-soft text-live-fg`}>{t("statusLate")}</span>;
   return <span className={`${pill} bg-primary-soft text-primary-fg-strong`}>{t("statusHandedIn")}</span>;
 }
 
@@ -125,7 +125,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
             </div>
           ) : (
             <>
-              {view.timing === "late" && <p className="mb-3 text-sm text-[#A11C14]">{t("lateNow")}</p>}
+              {view.timing === "late" && <p className="mb-3 text-sm text-live-fg">{t("lateNow")}</p>}
               {mine?.submittedAt && (
                 <p className="mb-3 text-sm text-muted">{t("handedInAt", { when: when(mine.submittedAt) })}</p>
               )}

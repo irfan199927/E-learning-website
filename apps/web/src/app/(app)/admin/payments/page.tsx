@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { intlLocale } from "@/i18n/locales";
 import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
-import { getPaymentSettings, listPayments } from "@/server/services/payments";
+import { countPendingPayments, getPaymentSettings, listPayments } from "@/server/services/payments";
 import { DecidePayment } from "./decide-payment";
 import { PaymentsExportForm } from "./export-form";
 import { QrEditor } from "./qr-editor";
@@ -30,9 +30,10 @@ export default async function PaymentsPage({
   const actor = await requirePageActor(["ADMIN"]);
   const { status: raw } = await searchParams;
   const status = TABS.find((tab) => tab.status === raw)?.status ?? "PENDING";
-  const [settings, payments, t, locale] = await Promise.all([
+  const [settings, payments, pending, t, locale] = await Promise.all([
     getPaymentSettings(deps()),
     listPayments(deps(), actor, { status }),
+    countPendingPayments(deps(), actor),
     getTranslations("AdminPayments"),
     getLocale(),
   ]);
@@ -59,13 +60,19 @@ export default async function PaymentsPage({
                 <Link
                   href={tab.status === "PENDING" ? "/admin/payments" : `/admin/payments?status=${tab.status}`}
                   aria-current={tab.status === status ? "page" : undefined}
-                  className={`inline-flex h-11 items-center rounded-full border px-5 text-[15px] font-medium ${
+                  className={`inline-flex h-11 items-center gap-2 rounded-full border px-5 text-[15px] font-medium ${
                     tab.status === status
                       ? "border-ink bg-ink text-surface"
                       : "border-line-strong bg-surface text-muted hover:text-ink"
                   }`}
                 >
                   {t(tab.label)}
+                  {tab.status === "PENDING" && pending > 0 && (
+                    <span className="rounded-full bg-live px-2 text-xs font-bold tabular-nums text-white">
+                      <span className="sr-only">: </span>
+                      {pending}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

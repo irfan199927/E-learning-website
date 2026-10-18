@@ -141,7 +141,7 @@ export default async function QuizPage({ params }: { params: Promise<{ quizId: s
                       {i + 1}. {x.prompt}{" "}
                       <span
                         className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          x.right ? "bg-success-soft text-[#0C6447]" : "bg-live-soft text-[#A11C14]"
+                          x.right ? "bg-success-soft text-[#0C6447]" : "bg-live-soft text-live-fg"
                         }`}
                       >
                         {x.right ? t("right") : t("wrong")}

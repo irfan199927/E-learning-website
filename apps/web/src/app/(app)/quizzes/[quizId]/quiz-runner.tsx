@@ -74,7 +74,7 @@ export function QuizRunner({
       {left !== null && (
         <div
           className={`sticky top-2 z-10 w-fit rounded-full border px-4 py-2 font-bold shadow-sm ${
-            left < 60_000 ? "border-live bg-live-soft text-[#A11C14]" : "border-line bg-surface"
+            left < 60_000 ? "border-live bg-live-soft text-live-fg" : "border-line bg-surface"
           }`}
         >
           <span aria-hidden="true">{t("timeLeft", { time: clock(left) })}</span>

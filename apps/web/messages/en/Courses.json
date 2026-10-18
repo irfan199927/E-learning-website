@@ -103,5 +103,7 @@
   "completed": "Completed",
   "watched": "{percent}% watched",
   "minutes": "{m} min",
-  "hoursMinutes": "{h} h {m} min"
+  "hoursMinutes": "{h} h {m} min",
+  "sectionsNav": "Sections of this course",
+  "studentsNav": "Students"
 }

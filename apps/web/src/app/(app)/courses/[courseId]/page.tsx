@@ -136,10 +136,48 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
       </header>
 
       {course.canManage && (
+        <nav
+          aria-label={t("sectionsNav")}
+          className="z-10 -mx-4 border-b border-line bg-canvas/90 px-4 py-2.5 backdrop-blur md:sticky md:top-16 md:-mx-10 md:px-10"
+        >
+          <ul className="flex flex-wrap gap-2">
+            {(
+              [
+                ["join-requests", t("joinRequests"), requests.length],
+                ["students", t("studentsNav"), roster.length],
+                ["attendance", t("attendance"), null],
+                ["assignments", t("assignments"), assignments.length],
+                ["quizzes", t("quizzes"), quizzes.length],
+                ["lessons", t("lessons"), course.lessonCount],
+              ] as const
+            ).map(([id, label, count]) => (
+              <li key={id}>
+                <a
+                  href={`#${id}`}
+                  className={`flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-colors hover:border-primary hover:text-primary-fg ${
+                    id === "join-requests" && count
+                      ? "border-primary bg-primary-soft text-primary-fg-strong"
+                      : "border-line bg-surface"
+                  }`}
+                >
+                  {label}
+                  {count !== null && (
+                    <span className="rounded-full bg-canvas px-1.5 text-xs tabular-nums text-muted">
+                      {count}
+                    </span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {course.canManage && (
         <section
           id="join-requests"
           aria-labelledby="join-h"
-          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+          className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="join-h" className="mb-1 font-display text-xl font-bold">
             {requests.length > 0 ? t("joinRequestsCount", { count: requests.length }) : t("joinRequests")}
@@ -159,8 +197,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
 
       {course.canManage && (
         <section
+          id="students"
           aria-labelledby="students-h"
-          className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
+          className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="students-h" className="mb-3 font-display text-xl font-bold">
             {t("students", { count: roster.length })}
@@ -181,7 +220,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         <section
           id="attendance"
           aria-labelledby="attendance-h"
-          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+          className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <h2 id="attendance-h" className="mb-1 font-display text-xl font-bold">
             {t("attendance")}
@@ -231,7 +270,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         <section
           id="assignments"
           aria-labelledby="assignments-h"
-          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+          className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 id="assignments-h" className="font-display text-xl font-bold">
@@ -287,7 +326,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         <section
           id="quizzes"
           aria-labelledby="quizzes-h"
-          className="scroll-mt-24 rounded-[var(--radius-card)] border border-line bg-surface p-5"
+          className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 id="quizzes-h" className="font-display text-xl font-bold">
@@ -341,8 +380,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
       )}
 
       <section
+        id="lessons"
         aria-labelledby="lessons-h"
-        className="rounded-[var(--radius-card)] border border-line bg-surface p-5"
+        className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
         <h2 id="lessons-h" className="mb-2 font-display text-xl font-bold">
           {t("lessons")}

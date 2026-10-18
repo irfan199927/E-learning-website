@@ -236,7 +236,7 @@ export function QuizEditor({
                     <Icon name="arrowDown" size={18} />
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="danger"
                     className={iconBtn}
                     disabled={questions.length === 1}
                     onClick={() => setQuestions((qs) => qs.filter((_, j) => j !== i))}

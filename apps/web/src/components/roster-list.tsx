@@ -76,7 +76,7 @@ export function RosterList({ courseId, students }: { courseId: string; students:
                 </div>
               ) : (
                 <Button
-                  variant="secondary"
+                  variant="danger"
                   disabled={busy}
                   onClick={() => setConfirming(r.userId)}
                   aria-label={t("removeFromCourse", { name: r.name })}

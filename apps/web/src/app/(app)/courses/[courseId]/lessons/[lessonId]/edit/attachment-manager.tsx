@@ -131,7 +131,7 @@ export function AttachmentManager({ lessonId, files }: { lessonId: string; files
                 </span>
               ) : (
                 <Button
-                  variant="secondary"
+                  variant="danger"
                   className="w-11 px-0!"
                   disabled={busy}
                   onClick={() => setConfirming(f.id)}

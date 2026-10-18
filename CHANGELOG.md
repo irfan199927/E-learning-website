@@ -5,6 +5,20 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — staff and admin UI/UX pass (2026-10-18)
+
+An audit of every teacher and admin screen against the ui-ux-pro-max rule set (navigation hierarchy, content
+priority, destructive emphasis, tab badges, semantic colour tokens), and the fixes:
+
+- **Needs your attention** on the staff Overview: work to grade, join requests, classes without attendance; for
+  admins also payments to check, accounts being deleted, and school totals. Each card links to the oldest item.
+- The admin sidebar groups Users, Payments and Settings under **Administration**; Settings has its own icon.
+- Course page (staff): sticky section shortcuts with counts.
+- Users: role filter chips instead of a dropdown (one click, keeps the search), initials avatars.
+- Destructive buttons (switch off, remove, delete) use a new red `danger` variant.
+- Payments: the "To check" tab shows how many are waiting.
+- Red badge text uses the `live-fg` token instead of a hard-coded colour.
+
 ### Changed — Google invites no longer carry the Meet link (2026-10-18)
 
 - Each class gets its own Meet room (Meet API `spaces.create`, access `TRUSTED`) instead of a Calendar conference,

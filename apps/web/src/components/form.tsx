@@ -35,7 +35,7 @@ export function Field({
 }
 
 export function FormAlert({ tone = "error", children }: { tone?: "error" | "success"; children: ReactNode }) {
-  const cls = tone === "error" ? "bg-live-soft text-[#A11C14]" : "bg-success-soft text-[#0C6447]";
+  const cls = tone === "error" ? "bg-live-soft text-live-fg" : "bg-success-soft text-[#0C6447]";
   return (
     <p
       role={tone === "error" ? "alert" : "status"}

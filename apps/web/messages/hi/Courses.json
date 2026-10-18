@@ -103,5 +103,7 @@
   "completed": "पूरा हुआ",
   "watched": "{percent}% देखा",
   "minutes": "{m} मिनट",
-  "hoursMinutes": "{h} घंटे {m} मिनट"
+  "hoursMinutes": "{h} घंटे {m} मिनट",
+  "sectionsNav": "इस कोर्स के हिस्से",
+  "studentsNav": "विद्यार्थी"
 }

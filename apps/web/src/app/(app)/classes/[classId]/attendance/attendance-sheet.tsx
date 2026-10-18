@@ -107,7 +107,7 @@ export function AttendanceSheet({ classId, rows }: { classId: string; rows: Shee
                     [
                       false,
                       t("absent"),
-                      "has-[:checked]:border-live has-[:checked]:bg-live-soft has-[:checked]:text-[#A11C14]",
+                      "has-[:checked]:border-live has-[:checked]:bg-live-soft has-[:checked]:text-live-fg",
                     ],
                   ] as const
                 ).map(([v, label, checked]) => (

@@ -84,31 +84,41 @@ export function UserRow({ user }: { user: UserRowData }) {
 
   return (
     <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
-      <div className="min-w-0">
-        <p className="font-semibold">
-          {user.name}
-          {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">{t("you")}</span>}
-          {user.deletesOn && (
-            <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
-              {t("deletingOn", { date: user.deletesOn })}
-            </span>
+      <div className="flex min-w-0 gap-3">
+        <span
+          className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
+            active ? "bg-primary-soft text-primary-fg-strong" : "bg-canvas text-muted"
+          }`}
+          aria-hidden="true"
+        >
+          {initials(user.name)}
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold">
+            {user.name}
+            {user.isSelf && <span className="ml-2 text-sm font-normal text-muted">{t("you")}</span>}
+            {user.deletesOn && (
+              <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-live-fg">
+                {t("deletingOn", { date: user.deletesOn })}
+              </span>
+            )}
+            {!active && (
+              <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-live-fg">
+                {t("switchedOff")}
+              </span>
+            )}
+          </p>
+          <p className="truncate text-sm text-muted">{user.email}</p>
+          <p className="text-sm text-muted">{user.meta}</p>
+          {user.children && role === "PARENT" && (
+            <ParentChildren parentId={user.id} parentName={user.name} links={user.children} />
           )}
-          {!active && (
-            <span className="ml-2 rounded-full bg-live-soft px-2 py-0.5 text-xs font-semibold text-[#A11C14]">
-              {t("switchedOff")}
-            </span>
+          {note && (
+            <div className="mt-2">
+              <FormAlert tone={note.tone}>{note.text}</FormAlert>
+            </div>
           )}
-        </p>
-        <p className="truncate text-sm text-muted">{user.email}</p>
-        <p className="text-sm text-muted">{user.meta}</p>
-        {user.children && role === "PARENT" && (
-          <ParentChildren parentId={user.id} parentName={user.name} links={user.children} />
-        )}
-        {note && (
-          <div className="mt-2">
-            <FormAlert tone={note.tone}>{note.text}</FormAlert>
-          </div>
-        )}
+        </div>
       </div>
       {user.deletesOn ? (
         <Button
@@ -149,7 +159,7 @@ export function UserRow({ user }: { user: UserRowData }) {
           )}
           {!user.isSelf && (
             <Button
-              variant="secondary"
+              variant={active ? "danger" : "secondary"}
               disabled={busy}
               onClick={toggleActive}
               aria-label={t(active ? "switchOffLabel" : "switchOnLabel", { name: user.name })}
@@ -161,4 +171,10 @@ export function UserRow({ user }: { user: UserRowData }) {
       )}
     </div>
   );
+}
+
+/** "Asha Admin" → "AA"; one letter for a single name. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "")).toUpperCase();
 }
