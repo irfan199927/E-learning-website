@@ -75,7 +75,7 @@ export function NotificationList({ items, unread }: { items: ListItem[]; unread:
               <button
                 type="button"
                 onClick={() => void open(n)}
-                className={`flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-canvas ${read ? "" : "bg-primary-soft/40"}`}
+                className={`flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-hover ${read ? "" : "bg-primary-soft/40"}`}
               >
                 <span
                   className={`mt-2 size-2.5 shrink-0 rounded-full ${read ? "bg-transparent" : "bg-primary"}`}

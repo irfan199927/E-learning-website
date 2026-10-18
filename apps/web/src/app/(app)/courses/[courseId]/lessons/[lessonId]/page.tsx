@@ -111,7 +111,7 @@ export default async function LessonPage({
               <li key={a.id}>
                 <a
                   href={`/api/v1/attachments/${a.id}`}
-                  className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-3 hover:bg-canvas"
+                  className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-3 hover:bg-hover"
                 >
                   <Icon name="file" size={20} className="shrink-0 text-primary-fg" />
                   <span className="min-w-0 flex-1 truncate font-semibold">{a.fileName}</span>

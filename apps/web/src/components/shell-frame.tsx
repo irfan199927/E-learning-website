@@ -154,7 +154,7 @@ export function ShellFrame({
           </Link>
           <button
             type="button"
-            className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas md:hidden"
+            className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-hover md:hidden"
             aria-label={t("closeMenu")}
             onClick={() => {
               setOpen(false);
@@ -200,7 +200,7 @@ export function ShellFrame({
           aria-expanded={!collapsed}
           aria-controls="main-nav"
           title={collapsed ? t("expandSidebar") : t("collapseSidebar")}
-          className={`mt-auto flex h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] font-medium whitespace-nowrap text-muted transition-colors hover:bg-canvas hover:text-ink max-md:hidden ${
+          className={`mt-auto flex h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] font-medium whitespace-nowrap text-muted transition-colors hover:bg-hover hover:text-ink max-md:hidden ${
             collapsed ? "justify-center px-0" : ""
           }`}
         >
@@ -220,7 +220,7 @@ export function ShellFrame({
           <button
             ref={menuButton}
             type="button"
-            className="-ml-2 grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-canvas md:hidden"
+            className="-ml-2 grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-hover md:hidden"
             aria-label={t("openMenu")}
             aria-expanded={open}
             aria-controls="main-nav"
@@ -270,7 +270,7 @@ function NavList({
               className={`group relative flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] whitespace-nowrap transition-colors duration-200 ${collapsed ? "md:justify-center md:px-0" : ""} ${
                 active
                   ? "bg-primary-soft font-semibold text-primary-fg-strong"
-                  : "font-medium text-muted hover:bg-canvas hover:text-ink"
+                  : "font-medium text-muted hover:bg-hover hover:text-ink"
               }`}
             >
               {/* Active marker: a bar that grows in from the middle. */}

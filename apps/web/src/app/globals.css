@@ -18,18 +18,22 @@
   --color-ink: #14161f;
   --color-muted: #4b5162;
   --color-canvas: #f6f7f9;
+  /* Hover fill for rows and plain buttons: a step darker than white in light, lighter than the card in dark. */
+  --color-hover: #f6f7f9;
   --color-surface: #ffffff;
   --color-line: #e3e5ea;
   --color-line-strong: #cdd1da;
   --color-marigold: #f2a93b;
   --color-live: #c4231a;
   --color-live-soft: #fde7e5;
-  /* Text on live-soft chips (they stay light in both themes). */
+  /* Text on live-soft chips (dark mode swaps both for deep tints). */
   --color-live-fg: #a11c14;
   /* Destructive text on the page surface: changes with the theme. */
   --color-danger-fg: #a11c14;
   --color-success: #12805c;
   --color-success-soft: #dff3ea;
+  /* Text on solid success fills (white in light, deep green in dark where the fill is brighter). */
+  --color-on-success: #ffffff;
   --color-warning: #a15c00;
   --color-warning-soft: #fcefd9;
 
@@ -43,30 +47,48 @@
  * Keep the two dark blocks identical.
  */
 :root[data-theme="dark"] {
-  --color-ink: #e8eaf0;
-  --color-muted: #a3a8b8;
-  --color-canvas: #0e1117;
-  --color-surface: #171b24;
-  --color-line: #2a2f3b;
-  --color-line-strong: #3a4050;
-  --color-primary-soft: #1c2550;
-  --color-primary-fg: #8fa2ff;
-  --color-primary-fg-strong: #c3ceff;
+  --color-ink: #eceef4;
+  --color-muted: #a9aebd;
+  --color-canvas: #0c0f15;
+  --color-hover: #1f2531;
+  --color-surface: #161b25;
+  --color-line: #262d3b;
+  --color-line-strong: #3a4254;
+  --color-primary-soft: #1d2655;
+  --color-primary-fg: #93a5ff;
+  --color-primary-fg-strong: #c9d2ff;
   --color-danger-fg: #ff8a80;
+  /* Status chips: deep tints with light text, instead of the pale light-mode chips glaring on dark. */
+  --color-live-soft: #3d1a19;
+  --color-live-fg: #ffa39b;
+  --color-success: #3ccf91;
+  --color-success-soft: #10342a;
+  --color-on-success: #05261a;
+  --color-warning: #f2b45a;
+  --color-warning-soft: #3a2b12;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-ink: #e8eaf0;
-    --color-muted: #a3a8b8;
-    --color-canvas: #0e1117;
-    --color-surface: #171b24;
-    --color-line: #2a2f3b;
-    --color-line-strong: #3a4050;
-    --color-primary-soft: #1c2550;
-    --color-primary-fg: #8fa2ff;
-    --color-primary-fg-strong: #c3ceff;
+    --color-ink: #eceef4;
+    --color-muted: #a9aebd;
+    --color-canvas: #0c0f15;
+    --color-hover: #1f2531;
+    --color-surface: #161b25;
+    --color-line: #262d3b;
+    --color-line-strong: #3a4254;
+    --color-primary-soft: #1d2655;
+    --color-primary-fg: #93a5ff;
+    --color-primary-fg-strong: #c9d2ff;
     --color-danger-fg: #ff8a80;
+    /* Status chips: deep tints with light text, instead of the pale light-mode chips glaring on dark. */
+    --color-live-soft: #3d1a19;
+    --color-live-fg: #ffa39b;
+    --color-success: #3ccf91;
+    --color-success-soft: #10342a;
+    --color-on-success: #05261a;
+    --color-warning: #f2b45a;
+    --color-warning-soft: #3a2b12;
     color-scheme: dark;
   }
 }
@@ -154,7 +176,7 @@ body {
   --fc-button-bg-color: var(--color-surface);
   --fc-button-border-color: var(--color-line-strong);
   --fc-button-text-color: var(--color-ink);
-  --fc-button-hover-bg-color: var(--color-canvas);
+  --fc-button-hover-bg-color: var(--color-hover);
   --fc-button-hover-border-color: var(--color-line-strong);
   --fc-button-active-bg-color: var(--color-primary-soft);
   --fc-button-active-border-color: var(--color-primary);

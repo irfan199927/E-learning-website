@@ -327,7 +327,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   <li key={a.id}>
                     <Link
                       href={`/assignments/${a.id}`}
-                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas"
+                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-hover"
                     >
                       <Icon name="file" size={20} className="shrink-0 text-primary-fg" />
                       <span className="flex min-w-0 flex-1 flex-col">
@@ -396,7 +396,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   <li key={q.id}>
                     <Link
                       href={`/quizzes/${q.id}`}
-                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas"
+                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-hover"
                     >
                       <Icon name="check" size={20} className="shrink-0 text-primary-fg" />
                       <span className="flex min-w-0 flex-1 flex-col">
@@ -457,14 +457,14 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                       <li key={l.id}>
                         <Link
                           href={`/courses/${course.id}/lessons/${l.id}`}
-                          className={`-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas ${
+                          className={`-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-hover ${
                             l.number === null ? "opacity-75" : ""
                           }`}
                         >
                           <span
                             className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
                               l.completed
-                                ? "bg-success text-white"
+                                ? "bg-success text-on-success"
                                 : l.percent > 0
                                   ? "bg-primary-soft text-primary-fg-strong"
                                   : "bg-canvas text-muted"

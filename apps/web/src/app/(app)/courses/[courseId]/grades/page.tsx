@@ -283,7 +283,7 @@ async function StudentGrades({ view, tz }: { view: Awaited<ReturnType<typeof get
                 <li key={i.id}>
                   <Link
                     href={itemHref(i)}
-                    className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
+                    className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-hover"
                   >
                     <Icon
                       name={i.kind === "quiz" ? "check" : "file"}

@@ -55,7 +55,7 @@ export async function AppShell({
             <NotificationBell initial={unread} />
             <Link
               href="/account"
-              className="flex min-h-11 items-center gap-3 rounded-full hover:bg-canvas sm:pl-3"
+              className="flex min-h-11 items-center gap-3 rounded-full hover:bg-hover sm:pl-3"
               aria-label={t("account", { name: user.name })}
             >
               <span className="hidden min-w-0 flex-col text-right sm:flex" aria-hidden="true">

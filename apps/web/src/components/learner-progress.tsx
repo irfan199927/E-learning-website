@@ -77,7 +77,7 @@ export function TodayProgress({
 export function MonthlyProgress({ month, basePath }: { month: MonthActivity; basePath: string }) {
   const t = useTranslations("Dashboard");
   const navLink =
-    "grid size-9 place-items-center rounded-full text-ink hover:bg-canvas aria-disabled:pointer-events-none aria-disabled:opacity-30";
+    "grid size-9 place-items-center rounded-full text-ink hover:bg-hover aria-disabled:pointer-events-none aria-disabled:opacity-30";
   return (
     <section aria-labelledby="month-h" className="flex flex-col">
       <SectionTitle id="month-h">{t("monthly")}</SectionTitle>
@@ -121,7 +121,7 @@ export function MonthlyProgress({ month, basePath }: { month: MonthActivity; bas
                       <span
                         className={`mx-auto grid size-8 place-items-center rounded-full text-xs ${
                           c.seconds > 0
-                            ? "bg-success font-bold text-white"
+                            ? "bg-success font-bold text-on-success"
                             : c.isFuture
                               ? "text-muted/50"
                               : "border border-dashed border-line-strong text-muted"

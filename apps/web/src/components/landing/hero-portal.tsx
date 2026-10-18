@@ -5,10 +5,10 @@ import GlyphPortal from "@/components/ui/glyph-portal";
 
 const WORD = "CODE";
 const FALLBACK = '"Arial Black", Arial, sans-serif';
-/** Light: heavy sans (product-launch style). Dark: the mono "terminal" face. Both self-hosted. */
+/** Both themes: heavy sans (product-launch style), self-hosted. Kept per mode so a theme could differ again. */
 const FACES = {
   light: { variable: "--font-figtree", weight: 900 },
-  dark: { variable: "--font-jetbrains", weight: 800 },
+  dark: { variable: "--font-figtree", weight: 900 },
 } as const;
 type Mode = keyof typeof FACES;
 
