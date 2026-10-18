@@ -159,7 +159,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
             <p className="text-muted">{t("noStudents")}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-line">
-              {view.roster.map((r) => (
+              {byGradingOrder(view.roster).map((r) => (
                 <li key={r.userId} className="flex flex-col gap-3 py-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold">{r.name}</p>
@@ -196,4 +196,11 @@ export default async function AssignmentPage({ params }: { params: Promise<{ ass
       )}
     </div>
   );
+}
+
+/** Work waiting for a grade first (the Overview's "to grade" card links here), then graded, then not handed in. */
+function byGradingOrder<T extends { submission: { status: string } | null }>(roster: T[]): T[] {
+  const waiting = ["SUBMITTED", "LATE"];
+  const rank = (r: T) => (!r.submission ? 2 : waiting.includes(r.submission.status) ? 0 : 1);
+  return [...roster].sort((a, b) => rank(a) - rank(b));
 }

@@ -105,9 +105,10 @@ export function ClassCalendar({ timeZone, canSchedule, googleConnected, googleAv
           ref={ref}
           // luxonPlugin makes the named `timeZone` real; without it FullCalendar silently renders UTC.
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
-          // Hindi has FullCalendar button labels; Marathi gets Marathi dates with English buttons.
+          // Hindi has FullCalendar button labels; Marathi gets Marathi dates with English buttons. English uses
+          // en-IN too, so dates read day-first (12/10, 12 – 18 Oct) like the rest of the app, not US month-first.
           locales={[hiLocale]}
-          locale={locale === "en" ? "en" : intlLocale(locale)}
+          locale={intlLocale(locale)}
           initialView="timeGridWeek"
           headerToolbar={{
             left: "prev,next today",

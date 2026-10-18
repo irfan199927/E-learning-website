@@ -28,7 +28,9 @@ export interface QuizEditorValues {
   locked: boolean;
 }
 
-const inputCls = "h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]";
+// Locked quizzes disable the question fieldsets; greyed fields show that at a glance.
+const lockedCls = "disabled:cursor-not-allowed disabled:bg-canvas disabled:text-muted";
+const inputCls = `h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] ${lockedCls}`;
 const iconBtn = "w-11 px-0!";
 const blank = (): EditorQuestion => ({ prompt: "", options: ["", ""], correct: [], points: 1 });
 
@@ -201,7 +203,11 @@ export function QuizEditor({
           </span>
         </div>
         {locked && (
-          <p role="status" className="rounded-[var(--radius-control)] bg-canvas px-3 py-2.5 text-sm">
+          <p
+            role="status"
+            className="flex items-start gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-3 py-2.5 text-sm"
+          >
+            <Icon name="info" size={18} className="mt-px shrink-0 text-primary-fg" />
             {t("locked")}
           </p>
         )}
@@ -257,7 +263,7 @@ export function QuizEditor({
                 maxLength={2000}
                 value={q.prompt}
                 onChange={(e) => update(i, { prompt: e.target.value })}
-                className="rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-[15px]"
+                className={`rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 py-2 text-[15px] ${lockedCls}`}
               />
               {err(`questions.${i}.prompt`)}
             </div>
