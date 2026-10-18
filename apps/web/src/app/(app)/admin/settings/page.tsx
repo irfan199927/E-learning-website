@@ -4,6 +4,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { getSchoolSettings } from "@/server/services/school-settings";
 import { SchoolSettingsForm } from "./settings-form";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("AdminSettings"))("title") };
@@ -14,10 +15,7 @@ export default async function SettingsPage() {
   const [settings, t] = await Promise.all([getSchoolSettings(deps()), getTranslations("AdminSettings")]);
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">{t("intro")}</p>
-      </header>
+      <PageHeader icon="settings" title={t("title")} intro={t("intro")} />
       <section
         aria-labelledby="learning-h"
         className="rounded-[var(--radius-card)] border border-line bg-surface p-5"

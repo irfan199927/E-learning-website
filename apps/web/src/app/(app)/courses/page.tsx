@@ -12,6 +12,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { listCatalog, pendingJoinCounts, type CatalogCourse } from "@/server/services/join-requests";
 import { listMyCourses, type CourseCard } from "@/server/services/learning";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("Courses"))("title") };
@@ -44,20 +45,18 @@ export default async function CoursesPage({
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {learner ? t("myCourses") : t("title")}
-          </h1>
-          <p className="mt-1 text-muted">{learner ? t("introLearner") : t("introStaff")}</p>
-        </div>
+      <PageHeader
+        icon="courses"
+        title={learner ? t("myCourses") : t("title")}
+        intro={learner ? t("introLearner") : t("introStaff")}
+      >
         {!learner && (
           <Link href="/courses/new" className={buttonClasses("primary")}>
             <Icon name="plus" size={18} />
             {t("newCourse")}
           </Link>
         )}
-      </header>
+      </PageHeader>
 
       {learner && (
         <nav aria-label={t("filterLabel")}>
@@ -97,10 +96,18 @@ export default async function CoursesPage({
               : t("emptyInProgress")}
         </EmptyState>
       ) : (
-        <ul className="stagger flex flex-col gap-5">
+        <ul
+          className={
+            learner ? "stagger flex flex-col gap-5" : "stagger grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+          }
+        >
           {courses.map((c) => (
-            <li key={c.id}>
-              <CourseRow course={c} learner={learner} pendingRequests={pending.get(c.id) ?? 0} />
+            <li key={c.id} className={learner ? undefined : "flex"}>
+              {learner ? (
+                <CourseRow course={c} learner={learner} pendingRequests={pending.get(c.id) ?? 0} />
+              ) : (
+                <StaffCourseCard course={c} pendingRequests={pending.get(c.id) ?? 0} />
+              )}
             </li>
           ))}
         </ul>
@@ -190,6 +197,55 @@ async function CatalogCard({ course: c }: { course: CatalogCourse }) {
           <JoinCourseButton courseId={c.id} title={c.title} state={c.state} />
         </div>
       )}
+    </article>
+  );
+}
+
+/** Staff: one card per course, the whole card opens it; a waiting-to-join chip jumps to the requests. */
+async function StaffCourseCard({
+  course: c,
+  pendingRequests,
+}: {
+  course: CourseCard;
+  pendingRequests: number;
+}) {
+  const t = await getTranslations("Courses");
+  return (
+    <article className="lift relative flex w-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface hover:border-primary">
+      <CourseTile
+        title={c.title}
+        grade={c.grade}
+        color={c.color}
+        cover={{ courseId: c.id, version: c.coverVersion }}
+        className="h-36 w-full rounded-none!"
+      />
+      <div className="flex flex-1 flex-col gap-1 p-4">
+        <h2 className="text-lg font-semibold">
+          {/* Stretched link: the card is one target; the chip below sits above it. */}
+          <Link href={`/courses/${c.id}`} className="after:absolute after:inset-0 after:content-['']">
+            {c.title}
+          </Link>
+        </h2>
+        <p className="flex flex-wrap gap-x-3 text-sm text-muted">
+          <span className="inline-flex items-center gap-1">
+            <Icon name="users" size={15} />
+            {t("studentsEnrolled", { count: c.studentCount })}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="file" size={15} />
+            {t("lessonsReady", { count: c.lessonCount })}
+          </span>
+        </p>
+        {pendingRequests > 0 && (
+          <Link
+            href={`/courses/${c.id}#join-requests`}
+            className="relative z-10 mt-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 text-sm font-semibold text-warning hover:brightness-95"
+          >
+            <span className="size-2 rounded-full bg-warning" aria-hidden="true" />
+            {t("waitingToJoin", { count: pendingRequests })}
+          </Link>
+        )}
+      </div>
     </article>
   );
 }

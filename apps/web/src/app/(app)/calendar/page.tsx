@@ -5,6 +5,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import { isGoogleConnected, listManageableCourses } from "@/server/services/courses";
 import { ClassCalendar } from "./class-calendar";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("Calendar"))("title") };
@@ -27,7 +28,7 @@ export default async function CalendarPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
+      <PageHeader icon="calendar" title={t("title")} />
       {sp.google === "connected" && <FormAlert tone="success">{t("googleConnected")}</FormAlert>}
       {sp.google === "error" && <FormAlert>{sp.message ?? t("googleError")}</FormAlert>}
       <ClassCalendar

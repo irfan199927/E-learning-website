@@ -418,6 +418,9 @@ One rhythm across the app (`app/globals.css`, "Motion"), following the ui-ux-pro
 The staff Overview opens with a blue welcome banner: today's date, the greeting, and quick actions (teachers:
 schedule a class, upload a video, new course; admins: add people, check payments, new course).
 
+Main screens use `PageHeader` (icon chip, title, intro, optional actions) so they share one layout. Staff
+see My courses as a card grid (learners keep the list with progress rings).
+
 ## Streak rules
 
 These are pure functions in `packages/core/src/learning.ts`, unit-tested in `learning.test.ts`.

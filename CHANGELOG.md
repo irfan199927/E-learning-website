@@ -5,6 +5,16 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — staff screens restyled (2026-10-18)
+
+- Main screens (Courses, Calendar, Upload, Users, Payments, Settings) open with a shared header: an icon chip,
+  the title and one line of intro (`components/page-header.tsx`).
+- Teachers and admins see their courses as a grid of cards: cover, student and lesson counts, and an amber
+  "waiting to join" chip that jumps to the requests. The whole card lifts on hover and opens the course.
+- Course page sections get icon headings; assignment and quiz rows highlight on hover.
+- Users: initials coloured by role (admin red, teacher green, student blue, parent amber), rows highlight on
+  hover.
+
 ### Changed — staff area look and motion (2026-10-18)
 
 - A welcome banner on the teacher and admin Overview: date, greeting and quick actions.

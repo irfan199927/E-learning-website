@@ -5,6 +5,7 @@ import { deps } from "@/server/container";
 import { getLessonForEditing } from "@/server/services/course-content";
 import { listManageableCourses } from "@/server/services/courses";
 import { VideoUploader } from "./video-uploader";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("Upload"))("title") };
@@ -25,12 +26,11 @@ export default async function UploadPage({
   const t = await getTranslations("Upload");
   return (
     <div className="flex max-w-2xl flex-col gap-5">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          {replacing ? t("replaceHeading", { title: replacing.title }) : t("heading")}
-        </h1>
-        <p className="mt-1 text-muted">{t("intro", { gb: maxGb })}</p>
-      </header>
+      <PageHeader
+        icon="upload"
+        title={replacing ? t("replaceHeading", { title: replacing.title }) : t("heading")}
+        intro={t("intro", { gb: maxGb })}
+      />
       <VideoUploader
         courses={courses.map((c) => ({ id: c.id, title: c.title, modules: c.modules }))}
         initialCourseId={courses.some((c) => c.id === course) ? course : undefined}
