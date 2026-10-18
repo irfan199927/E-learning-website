@@ -9,6 +9,7 @@
  */
 import { Errors } from "@elearner/core";
 import { NotificationChannel } from "@elearner/db";
+import { isSitePath } from "../../lib/safe-path";
 import type { Actor, Deps } from "../deps";
 
 export const NOTIFICATIONS_PAGE_SIZE = 50;
@@ -26,7 +27,7 @@ export interface NotificationRow {
 
 /** Only same-site paths are ever turned into links. */
 export function safeLink(link: string | null): string | null {
-  return link && link.startsWith("/") && !link.startsWith("//") && !link.startsWith("/\\") ? link : null;
+  return isSitePath(link) ? link : null;
 }
 
 const mine = (actor: Actor) => ({ userId: actor.id, channel: NotificationChannel.IN_APP });

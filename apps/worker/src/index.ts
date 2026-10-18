@@ -34,7 +34,22 @@ import { sendReminder } from "./jobs/reminder";
 import { markTranscodeFailed, transcodeVideo } from "./jobs/transcode";
 
 const env = loadEnv();
-const log = pino({ level: env.LOG_LEVEL, base: { service: "worker" } });
+const log = pino({
+  level: env.LOG_LEVEL,
+  base: { service: "worker" },
+  // Same safety net as the web logger: never write tokens or credentials, even inside error objects.
+  redact: {
+    paths: [
+      "*.password",
+      "*.token",
+      "*.refreshToken",
+      "*.accessToken",
+      "*.authorization",
+      "*.headers.authorization",
+    ],
+    censor: "[redacted]",
+  },
+});
 const db = createDb(env.DATABASE_URL, { poolMax: 5 });
 const redis = createRedis(env.REDIS_URL);
 const jobs = new Jobs(redis);

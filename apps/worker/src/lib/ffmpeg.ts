@@ -18,6 +18,12 @@ export const LADDER: Rendition[] = [
 ];
 
 /** Never upscale: keep renditions at or below the source height (always at least the lowest). */
+/**
+ * Only real video containers may be opened (MP4/MOV, WebM/Matroska: what uploads and Meet recordings are).
+ * Without this, an "mp4" that is really an HLS playlist would make ffmpeg fetch the URLs inside it (SSRF).
+ */
+export const INPUT_FORMATS = ["-format_whitelist", "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm"];
+
 export function pickRenditions(sourceHeight: number | null, ladder = LADDER): Rendition[] {
   if (!sourceHeight) return ladder.slice(0, 1);
   const fit = ladder.filter((r) => r.height <= sourceHeight);
@@ -43,6 +49,7 @@ export function buildHlsArgs(
     "-loglevel",
     "error",
     "-y",
+    ...INPUT_FORMATS,
     "-i",
     input,
     "-filter_complex",
@@ -102,6 +109,7 @@ export function buildThumbnailArgs(input: string, atSeconds: number, outFile: st
     "-y",
     "-ss",
     atSeconds.toFixed(2),
+    ...INPUT_FORMATS,
     "-i",
     input,
     "-frames:v",
@@ -117,6 +125,7 @@ export function buildThumbnailArgs(input: string, atSeconds: number, outFile: st
 export const PROBE_ARGS = (input: string) => [
   "-v",
   "error",
+  ...INPUT_FORMATS,
   "-print_format",
   "json",
   "-show_format",

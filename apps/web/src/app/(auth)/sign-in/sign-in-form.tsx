@@ -7,10 +7,11 @@ import { useState, type FormEvent } from "react";
 import { Field, FormAlert } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import { isSitePath } from "@/lib/safe-path";
 
 /** Only same-site paths are allowed as post-login destinations. */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  return isSitePath(next) ? next : "/dashboard";
 }
 
 /** `google` is false when the server has no Google credentials (e.g. a LAN-only UAT): password sign-in only. */

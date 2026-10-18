@@ -346,7 +346,7 @@ export async function getCourseDetail(deps: Deps, actor: Actor, courseId: string
     },
   });
   if (!course) throw Errors.notFound("Course");
-  const canManage = actor.role === "ADMIN" || course.teacherId === actor.id;
+  const canManage = actor.role === "ADMIN" || (actor.role === "TEACHER" && course.teacherId === actor.id);
 
   // Staff also see hidden lessons and videos still processing, so they know what students can't see yet.
   const lessons = await deps.db.lesson.findMany({

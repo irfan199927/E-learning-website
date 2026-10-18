@@ -190,7 +190,13 @@ export async function decideJoinRequest(
   assertCan(actor.role, "course:manage");
   const request = await deps.db.joinRequest.findUnique({
     where: { id: requestId },
-    select: { id: true, userId: true, courseId: true, status: true, course: { select: { title: true } } },
+    select: {
+      id: true,
+      userId: true,
+      courseId: true,
+      status: true,
+      course: { select: { title: true, isPaid: true } },
+    },
   });
   if (!request) throw Errors.notFound("Join request");
   // NOT_FOUND, not FORBIDDEN, for courses the actor doesn't manage: no id leaks.
@@ -201,6 +207,9 @@ export async function decideJoinRequest(
     throw Errors.conflict("This request was already answered.");
 
   const approve = input.decision === "approve";
+  // A price set after the request was made: approving would enrol without paying (payments enrol instead).
+  if (approve && request.course.isPaid)
+    throw Errors.conflict("This course now has a price. The student pays from the course page instead.");
   const now = deps.now();
   await deps.db.$transaction([
     deps.db.joinRequest.update({

@@ -10,6 +10,9 @@ export GIT_SHA; GIT_SHA="$(git rev-parse --short HEAD)"
 dc() { docker compose --env-file "$env_file" -f deploy/uat/compose.yaml ${UAT_COMPOSE_OVERRIDE:+-f "$UAT_COMPOSE_OVERRIDE"} "$@"; }
 port="$(grep -E '^WEB_PORT=' "$env_file" | cut -d= -f2)"; port="${port:-80}"
 
+grep -qE '^MAILPIT_UI_AUTH=.+' "$env_file" ||
+  echo "WARNING: MAILPIT_UI_AUTH is not set in $env_file: the mail inbox on :8025 (reset links) is open to the LAN." >&2
+
 echo "==> Building images for $GIT_SHA"
 dc --profile tools build
 echo "==> Starting data services"

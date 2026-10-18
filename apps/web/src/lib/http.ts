@@ -17,6 +17,7 @@ import { logger, type Logger } from "./logger";
 import { toErrorResponse } from "./problem";
 import { enforceRateLimit, type RateLimitRule } from "./rate-limit";
 import { getActor } from "./session";
+import { clientIp } from "./client-ip";
 
 export interface RouteContext<P> {
   req: NextRequest;
@@ -45,6 +46,9 @@ function assertSameOrigin(req: NextRequest) {
   const origin = req.headers.get("origin");
   if (origin && origin !== new URL(env().APP_URL).origin)
     throw Errors.forbidden("Cross-site request blocked.");
+  // No Origin header (older or unusual clients): the browser's own Fetch Metadata still says where it came from.
+  if (req.headers.get("sec-fetch-site") === "cross-site")
+    throw Errors.forbidden("Cross-site request blocked.");
 }
 
 function wrap<P>(handler: PublicHandler<P>, opts: RouteOptions) {
@@ -63,7 +67,7 @@ function wrap<P>(handler: PublicHandler<P>, opts: RouteOptions) {
         if (opts.roles && !opts.roles.includes(actor.role)) throw Errors.forbidden();
       }
       if (opts.rateLimit) {
-        const subject = actor?.id ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+        const subject = actor?.id ?? clientIp(req.headers) ?? "anon";
         await enforceRateLimit(redis, opts.rateLimit, subject);
       }
       const params = (await ctx.params) ?? ({} as P);
@@ -73,6 +77,8 @@ function wrap<P>(handler: PublicHandler<P>, opts: RouteOptions) {
       res = toErrorResponse(err, requestId, log);
     }
     res.headers.set("x-request-id", requestId);
+    // API answers are per user: never let a browser or proxy cache them (files and playlists set their own).
+    if (!res.headers.has("cache-control")) res.headers.set("cache-control", "private, no-store");
     log.info({ status: res.status, ms: Math.round(performance.now() - started) }, "request");
     return res;
   };
@@ -95,18 +101,51 @@ export function publicRoute<P = Record<string, never>>(
 /** Parse a JSON body with a schema. Bodies are capped at 1 MB (uploads go straight to storage). */
 export async function body<T>(req: NextRequest, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
   const len = Number(req.headers.get("content-length") ?? 0);
-  if (len > 1_000_000) throw Errors.validation("Request body is too large.");
+  if (len > MAX_BODY_BYTES) throw Errors.validation("Request body is too large.");
+  // JSON only: a form or text/plain body is what a cross-site form would send.
+  if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json"))
+    throw Errors.validation("Send the request body as JSON (Content-Type: application/json).");
   let json: unknown;
   try {
-    json = await req.json();
-  } catch {
+    json = JSON.parse(await readCapped(req), (_key, value: unknown) => {
+      // Postgres can't store NUL characters in text: refuse them here instead of failing with a 500 later.
+      if (typeof value === "string" && value.includes("\u0000"))
+        throw Errors.validation("Text can't contain NUL characters.");
+      return value;
+    });
+  } catch (err) {
+    if (err instanceof AppError) throw err;
     throw Errors.validation("Request body must be valid JSON.");
   }
   return schema.parse(json);
 }
 
+const MAX_BODY_BYTES = 1_000_000;
+
+/** Reads the body counting bytes, so a chunked request (no Content-Length) can't stream in more than the cap. */
+async function readCapped(req: NextRequest): Promise<string> {
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel();
+      throw Errors.validation("Request body is too large.");
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 export function query<T>(req: NextRequest, schema: ZodType<T, ZodTypeDef, unknown>): T {
-  return schema.parse(Object.fromEntries(req.nextUrl.searchParams));
+  const params = Object.fromEntries(req.nextUrl.searchParams);
+  if (Object.values(params).some((v) => v.includes("\u0000")))
+    throw Errors.validation("Text can't contain NUL characters.");
+  return schema.parse(params);
 }
 
 export { AppError };

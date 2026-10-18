@@ -22,6 +22,12 @@ main() {
   failed="$(jq '[.check_runs[] | select(.status == "completed" and (.conclusion | IN("success","skipped","neutral") | not))] | length' <<< "$runs")"
   if (( total == 0 || pending > 0 )); then echo "main@${target:0:7}: CI not finished, waiting"; exit 0; fi
   if (( failed > 0 )); then echo "main@${target:0:7}: CI failed, not deploying"; exit 0; fi
+  # Green must mean OUR CI ran: every required job, reported by GitHub Actions itself (not another app's
+  # check that happened to finish before Actions registered its runs).
+  for job in "Format, lint, typecheck, unit tests" "Integration tests (Postgres, ffmpeg)" "Build + Playwright e2e"; do
+    ok="$(jq --arg j "$job" '[.check_runs[] | select(.app.slug == "github-actions" and (.name | endswith($j)) and .conclusion == "success")] | length' <<< "$runs")"
+    if (( ok == 0 )); then echo "main@${target:0:7}: CI job \"$job\" not reported yet, waiting"; exit 0; fi
+  done
 
   echo "Deploying main@${target:0:7}"
   git checkout --quiet --detach "$target"

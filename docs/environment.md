@@ -47,13 +47,14 @@ Where a variable is used by both, set the **same value** on both services. Pay s
 
 ## Web only
 
-| Variable                    | Required | Default             | What it is                                                                                                                                                  |
-| --------------------------- | -------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET`        | yes      |                     | At least 32 characters; signs session cookies. Generate with `openssl rand -base64 32`. Changing it signs everyone out.                                     |
-| `MAX_UPLOAD_BYTES`          | no       | `4294967296` (4 GB) | Largest video a teacher may upload. The upload page shows it in GB.                                                                                         |
-| `JOIN_OPENS_MINUTES_BEFORE` | no       | `10`                | How many minutes before a class the Join button becomes active (0–60).                                                                                      |
-| `AUTH_SIGNIN_LIMIT_PER_MIN` | no       | `5`                 | Email sign-in attempts per minute per IP. **Leave unset in production.** Playwright raises it to 100 because every e2e test signs in from the same address. |
-| `APP_VERSION`               | no       | `dev`               | Reported by `GET /api/health`. Set it to the commit SHA at deploy time if you want to see which build is serving.                                           |
+| Variable                    | Required | Default             | What it is                                                                                                                                                                                                                 |
+| --------------------------- | -------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`        | yes      |                     | At least 32 characters; signs session cookies. Generate with `openssl rand -base64 32`. Changing it signs everyone out.                                                                                                    |
+| `MAX_UPLOAD_BYTES`          | no       | `4294967296` (4 GB) | Largest video a teacher may upload. The upload page shows it in GB.                                                                                                                                                        |
+| `JOIN_OPENS_MINUTES_BEFORE` | no       | `10`                | How many minutes before a class the Join button becomes active (0–60).                                                                                                                                                     |
+| `CLIENT_IP_HEADER`          | no       | (empty)             | Header your reverse proxy sets to the real client IP (`cf-connecting-ip` behind Cloudflare, `x-real-ip` behind nginx). Empty = `x-forwarded-for`, which clients can fake when no proxy overwrites it. Used by rate limits. |
+| `AUTH_SIGNIN_LIMIT_PER_MIN` | no       | `5`                 | Email sign-in attempts per minute per IP. **Leave unset in production.** Playwright raises it to 100 because every e2e test signs in from the same address.                                                                |
+| `APP_VERSION`               | no       | `dev`               | Reported by `GET /api/health`. Set it to the commit SHA at deploy time if you want to see which build is serving.                                                                                                          |
 
 ## Worker only
 

@@ -177,8 +177,14 @@ a newer schema.
   (`ssh -L 9001:127.0.0.1:9001 vm` to open it).
 - UAT uses plain HTTP, so anyone on the same network could read the traffic. Use test data, not real student
   records.
-- The Mailpit inbox shows every email, including password-reset links, to anyone on the LAN. That's fine for
-  UAT; production uses a real mail provider.
+- The Mailpit inbox shows every email, including password-reset links, so it asks for a login: the user and
+  password are `MAILPIT_UI_AUTH` in `/opt/elearner/uat.env` (`init-env.sh` makes one). On a VM set up before
+  2026-10-18, add a line `MAILPIT_UI_AUTH=uat:<random>` yourself (`openssl rand -hex 12`); until then deploys
+  print a warning and the inbox stays open to the LAN. Production uses a real mail provider.
+- `manage.sh demo-data` adds accounts whose password is in this repo. It refuses on an HTTPS (public) UAT
+  unless `ALLOW_DEMO_SEED=1`; if UAT ever goes public, remove those accounts first.
+- `manage.sh backup` writes owner-only dumps and deletes ones older than `BACKUP_KEEP_DAYS` (45), so erased
+  accounts don't live on in old backups.
 
 ## Later: a public HTTPS address
 

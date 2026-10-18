@@ -32,7 +32,9 @@ async function managedClass(deps: Deps, actor: Actor, classId: string) {
     },
   });
   const allowed =
-    cls && (cls.hostId === actor.id || (await hasCourseAccess(deps.db, actor, cls.courseId, "manage")));
+    cls &&
+    ((actor.role === "TEACHER" && cls.hostId === actor.id) ||
+      (await hasCourseAccess(deps.db, actor, cls.courseId, "manage")));
   if (!cls || !allowed) throw Errors.notFound("Class");
   return cls;
 }

@@ -349,7 +349,7 @@ export async function initSubmissionFile(
   const { a } = await loadForStudent(deps, actor, assignmentId);
   if (!a.allowFile) throw Errors.conflict("This assignment takes a text answer only.");
   const fileKey = keys.submission(a.id, actor.id, randomUUID(), input.fileName);
-  return { fileKey, uploadUrl: await deps.storage.presignPut(fileKey, input.mimeType, 900) };
+  return { fileKey, uploadUrl: await deps.storage.presignPut(fileKey, input.mimeType, 900, input.sizeBytes) };
 }
 
 /** Hand in (or hand in again, until graded). */

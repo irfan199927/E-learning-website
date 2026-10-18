@@ -79,6 +79,10 @@ async function loadPendingUpload(deps: Deps, actor: Actor, videoId: string) {
 
 export async function presignParts(deps: Deps, actor: Actor, videoId: string, partNumbers: number[]) {
   const video = await loadPendingUpload(deps, actor, videoId);
+  // Only the parts the declared size needs: more parts would let the file outgrow the size checked at init.
+  const parts = partCount(Number(video.sizeBytes));
+  if (partNumbers.some((n) => n < 1 || n > parts))
+    throw Errors.validation(`Part numbers run from 1 to ${parts}.`);
   const urls = await Promise.all(
     partNumbers.map(async (n) => ({
       partNumber: n,
@@ -93,6 +97,18 @@ export async function completeUpload(deps: Deps, actor: Actor, videoId: string, 
   await deps.storage.completeMultipart(video.rawKey, video.uploadId, input.parts);
   const head = await deps.storage.head(video.rawKey);
   if (!head) throw Errors.upstream("Storage", "Upload finished but the file is missing.");
+  // The real size must match what was declared (and so checked against the limit) at init.
+  if (head.size > Number(video.sizeBytes) || head.size > deps.config.maxUploadBytes) {
+    await deps.storage.deleteObject(video.rawKey).catch(() => undefined);
+    await deps.db.$transaction([
+      deps.db.lesson.deleteMany({ where: { videoId } }),
+      deps.db.video.update({
+        where: { id: videoId },
+        data: { status: VideoStatus.FAILED, uploadId: null, error: "Uploaded file is bigger than declared" },
+      }),
+    ]);
+    throw Errors.validation("The uploaded file is bigger than the size given when the upload started.");
+  }
   await deps.db.video.update({
     where: { id: videoId },
     data: { status: VideoStatus.UPLOADED, uploadId: null, sizeBytes: BigInt(head.size) },

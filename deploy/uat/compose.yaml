@@ -79,6 +79,10 @@ services:
   mailpit:
     image: axllent/mailpit:v1.27
     restart: unless-stopped
+    # The inbox shows every password-reset and invite link, so it asks for a login when MAILPIT_UI_AUTH
+    # ("user:password", made by init-env.sh) is set. Without it anyone on the LAN can take over accounts.
+    environment:
+      MP_UI_AUTH: ${MAILPIT_UI_AUTH:-}
     ports: ["8025:8025"]
 
   web:

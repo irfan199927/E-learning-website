@@ -7,40 +7,59 @@
 import "server-only";
 import { z } from "zod";
 
-const schema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
-  APP_URL: z.string().url(),
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
-  BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
-  /** Leave both empty to run without Google (e.g. a LAN-only UAT): no Google sign-in, no Meet scheduling. */
-  GOOGLE_CLIENT_ID: z.string().default(""),
-  GOOGLE_CLIENT_SECRET: z.string().default(""),
-  // Empty means unset (Compose passes empty strings for unset variables).
-  GOOGLE_WORKSPACE_DOMAIN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(3).optional()),
-  TOKEN_ENC_KEYS: z.string().min(1),
-  TOKEN_ENC_ACTIVE_KEY_ID: z.string().min(1),
-  S3_ENDPOINT: z.string().url(),
-  S3_REGION: z.string().default("auto"),
-  S3_BUCKET: z.string().min(1),
-  S3_ACCESS_KEY_ID: z.string().min(1),
-  S3_SECRET_ACCESS_KEY: z.string().min(1),
-  S3_FORCE_PATH_STYLE: z
-    .enum(["true", "false"])
-    .default("false")
-    .transform((v) => v === "true"),
-  SMTP_URL: z.string().min(1),
-  MAIL_FROM: z.string().min(3),
-  MAX_UPLOAD_BYTES: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(4 * 1024 ** 3),
-  JOIN_OPENS_MINUTES_BEFORE: z.coerce.number().int().min(0).max(60).default(10),
-  /** Sign-in attempts per minute per IP. Keep the default in production; raised only for e2e runs. */
-  AUTH_SIGNIN_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(5),
-});
+const schema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+    APP_URL: z.string().url(),
+    DATABASE_URL: z.string().url(),
+    REDIS_URL: z.string().url(),
+    BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+    /** Leave both empty to run without Google (e.g. a LAN-only UAT): no Google sign-in, no Meet scheduling. */
+    GOOGLE_CLIENT_ID: z.string().default(""),
+    GOOGLE_CLIENT_SECRET: z.string().default(""),
+    // Empty means unset (Compose passes empty strings for unset variables).
+    GOOGLE_WORKSPACE_DOMAIN: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(3).optional()),
+    TOKEN_ENC_KEYS: z.string().min(1),
+    TOKEN_ENC_ACTIVE_KEY_ID: z.string().min(1),
+    S3_ENDPOINT: z.string().url(),
+    S3_REGION: z.string().default("auto"),
+    S3_BUCKET: z.string().min(1),
+    S3_ACCESS_KEY_ID: z.string().min(1),
+    S3_SECRET_ACCESS_KEY: z.string().min(1),
+    S3_FORCE_PATH_STYLE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
+    SMTP_URL: z.string().min(1),
+    MAIL_FROM: z.string().min(3),
+    MAX_UPLOAD_BYTES: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(4 * 1024 ** 3),
+    JOIN_OPENS_MINUTES_BEFORE: z.coerce.number().int().min(0).max(60).default(10),
+    /** Sign-in attempts per minute per IP. Keep the default in production; raised only for e2e runs. */
+    AUTH_SIGNIN_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(5),
+    /**
+     * The request header that carries the real client IP, set by YOUR proxy (e.g. `cf-connecting-ip` behind a
+     * Cloudflare Tunnel, `x-real-ip` behind nginx). Empty = `x-forwarded-for`, which a client can fake when no
+     * proxy overwrites it; per-account sign-in limits (lib/auth.ts) hold either way.
+     */
+    CLIENT_IP_HEADER: z
+      .string()
+      .default("")
+      .transform((v) => v.trim().toLowerCase()),
+  })
+  .superRefine((e, ctx) => {
+    // The .env.example placeholder is 40 characters, so the length check alone lets it through.
+    if (e.NODE_ENV === "production" && /change-me/i.test(e.BETTER_AUTH_SECRET))
+      ctx.addIssue({
+        code: "custom",
+        path: ["BETTER_AUTH_SECRET"],
+        message: "still the .env.example placeholder",
+      });
+  });
 
 export type Env = z.infer<typeof schema>;
 

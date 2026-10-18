@@ -80,7 +80,7 @@ describe("classes service (integration)", () => {
       notifyParents: true,
       meeting: "google" as const,
     };
-    await expect(scheduleClass(deps, w.otherTeacher, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(scheduleClass(deps, w.otherTeacher, input)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(scheduleClass(deps, w.student, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 

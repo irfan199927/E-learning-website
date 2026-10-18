@@ -58,7 +58,9 @@ type ClassRow = {
 };
 
 function toDto(row: ClassRow, actor: Actor): ClassDto {
-  const canManage = actor.role === "ADMIN" || row.hostId === actor.id || row.course.teacherId === actor.id;
+  const canManage =
+    actor.role === "ADMIN" ||
+    (actor.role === "TEACHER" && (row.hostId === actor.id || row.course.teacherId === actor.id));
   return {
     id: row.id,
     title: row.title,
@@ -101,10 +103,9 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
     where: { id: input.courseId },
     select: { id: true, title: true, teacherId: true },
   });
-  if (!course) throw Errors.notFound("Course");
   // The Meet/Calendar event is owned by the host's Google account, so only the course teacher can host.
-  if (course.teacherId !== actor.id)
-    throw Errors.forbidden("Only the course teacher can schedule its classes.");
+  // Someone else's course reads as missing, like everywhere else (no id leaks).
+  if (!course || course.teacherId !== actor.id) throw Errors.notFound("Course");
 
   const students = await deps.db.enrollment.findMany({
     where: { courseId: course.id, revokedAt: null, user: { isActive: true, deletedAt: null } },
@@ -223,7 +224,8 @@ async function scheduleWithoutGoogle(
 async function loadManageable(deps: Deps, actor: Actor, classId: string) {
   const session = await deps.db.classSession.findUnique({ where: { id: classId }, include: classInclude });
   if (!session) throw Errors.notFound("Class");
-  if (!(actor.role === "ADMIN" || session.hostId === actor.id)) throw Errors.notFound("Class");
+  if (!(actor.role === "ADMIN" || (actor.role === "TEACHER" && session.hostId === actor.id)))
+    throw Errors.notFound("Class");
   if (session.status !== ClassStatus.SCHEDULED)
     throw Errors.conflict("Only upcoming classes can be changed.");
   return session;

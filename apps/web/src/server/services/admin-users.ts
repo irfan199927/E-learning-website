@@ -125,19 +125,20 @@ export async function updateUser(
     user.role === Role.ADMIN &&
     user.isActive &&
     ((input.role !== undefined && input.role !== Role.ADMIN) || input.isActive === false);
-  if (losesAdmin) {
-    const admins = await deps.db.user.count({ where: { role: Role.ADMIN, isActive: true, deletedAt: null } });
-    if (admins <= 1)
-      throw Errors.conflict("This is the last active admin. Make someone else an admin first.");
-  }
-
   const role = input.role ?? user.role;
   const isActive = input.isActive ?? user.isActive;
-  await deps.db.$transaction([
-    deps.db.user.update({ where: { id: user.id }, data: { role, isActive } }),
+  await deps.db.$transaction(async (tx) => {
+    if (losesAdmin) {
+      // Admin removals run one at a time, so two admins demoting each other can't leave the school with none.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('admin-roles'))`;
+      const admins = await tx.user.count({ where: { role: Role.ADMIN, isActive: true, deletedAt: null } });
+      if (admins <= 1)
+        throw Errors.conflict("This is the last active admin. Make someone else an admin first.");
+    }
+    await tx.user.update({ where: { id: user.id }, data: { role, isActive } });
     // Database sessions: deleting them takes effect on the person's next request.
-    ...(isActive ? [] : [deps.db.session.deleteMany({ where: { userId: user.id } })]),
-  ]);
+    if (!isActive) await tx.session.deleteMany({ where: { userId: user.id } });
+  });
   if (role !== user.role)
     await audit(deps.db, actor, "user.role", { type: "User", id: user.id }, { from: user.role, to: role });
   if (isActive !== user.isActive)
