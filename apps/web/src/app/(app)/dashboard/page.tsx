@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
 import { Icon, type IconName } from "@/components/icons";
 import { ChildCard, NoChildren } from "@/components/child-card";
+import { CountUp } from "@/components/count-up";
 import { JoinButton } from "@/components/join-button";
 import { MonthlyProgress, TodayProgress } from "@/components/learner-progress";
 import { ProgressRing } from "@/components/progress-ring";
@@ -66,14 +67,24 @@ export default async function DashboardPage({
 
   return (
     <div className="flex max-w-6xl flex-col gap-7">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-          {t("greeting", { part, name: actor.name.split(" ")[0] ?? "" })}
-        </h1>
-        <p className="mt-1 text-muted">
-          {upcoming.length ? t("upcomingCount", { count: upcoming.length }) : t("noClasses")}
-        </p>
-      </header>
+      {staff ? (
+        <StaffHero
+          admin={actor.role === "ADMIN"}
+          greeting={t("greeting", { part, name: actor.name.split(" ")[0] ?? "" })}
+          summary={upcoming.length ? t("upcomingCount", { count: upcoming.length }) : t("noClasses")}
+          date={now}
+          timeZone={actor.timezone}
+        />
+      ) : (
+        <header>
+          <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
+            {t("greeting", { part, name: actor.name.split(" ")[0] ?? "" })}
+          </h1>
+          <p className="mt-1 text-muted">
+            {upcoming.length ? t("upcomingCount", { count: upcoming.length }) : t("noClasses")}
+          </p>
+        </header>
+      )}
 
       {!googleOk && (
         <section className={`flex flex-wrap items-center gap-4 p-5 ${card}`} aria-label={t("googleLabel")}>
@@ -277,6 +288,84 @@ const ATTENTION_ICON: Record<AttentionKey, IconName> = {
   payments: "rupee",
   deletions: "trash",
 };
+/** One colour per kind of work, so a glance tells them apart (the soft chips stay light in both themes). */
+const ATTENTION_TONE: Record<AttentionKey, string> = {
+  grade: "bg-primary-soft text-primary-fg-strong",
+  joinRequests: "bg-warning-soft text-warning",
+  attendance: "bg-success-soft text-success",
+  payments: "bg-warning-soft text-warning",
+  deletions: "bg-live-soft text-live-fg",
+};
+const STAT_ICON = { students: "users", teachers: "teacher", courses: "courses" } as const;
+
+type QuickKey = "schedule" | "upload" | "newCourse" | "users" | "payments";
+const QUICK_ACTIONS: Record<"TEACHER" | "ADMIN", { key: QuickKey; href: string; icon: IconName }[]> = {
+  TEACHER: [
+    { key: "schedule", href: "/calendar", icon: "calendar" },
+    { key: "upload", href: "/library/upload", icon: "upload" },
+    { key: "newCourse", href: "/courses/new", icon: "plus" },
+  ],
+  ADMIN: [
+    { key: "users", href: "/admin/users", icon: "users" },
+    { key: "payments", href: "/admin/payments", icon: "rupee" },
+    { key: "newCourse", href: "/courses/new", icon: "plus" },
+  ],
+};
+
+/** Staff Overview header: greeting, today's date and the actions they reach for most. */
+function StaffHero({
+  admin,
+  greeting,
+  summary,
+  date,
+  timeZone,
+}: {
+  admin: boolean;
+  greeting: string;
+  summary: string;
+  date: Date;
+  timeZone: string;
+}) {
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+  const today = new Intl.DateTimeFormat(intlLocale(locale), {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone,
+  }).format(date);
+  return (
+    <header className="relative isolate overflow-hidden rounded-[var(--radius-card)] bg-linear-135 from-primary to-primary-strong px-6 py-7 text-white md:px-8 md:py-9">
+      {/* Decoration only: two soft rings, like the course covers. */}
+      <span
+        aria-hidden="true"
+        className="absolute -right-16 -top-20 -z-10 size-64 rounded-full border-[40px] border-white/8"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-24 right-40 -z-10 size-48 rounded-full bg-white/6"
+      />
+      <p className="text-sm font-semibold text-white/80">{today}</p>
+      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight md:text-4xl">{greeting}</h1>
+      <p className="mt-1 text-white/85">{summary}</p>
+      <nav aria-label={t("quickActions")} className="mt-6">
+        <ul className="stagger flex flex-wrap gap-2">
+          {QUICK_ACTIONS[admin ? "ADMIN" : "TEACHER"].map((a) => (
+            <li key={a.key}>
+              <Link
+                href={a.href}
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/12 px-4 text-[15px] font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm transition-[background-color,transform] duration-200 hover:bg-white/20 active:scale-[0.97]"
+              >
+                <Icon name={a.icon} size={18} />
+                {t(`quick.${a.key}`)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+  );
+}
 
 /** Staff: what's waiting on them, each a link to the first place to act; admins also get school totals. */
 function NeedsAttention({ attention }: { attention: Attention }) {
@@ -298,39 +387,54 @@ function NeedsAttention({ attention }: { attention: Attention }) {
           {t("allCaughtUp")}
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
             <li key={item.key}>
               <Link
                 href={item.href}
-                className={`flex min-h-20 items-center gap-4 p-4 transition-colors hover:border-primary hover:bg-primary-soft/40 ${card}`}
+                className={`lift group flex min-h-20 items-center gap-4 p-4 hover:border-primary ${card}`}
               >
                 <span
-                  className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary-fg-strong"
+                  className={`grid size-12 shrink-0 place-items-center rounded-2xl ${ATTENTION_TONE[item.key]}`}
                   aria-hidden="true"
                 >
-                  <Icon name={ATTENTION_ICON[item.key]} size={20} />
+                  <Icon name={ATTENTION_ICON[item.key]} size={22} />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-display text-2xl font-bold tabular-nums leading-tight">
-                    {item.count}
+                  <span className="font-display text-3xl font-bold tabular-nums leading-tight">
+                    <CountUp value={item.count} />
                   </span>
                   <span className="text-sm text-muted">
                     {t(`attention.${item.key}`, { count: item.count })}
                   </span>
                 </span>
-                <Icon name="chevronRight" size={18} className="text-muted" />
+                <Icon
+                  name="chevronRight"
+                  size={18}
+                  className="text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary-fg"
+                />
               </Link>
             </li>
           ))}
         </ul>
       )}
       {stats && (
-        <dl className={`grid grid-cols-3 divide-x divide-line ${card}`}>
+        <dl className="stagger grid grid-cols-3 gap-3">
           {(["students", "teachers", "courses"] as const).map((k) => (
-            <div key={k} className="flex flex-col gap-0.5 px-5 py-4">
-              <dt className="text-sm text-muted">{t(`stats.${k}`)}</dt>
-              <dd className="font-display text-2xl font-bold tabular-nums">{stats[k]}</dd>
+            // dl > div may only hold dt/dd, so the icon sits inside the dt.
+            <div key={k} className={`grid items-center gap-x-4 p-4 sm:grid-cols-[auto_1fr] ${card}`}>
+              <dt className="contents text-sm text-muted">
+                <span
+                  className="row-span-2 hidden size-11 place-items-center rounded-full bg-canvas text-muted sm:grid"
+                  aria-hidden="true"
+                >
+                  <Icon name={STAT_ICON[k]} size={20} />
+                </span>
+                <span className="text-sm text-muted">{t(`stats.${k}`)}</span>
+              </dt>
+              <dd className="font-display text-2xl font-bold tabular-nums">
+                <CountUp value={stats[k]} />
+              </dd>
             </div>
           ))}
         </dl>
@@ -351,12 +455,12 @@ function TeachingCourses({ courses }: { courses: CourseCard[] }) {
           {t("allCourses")}
         </Link>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="stagger grid gap-3 sm:grid-cols-2">
         {courses.slice(0, 4).map((c) => (
           <li key={c.id}>
             <Link
               href={`/courses/${c.id}`}
-              className="flex items-center gap-3 rounded-xl border border-line p-3 hover:bg-canvas"
+              className="lift flex items-center gap-3 rounded-xl border border-line p-3 hover:border-line-strong"
             >
               <span
                 className="grid size-10 shrink-0 place-items-center rounded-lg font-display text-lg font-bold text-white"

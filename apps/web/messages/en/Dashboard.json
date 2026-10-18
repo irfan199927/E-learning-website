@@ -60,5 +60,13 @@
     "students": "Students",
     "teachers": "Teachers",
     "courses": "Courses"
+  },
+  "quickActions": "Quick actions",
+  "quick": {
+    "schedule": "Schedule a class",
+    "upload": "Upload a video",
+    "newCourse": "New course",
+    "users": "Add people",
+    "payments": "Check payments"
   }
 }

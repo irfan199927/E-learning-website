@@ -81,7 +81,7 @@ export default async function PaymentsPage({
         {payments.length === 0 ? (
           <p className="text-muted">{status === "PENDING" ? t("emptyPending") : t("emptyOther")}</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-line">
+          <ul className="stagger flex flex-col divide-y divide-line">
             {payments.map((p) => (
               <li
                 key={p.id}

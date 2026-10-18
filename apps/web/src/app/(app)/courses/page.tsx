@@ -97,7 +97,7 @@ export default async function CoursesPage({
               : t("emptyInProgress")}
         </EmptyState>
       ) : (
-        <ul className="flex flex-col gap-5">
+        <ul className="stagger flex flex-col gap-5">
           {courses.map((c) => (
             <li key={c.id}>
               <CourseRow course={c} learner={learner} pendingRequests={pending.get(c.id) ?? 0} />
@@ -143,7 +143,7 @@ export default async function CoursesPage({
               {q ? t("noMatch", { q }) : t("catalogEmpty")}
             </p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
+            <ul className="stagger grid gap-4 sm:grid-cols-2">
               {catalog.map((c) => (
                 <li key={c.id}>
                   <CatalogCard course={c} />

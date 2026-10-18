@@ -60,5 +60,13 @@
     "students": "विद्यार्थी",
     "teachers": "शिक्षक",
     "courses": "अभ्यासक्रम"
+  },
+  "quickActions": "झटपट कृती",
+  "quick": {
+    "schedule": "वर्ग ठरवा",
+    "upload": "व्हिडिओ अपलोड करा",
+    "newCourse": "नवीन कोर्स",
+    "users": "लोक जोडा",
+    "payments": "पेमेंट तपासा"
   }
 }

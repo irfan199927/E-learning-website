@@ -17,6 +17,7 @@ const PATHS = {
   chevronLeft: "M15 6l-6 6 6 6",
   chevronRight: "M9 6l6 6-6 6",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
+  teacher: "M3 4h18v11H3zM8 20l4-5 4 5M7 8h6",
   users:
     "M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM22 19v-1a4 4 0 0 0-3-3.9M16 3.1a3.5 3.5 0 0 1 0 6.8",
   video: "M3 6h12v12H3zM15 10l6-3v10l-6-3",

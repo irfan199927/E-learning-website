@@ -180,3 +180,83 @@ body {
   padding: 2px 4px;
   font-weight: 600;
 }
+
+/*
+ * Motion (ui-ux-pro-max §7): one rhythm for the whole app. Elements arrive with a decelerating curve, lists
+ * stagger 40 ms per item, only transform/opacity animate, and everything stops under prefers-reduced-motion.
+ */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-enter: 420ms;
+  --shadow-raised: 0 1px 2px rgb(20 22 31 / 0.04), 0 8px 24px -8px rgb(20 22 31 / 0.14);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+/* A page (app/(app)/template.tsx) or a block arriving. `backwards`, not `both`: a finished animation must
+ * leave no transform behind, or the page wrapper would trap position:fixed children. */
+.enter {
+  animation: rise var(--dur-enter) var(--ease-out) backwards;
+}
+/* Children arrive one after another. */
+.stagger > * {
+  animation: rise var(--dur-enter) var(--ease-out) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 40ms);
+}
+.stagger > :nth-child(1) {
+  --i: 0;
+}
+.stagger > :nth-child(2) {
+  --i: 1;
+}
+.stagger > :nth-child(3) {
+  --i: 2;
+}
+.stagger > :nth-child(4) {
+  --i: 3;
+}
+.stagger > :nth-child(5) {
+  --i: 4;
+}
+.stagger > :nth-child(6) {
+  --i: 5;
+}
+.stagger > :nth-child(7) {
+  --i: 6;
+}
+.stagger > :nth-child(n + 8) {
+  --i: 7;
+}
+/* Cards that are links: lift towards the pointer, press back down. */
+.lift {
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-fast),
+    background-color var(--dur-fast);
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+.lift:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: var(--dur-fast);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+  .lift:hover {
+    transform: none;
+  }
+}

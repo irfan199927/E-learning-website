@@ -403,6 +403,21 @@ dark) { :root:not([data-theme="light"]) }`. Change both together. This applies t
 - **Both:** the code editor stays dark. The hero re-mounts the portal with the matching font when the theme changes,
   because it measures the letters once at mount.
 
+## Motion
+
+One rhythm across the app (`app/globals.css`, "Motion"), following the ui-ux-pro-max animation rules:
+
+- **Pages arrive** with a short rise and fade (`app/(app)/template.tsx` wraps every signed-in page in `.enter`).
+- **Lists stagger**: add `stagger` to a list and its items arrive 40 ms apart (capped at eight steps).
+- **Link cards lift** on hover and press back down (`lift`); buttons squeeze slightly while pressed.
+- **Numbers count up** on the staff Overview (`components/count-up.tsx`); the server renders the final number.
+- Only `transform` and `opacity` animate, so nothing shifts layout. Animations use `backwards` fill, never
+  `both`: a finished animation must not leave a transform behind (it would trap `position: fixed` children).
+- `prefers-reduced-motion: reduce` turns all of it off. Nothing loops except loading indicators.
+
+The staff Overview opens with a blue welcome banner: today's date, the greeting, and quick actions (teachers:
+schedule a class, upload a video, new course; admins: add people, check payments, new course).
+
 ## Streak rules
 
 These are pure functions in `packages/core/src/learning.ts`, unit-tested in `learning.test.ts`.
