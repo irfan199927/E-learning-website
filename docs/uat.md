@@ -35,7 +35,9 @@ What doesn't:
 
 ## The VM
 
-- Ubuntu 24.04 or Debian 12, x86_64.
+- Ubuntu 24.04, Debian 12, or Rocky Linux / AlmaLinux / RHEL 9 or later; x86_64. On Rocky/RHEL the script
+  removes Podman's Docker shim (it conflicts with Docker Engine) and opens ports 80, 9000 and 8025 in firewalld.
+  SELinux can stay enforcing: the stack uses Docker named volumes only.
 - **4 vCPU, 8 GB RAM, 100 GB disk** is comfortable. Video transcoding is the heavy part; 2 vCPU and 4 GB work
   for light testing.
 - A **fixed LAN IP** (a DHCP reservation on your router) or a hostname your LAN resolves, e.g. `192.168.1.50`.
@@ -52,7 +54,8 @@ sudo bash bootstrap.sh 192.168.1.50    # your VM's LAN IP or hostname
 
 `bootstrap-vm.sh`:
 
-1. installs Docker Engine and Compose from Docker's own repository, plus `git`, `jq` and `openssl`;
+1. installs Docker Engine and Compose from Docker's own repository (apt or dnf), plus `git`, `jq` and `openssl`,
+   and starts Docker;
 2. creates a system user `elearner` (home `/opt/elearner`) in the `docker` group;
 3. clones the repository to `/opt/elearner/app`;
 4. writes `/opt/elearner/uat.env` with fresh random secrets (`deploy/uat/init-env.sh`, mode 600);
