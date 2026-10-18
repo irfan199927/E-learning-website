@@ -9,7 +9,8 @@ const BEACON_MS = 15_000;
 
 /**
  * HLS player with resume, speed control and progress beacons.
- * Safari plays HLS natively; other browsers load hls.js on demand (keeps the bundle small).
+ * Plays through hls.js, loaded on demand (keeps the bundle small); browsers without Media Source Extensions
+ * (older iPhones) fall back to native HLS.
  */
 export function VideoPlayer({
   videoId,
@@ -38,12 +39,14 @@ export function VideoPlayer({
       if (resumeAt > 5) video.currentTime = resumeAt;
     };
 
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
-      video.addEventListener("loadedmetadata", seekToResume, { once: true });
-    } else {
-      void import("hls.js").then(({ default: HlsCtor }) => {
-        if (!HlsCtor.isSupported()) return setError("unsupported");
+    const onMediaError = () => setError("stopped");
+    video.addEventListener("error", onMediaError);
+    // hls.js first, wherever Media Source Extensions exist (hls.js's own advice): newer Chrome also claims native
+    // HLS, and that path is untested here. Native HLS is the fallback (older iPhones).
+    let cancelled = false;
+    void import("hls.js").then(({ default: HlsCtor }) => {
+      if (cancelled) return;
+      if (HlsCtor.isSupported()) {
         hls = new HlsCtor({
           xhrSetup: (xhr, url) => {
             xhr.withCredentials = url.startsWith("/");
@@ -51,12 +54,17 @@ export function VideoPlayer({
         });
         hls.on(HlsCtor.Events.MANIFEST_PARSED, seekToResume);
         hls.on(HlsCtor.Events.ERROR, (_e, data) => {
-          if (data.fatal) setError("stopped");
+          if (!data.fatal) return;
+          console.error("Video playback stopped", data.type, data.details, data.error);
+          setError("stopped");
         });
         hls.loadSource(src);
         hls.attachMedia(video);
-      });
-    }
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = src;
+        video.addEventListener("loadedmetadata", seekToResume, { once: true });
+      } else setError("unsupported");
+    });
 
     // Count only real watching time (not seeks) for progress/attendance analytics.
     const onTime = () => {
@@ -87,7 +95,9 @@ export function VideoPlayer({
     return () => {
       clearInterval(interval);
       window.removeEventListener("pagehide", onHide);
+      cancelled = true;
       video.removeEventListener("timeupdate", onTime);
+      video.removeEventListener("error", onMediaError);
       send(true);
       hls?.destroy();
     };

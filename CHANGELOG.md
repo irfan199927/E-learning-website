@@ -5,6 +5,12 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Fixed — video playback (2026-10-18)
+
+- The player now uses hls.js wherever the browser supports it and falls back to native HLS only without Media
+  Source Extensions. Before, browsers that claim native HLS (newer Chrome) skipped hls.js: the likely reason
+  lessons listed but didn't play on UAT, where the server side checked out. Playback errors now show the "stopped" message and log the hls.js error to the console.
+
 ### Changed — staff and admin UI/UX pass (2026-10-18)
 
 An audit of every teacher and admin screen against the ui-ux-pro-max rule set (navigation hierarchy, content
