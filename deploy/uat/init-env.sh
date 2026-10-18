@@ -28,7 +28,9 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_WORKSPACE_DOMAIN=
 
-# Mail goes to the UAT inbox (http://$host:8025) unless you set a real SMTP server here.
+# Mail goes to the UAT inbox (http://$host:8025, sign in with this user:password) unless you set a real
+# SMTP server here. The inbox holds password-reset links, so keep this login private.
+MAILPIT_UI_AUTH=uat:$(hex 12)
 # SMTP_URL=smtp://user:pass@smtp.example.com:587
 MAIL_FROM="E-learner UAT <no-reply@uat.local>"
 TRANSCODE_CONCURRENCY=1

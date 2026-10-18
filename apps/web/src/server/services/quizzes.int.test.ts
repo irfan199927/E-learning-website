@@ -109,4 +109,38 @@ describe("quizzes (integration)", () => {
       await expect(getQuizForStudent(at(0), actor, timed.id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(startAttempt(at(0), w.teacher, timed.id)).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
+
+  it("keeps the answer key hidden while an attempt is open, and late or parallel attempts don't score", async () => {
+    const w = await world();
+    const t0 = new Date();
+    const at = (s: number) => makeDeps({ now: () => new Date(t0.getTime() + s * 1000) });
+    const due = await createQuiz(at(0), w.teacher, w.course.id, {
+      ...quiz,
+      maxAttempts: 2,
+      dueAt: new Date(t0.getTime() + 100_000),
+    });
+
+    const first = await startAttempt(at(0), w.student, due.id);
+    await submitAttempt(at(10), w.student, first.attemptId, { answers: {} });
+    // A second attempt opened just before the due date…
+    const second = await startAttempt(at(90), w.student, due.id);
+    // …must not see the key after the due date while it is still open,
+    const view = await getQuizForStudent(at(300), w.student, due.id);
+    expect(view.open?.id).toBe(second.attemptId);
+    expect(view.last?.questions.every((q) => q.correctOptions === null)).toBe(true);
+    // and answers sent after the due date (plus grace) don't count.
+    const right = Object.fromEntries(
+      view.open!.questions.map((q) => [q.id, q.prompt.startsWith("1/2") ? [0] : [0, 1]]),
+    );
+    const late = await submitAttempt(at(300), w.student, second.attemptId, { answers: right });
+    expect(late.score).toBe(0);
+
+    // Two starts at once share one attempt, so a one-attempt quiz can't be taken twice.
+    const once = await createQuiz(at(0), w.teacher, w.course.id, { ...quiz, maxAttempts: 1 });
+    const [a, b] = await Promise.all([
+      startAttempt(at(0), w.student, once.id),
+      startAttempt(at(0), w.student, once.id),
+    ]);
+    expect(a.attemptId).toBe(b.attemptId);
+  });
 });

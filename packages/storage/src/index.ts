@@ -87,13 +87,25 @@ export class Storage {
     );
   }
 
-  /** One-request browser upload for small files (attachments). The browser must send the same Content-Type. */
-  presignPut(key: string, contentType: string, expiresInSec = 900): Promise<string> {
+  /**
+   * One-request browser upload for small files (attachments). The browser must send the same Content-Type
+   * and, when `contentLength` is given, exactly that many bytes: the size is signed, so the URL can't be
+   * reused to swap in a bigger file after the size was checked.
+   */
+  presignPut(key: string, contentType: string, expiresInSec = 900, contentLength?: number): Promise<string> {
     return getSignedUrl(
       this.s3,
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }),
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ContentType: contentType,
+        ContentLength: contentLength,
+      }),
       {
         expiresIn: expiresInSec,
+        ...(contentLength !== undefined
+          ? { signableHeaders: new Set(["content-type", "content-length"]) }
+          : {}),
       },
     );
   }

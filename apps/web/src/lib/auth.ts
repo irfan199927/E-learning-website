@@ -11,6 +11,7 @@ import "server-only";
 import { getDb } from "@elearner/db";
 import { mailLocale, templates } from "@elearner/notify";
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { env, googleEnabled } from "@/env";
@@ -19,6 +20,11 @@ import { consume } from "./rate-limit";
 
 function createAuth() {
   const e = env();
+  /** Attempts per account (by email), whatever IP they come from. Scales with the e2e override of the IP limit. */
+  const PER_ACCOUNT_LIMITS: Record<string, { window: number; max: number }> = {
+    "/sign-in/email": { window: 15 * 60, max: Math.max(10, e.AUTH_SIGNIN_LIMIT_PER_MIN * 2) },
+    "/request-password-reset": { window: 60 * 60, max: 5 },
+  };
   const { deps, redis } = container();
 
   return betterAuth({
@@ -82,7 +88,13 @@ function createAuth() {
     user: {
       // With GOOGLE_WORKSPACE_DOMAIN set, Google identities must belong to that Workspace (every Google sign-in).
       validateUserInfo: ({ user, source }) => {
-        if (source.oauth?.providerId !== "google" || !e.GOOGLE_WORKSPACE_DOMAIN) return;
+        if (source.oauth?.providerId !== "google") return;
+        // Google is a trusted linking provider, so its email must be verified, or an unverified identity
+        // claiming a staff address would be linked to that account.
+        if (source.oauth.profile?.email_verified !== true) {
+          return { error: "email_not_verified", errorDescription: "Verify your Google email address first." };
+        }
+        if (!e.GOOGLE_WORKSPACE_DOMAIN) return;
         const hd = source.oauth.profile?.hd;
         const email = String(user.email ?? "");
         if (hd !== e.GOOGLE_WORKSPACE_DOMAIN || !email.endsWith(`@${e.GOOGLE_WORKSPACE_DOMAIN}`)) {
@@ -137,8 +149,24 @@ function createAuth() {
       },
     },
 
+    // Per-account limits on top of the per-IP ones: they hold even when a client fakes its IP header.
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        const rule = PER_ACCOUNT_LIMITS[ctx.path];
+        const email = typeof ctx.body?.email === "string" ? ctx.body.email.trim().toLowerCase() : "";
+        if (!rule || !email) return;
+        const res = await consume(redis, `auth-account:${ctx.path}:${email}`, rule.window, rule.max);
+        if (!res.allowed) {
+          throw new APIError("TOO_MANY_REQUESTS", {
+            message: "Too many attempts for this account. Wait a few minutes and try again.",
+          });
+        }
+      }),
+    },
+
     advanced: {
       useSecureCookies: e.APP_URL.startsWith("https://"),
+      ...(e.CLIENT_IP_HEADER ? { ipAddress: { ipAddressHeaders: [e.CLIENT_IP_HEADER] } } : {}),
       database: { generateId: false }, // Prisma's @default(cuid()) owns ids
     },
 

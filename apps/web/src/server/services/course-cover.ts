@@ -40,7 +40,7 @@ export async function initCoverUpload(
   await assertManages(deps, actor, courseId);
   const coverId = randomUUID();
   const key = keys.courseCover(courseId, coverId, COVER_MIME_TYPES[input.mimeType]);
-  return { coverId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900) };
+  return { coverId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900, input.sizeBytes) };
 }
 
 export async function completeCoverUpload(

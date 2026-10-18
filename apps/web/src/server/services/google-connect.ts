@@ -4,6 +4,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { assertCan, Errors, sha256Hex, signToken, verifyToken } from "@elearner/core";
 import { buildConnectUrl, exchangeCode, missingScopes } from "@elearner/google";
+import { isSitePath } from "../../lib/safe-path";
 import { audit } from "../audit";
 import type { Actor, Deps } from "../deps";
 
@@ -12,8 +13,7 @@ const WATCH_TTL_SEC = 7 * 24 * 3600; // Google caps Calendar channels; the worke
 
 /** Only allow same-site relative paths as post-connect destinations (open-redirect guard). */
 export function safeReturnTo(value: string | null | undefined): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/calendar";
-  return value;
+  return isSitePath(value) ? value : "/calendar";
 }
 
 export function startConnect(deps: Deps, actor: Actor, returnTo: string | null): string {

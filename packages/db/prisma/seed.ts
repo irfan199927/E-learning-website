@@ -14,6 +14,14 @@ if (process.env.NODE_ENV === "production") {
   console.error("Refusing to seed a production database.");
   process.exit(1);
 }
+// The demo accounts share a password published in this repo: never on a server reachable over HTTPS
+// (a public UAT), unless someone explicitly asks for it.
+if (process.env.APP_URL?.startsWith("https://") && process.env.ALLOW_DEMO_SEED !== "1") {
+  console.error(
+    "Refusing to add demo accounts (known password) to a public HTTPS server. Set ALLOW_DEMO_SEED=1 to override.",
+  );
+  process.exit(1);
+}
 
 const db = createDb(process.env.DATABASE_URL ?? "");
 const PASSWORD = "Password123!";

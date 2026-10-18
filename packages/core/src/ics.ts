@@ -19,7 +19,11 @@ const utc = (d: Date) =>
     .replace(/\.\d{3}/, "");
 
 export function escapeText(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n"); // a lone CR too: lenient parsers split lines on it
 }
 
 /** Fold lines longer than 75 octets (RFC 5545 §3.1), never splitting a UTF-8 sequence. */

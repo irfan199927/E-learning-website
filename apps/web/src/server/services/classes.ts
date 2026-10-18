@@ -58,7 +58,9 @@ type ClassRow = {
 };
 
 function toDto(row: ClassRow, actor: Actor): ClassDto {
-  const canManage = actor.role === "ADMIN" || row.hostId === actor.id || row.course.teacherId === actor.id;
+  const canManage =
+    actor.role === "ADMIN" ||
+    (actor.role === "TEACHER" && (row.hostId === actor.id || row.course.teacherId === actor.id));
   return {
     id: row.id,
     title: row.title,
@@ -223,7 +225,8 @@ async function scheduleWithoutGoogle(
 async function loadManageable(deps: Deps, actor: Actor, classId: string) {
   const session = await deps.db.classSession.findUnique({ where: { id: classId }, include: classInclude });
   if (!session) throw Errors.notFound("Class");
-  if (!(actor.role === "ADMIN" || session.hostId === actor.id)) throw Errors.notFound("Class");
+  if (!(actor.role === "ADMIN" || (actor.role === "TEACHER" && session.hostId === actor.id)))
+    throw Errors.notFound("Class");
   if (session.status !== ClassStatus.SCHEDULED)
     throw Errors.conflict("Only upcoming classes can be changed.");
   return session;

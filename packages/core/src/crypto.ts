@@ -57,7 +57,9 @@ export function decrypt(payload: string, ring: Keyring): string {
   if (!keyId || !iv || !tag || data === undefined) throw new Error("Malformed ciphertext");
   const key = ring.keys.get(keyId);
   if (!key) throw new Error(`Unknown encryption key id "${keyId}"`);
-  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64url"));
+  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64url"), {
+    authTagLength: 16, // refuse truncated tags
+  });
   decipher.setAuthTag(Buffer.from(tag, "base64url"));
   return Buffer.concat([decipher.update(Buffer.from(data, "base64url")), decipher.final()]).toString("utf8");
 }

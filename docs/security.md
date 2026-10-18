@@ -102,11 +102,15 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Spec background: [
 
 ### Rate limits
 
-All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.ts`).
+All rate limits are stored in Redis, with atomic Lua counters (`lib/rate-limit.ts`). Per-IP limits read the
+client address from `CLIENT_IP_HEADER` (set it to the header your proxy writes, e.g. `cf-connecting-ip`);
+without a proxy a client can fake `X-Forwarded-For`, which is why sign-in and reset are also limited per account.
 
 | What                                      | Limit                |
 | ----------------------------------------- | -------------------- |
 | Email sign-in                             | 5 / min / IP         |
+| Email sign-in, per account (any IP)       | 10 / 15 min          |
+| Password reset, per account (any IP)      | 5 / h                |
 | Password reset, resend verification email | 3 / min / IP         |
 | Other auth endpoints                      | 60 / min / IP        |
 | Schedule a class                          | 30 / h / teacher     |

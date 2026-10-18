@@ -23,8 +23,11 @@ case "$cmd" in
   backup)
     dir="${BACKUP_DIR:-/opt/elearner/backups}"; mkdir -p "$dir"
     out="$dir/elearner-$(date +%F-%H%M).sql.gz"
+    umask 077 # dumps hold personal data: owner-only
     dc exec -T postgres pg_dump -U elearner --clean --if-exists elearner | gzip > "$out"
     echo "Wrote $out"
+    # Erased accounts must not live on in old dumps forever (DPDP): keep BACKUP_KEEP_DAYS (default 45).
+    find "$dir" -name 'elearner-*.sql.gz' -mtime +"${BACKUP_KEEP_DAYS:-45}" -print -delete
     ;;
   *) sed -n '2,9p' "$0" ;;
 esac

@@ -10,7 +10,7 @@ import type { Actor } from "./deps";
 export type CourseAccess = "manage" | "watch" | "read";
 
 /**
- * manage → course teacher or admin
+ * manage → course teacher (still in the TEACHER role) or admin
  * watch  → manage, or actively enrolled student
  * read   → watch, or parent of an enrolled student (schedule/attendance only)
  */
@@ -23,7 +23,8 @@ export async function hasCourseAccess(
   if (actor.role === "ADMIN") return true;
   const course = await db.course.findUnique({ where: { id: courseId }, select: { teacherId: true } });
   if (!course) return false;
-  if (course.teacherId === actor.id) return true;
+  // Owning a course counts only while the owner is still a teacher: a teacher moved to another role loses it.
+  if (course.teacherId === actor.id && actor.role === "TEACHER") return true;
   if (level === "manage") return false;
 
   if (actor.role === "STUDENT") {

@@ -486,7 +486,10 @@ export async function initAttachmentUpload(
     throw Errors.conflict(`A lesson can have at most ${MAX_ATTACHMENTS_PER_LESSON} files.`);
   const attachmentId = randomUUID();
   const key = keys.attachment(lesson.id, attachmentId, input.fileName);
-  return { attachmentId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900) };
+  return {
+    attachmentId,
+    uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900, input.sizeBytes),
+  };
 }
 
 /** Record an uploaded file. The key is rebuilt from the lesson and id, so callers can't point at other objects. */

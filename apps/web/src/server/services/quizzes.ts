@@ -370,7 +370,9 @@ export async function getQuizForStudent(deps: Deps, actor: Actor, quizId: string
   const openRow = attempts.find((a) => !a.submittedAt);
   const now = deps.now();
   const blocked = blockedReason(quiz, submitted.length, now);
-  const reveal = blocked !== null;
+  // Correct options only once the quiz is over for this student, and never while an attempt is still open
+  // (an attempt opened just before the due date must not see the key before it is submitted).
+  const reveal = blocked !== null && !openRow;
   return {
     quiz: {
       id: quiz.id,
@@ -403,22 +405,27 @@ export async function startAttempt(deps: Deps, actor: Actor, quizId: string): Pr
   if (actor.role !== "STUDENT") throw Errors.forbidden("Only students take quizzes.");
   const { quiz } = await load(deps, actor, quizId);
   await closeExpired(deps, quiz, actor.id);
-  const open = await deps.db.quizAttempt.findFirst({
-    where: { quizId, userId: actor.id, submittedAt: null },
-    select: { id: true },
+  // One student's starts run one at a time (transaction-scoped advisory lock), so two parallel requests
+  // can't both create an attempt and go past maxAttempts.
+  return deps.db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`quiz-start:${quizId}:${actor.id}`}))`;
+    const open = await tx.quizAttempt.findFirst({
+      where: { quizId, userId: actor.id, submittedAt: null },
+      select: { id: true },
+    });
+    if (open) return { attemptId: open.id };
+    const used = await tx.quizAttempt.count({
+      where: { quizId, userId: actor.id, submittedAt: { not: null } },
+    });
+    const blocked = blockedReason(quiz, used, deps.now());
+    if (blocked === "no-attempts-left") throw Errors.conflict("You've used all your attempts for this quiz.");
+    if (blocked === "past-due") throw Errors.conflict("This quiz is closed: its due date has passed.");
+    const attempt = await tx.quizAttempt.create({
+      data: { quizId, userId: actor.id, answers: {}, startedAt: deps.now() },
+      select: { id: true },
+    });
+    return { attemptId: attempt.id };
   });
-  if (open) return { attemptId: open.id };
-  const used = await deps.db.quizAttempt.count({
-    where: { quizId, userId: actor.id, submittedAt: { not: null } },
-  });
-  const blocked = blockedReason(quiz, used, deps.now());
-  if (blocked === "no-attempts-left") throw Errors.conflict("You've used all your attempts for this quiz.");
-  if (blocked === "past-due") throw Errors.conflict("This quiz is closed: its due date has passed.");
-  const attempt = await deps.db.quizAttempt.create({
-    data: { quizId, userId: actor.id, answers: {}, startedAt: deps.now() },
-    select: { id: true },
-  });
-  return { attemptId: attempt.id };
 }
 
 /** Submit and score an attempt. Answers after the time limit (plus grace) are ignored. */
@@ -436,8 +443,17 @@ export async function submitAttempt(
   if (attempt.submittedAt) throw Errors.conflict("This attempt was already submitted.");
   const { quiz } = await load(deps, actor, attempt.quizId);
 
+  const used = await deps.db.quizAttempt.count({
+    where: { quizId: quiz.id, userId: actor.id, submittedAt: { not: null } },
+  });
+  if (used >= quiz.maxAttempts) throw Errors.conflict("You've used all your attempts for this quiz.");
+
+  // Late = past the attempt's time limit or the quiz's due date (each plus grace): answers don't count.
+  const grace = QUIZ_GRACE_SECONDS * 1000;
+  const now = deps.now().getTime();
   const deadline = attemptDeadline(attempt.startedAt, quiz.timeLimitSec);
-  const late = deadline && deps.now().getTime() > deadline.getTime() + QUIZ_GRACE_SECONDS * 1000;
+  const late =
+    (deadline && now > deadline.getTime() + grace) || (quiz.dueAt && now > quiz.dueAt.getTime() + grace);
   const ids = new Set(quiz.questions.map((q) => q.id));
   const answers: Answers = late
     ? {}
@@ -450,13 +466,13 @@ export async function submitAttempt(
     data: { answers, score, submittedAt: deps.now() },
   });
   if (claimed.count === 0) throw Errors.conflict("This attempt was already submitted.");
-  const used = await deps.db.quizAttempt.count({
-    where: { quizId: quiz.id, userId: actor.id, submittedAt: { not: null } },
+  const stillOpen = await deps.db.quizAttempt.count({
+    where: { quizId: quiz.id, userId: actor.id, submittedAt: null },
   });
   return result(
     quiz,
     { id: attempt.id, answers, score, submittedAt: deps.now() },
-    blockedReason(quiz, used, deps.now()) !== null,
+    stillOpen === 0 && blockedReason(quiz, used + 1, deps.now()) !== null,
   );
 }
 

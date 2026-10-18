@@ -104,7 +104,7 @@ export async function initQrUpload(
     throw Errors.validation(`The QR image can be at most ${QR_MAX_BYTES / MB} MB.`);
   const qrId = randomUUID();
   const key = keys.paymentQr(qrId, PAYMENT_IMAGE_TYPES[input.mimeType]);
-  return { qrId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900) };
+  return { qrId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900, input.sizeBytes) };
 }
 
 export async function completeQrUpload(deps: Deps, actor: Actor, input: CompleteQrInput): Promise<void> {
@@ -233,7 +233,7 @@ export async function initProofUpload(
     throw Errors.validation(`Screenshots can be at most ${PROOF_MAX_BYTES / MB} MB.`);
   const proofId = randomUUID();
   const key = keys.paymentProof(actor.id, proofId, PAYMENT_IMAGE_TYPES[input.mimeType]);
-  return { proofId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900) };
+  return { proofId, uploadUrl: await deps.storage.presignPut(key, input.mimeType, 900, input.sizeBytes) };
 }
 
 export async function submitPayment(
