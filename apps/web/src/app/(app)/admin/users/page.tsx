@@ -118,7 +118,7 @@ export default async function AdminUsersPage({
               ? t("totalPaged", { count: result.total, page: result.page, pages: result.pages })
               : t("total", { count: result.total })}
         </p>
-        <ul className="mt-2 flex flex-col divide-y divide-line">
+        <ul className="stagger mt-2 flex flex-col divide-y divide-line">
           {result.users.map((u) => (
             <li key={u.id}>
               <UserRow

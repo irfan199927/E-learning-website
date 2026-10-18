@@ -213,13 +213,24 @@ function NavList({
               ref={i === 0 ? firstLink : undefined}
               href={n.href}
               aria-current={active ? "page" : undefined}
-              className={`flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] transition-colors ${
+              className={`group relative flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] transition-colors duration-200 ${
                 active
                   ? "bg-primary-soft font-semibold text-primary-fg-strong"
                   : "font-medium text-muted hover:bg-canvas hover:text-ink"
               }`}
             >
-              <Icon name={n.icon} size={22} />
+              {/* Active marker: a bar that grows in from the middle. */}
+              <span
+                aria-hidden="true"
+                className={`absolute inset-y-3 left-0 w-1 rounded-full bg-primary transition-transform duration-300 ease-[var(--ease-out)] ${
+                  active ? "scale-y-100" : "scale-y-0"
+                }`}
+              />
+              <Icon
+                name={n.icon}
+                size={22}
+                className="transition-transform duration-200 ease-[var(--ease-out)] group-hover:scale-110"
+              />
               {t(labelFor(n, role))}
             </Link>
           </li>

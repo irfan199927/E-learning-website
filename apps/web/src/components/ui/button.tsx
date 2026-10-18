@@ -18,7 +18,9 @@ export type ButtonVariant = keyof typeof VARIANTS;
  * outline buttons fade instead (see `secondary`). */
 export function buttonClasses(variant: ButtonVariant = "primary", extra = ""): string {
   return [
-    "inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] px-4 text-[15px] font-semibold transition-colors",
+    "inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] px-4 text-[15px] font-semibold",
+    // Press feedback: a slight squeeze while held (off with reduced motion, globals.css).
+    "transition-[color,background-color,border-color,transform] duration-150 enabled:active:scale-[0.97]",
     "disabled:cursor-not-allowed",
     variant === "secondary" || variant === "danger"
       ? ""

@@ -5,6 +5,13 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — staff area look and motion (2026-10-18)
+
+- A welcome banner on the teacher and admin Overview: date, greeting and quick actions.
+- "Needs your attention" cards get a colour per kind of work and numbers that count up; school totals get icons.
+- Motion across the app: pages rise in, lists stagger, link cards lift on hover, buttons squeeze when pressed,
+  and the sidebar's active item gets a marker bar. All of it is off with the system's reduced-motion setting.
+
 ### Changed — staff screens, second pass (2026-10-18)
 
 - Calendar dates read day-first in English too (`Mon 12/10`, `12 – 18 Oct 2026`), like the rest of the app.

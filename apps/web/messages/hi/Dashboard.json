@@ -60,5 +60,13 @@
     "students": "विद्यार्थी",
     "teachers": "शिक्षक",
     "courses": "कोर्स"
+  },
+  "quickActions": "त्वरित कार्य",
+  "quick": {
+    "schedule": "कक्षा शेड्यूल करें",
+    "upload": "वीडियो अपलोड करें",
+    "newCourse": "नया कोर्स",
+    "users": "लोग जोड़ें",
+    "payments": "भुगतान जाँचें"
   }
 }
