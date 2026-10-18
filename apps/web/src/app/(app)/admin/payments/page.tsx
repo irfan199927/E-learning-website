@@ -10,6 +10,7 @@ import { DecidePayment } from "./decide-payment";
 import { PaymentsExportForm } from "./export-form";
 import { QrEditor } from "./qr-editor";
 import { PaymentSettingsForm } from "./settings-form";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("AdminPayments"))("title") };
@@ -44,10 +45,7 @@ export default async function PaymentsPage({
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">{t("intro")}</p>
-      </header>
+      <PageHeader icon="rupee" title={t("title")} intro={t("intro")} />
 
       <section aria-labelledby="list-h" className={card}>
         <h2 id="list-h" className="mb-3 font-display text-xl font-bold">

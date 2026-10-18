@@ -8,6 +8,7 @@ import { deps } from "@/server/container";
 import { listUsers } from "@/server/services/admin-users";
 import { AddUsers } from "./add-users";
 import { UserRow } from "./user-row";
+import { PageHeader } from "@/components/page-header";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("AdminUsers"))("title") };
@@ -48,10 +49,7 @@ export default async function AdminUsersPage({
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <header>
-        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted">{t("intro")}</p>
-      </header>
+      <PageHeader icon="users" title={t("title")} intro={t("intro")} />
 
       <AddUsers />
 

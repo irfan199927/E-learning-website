@@ -179,7 +179,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           aria-labelledby="join-h"
           className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
-          <h2 id="join-h" className="mb-1 font-display text-xl font-bold">
+          <h2 id="join-h" className="mb-1 flex items-center gap-2.5 font-display text-xl font-bold">
+            <span
+              className="grid size-8 place-items-center rounded-lg bg-warning-soft text-warning"
+              aria-hidden="true"
+            >
+              <Icon name="users" size={17} />
+            </span>
             {requests.length > 0 ? t("joinRequestsCount", { count: requests.length }) : t("joinRequests")}
           </h2>
           <p className="mb-3 text-sm text-muted">{t("joinRequestsHelp")}</p>
@@ -201,7 +207,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           aria-labelledby="students-h"
           className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
-          <h2 id="students-h" className="mb-3 font-display text-xl font-bold">
+          <h2 id="students-h" className="mb-3 font-display text-xl font-bold flex items-center gap-2.5">
+            <span
+              className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary-fg-strong"
+              aria-hidden="true"
+            >
+              <Icon name="users" size={17} />
+            </span>
             {t("students", { count: roster.length })}
           </h2>
           <RosterList
@@ -222,7 +234,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           aria-labelledby="attendance-h"
           className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
-          <h2 id="attendance-h" className="mb-1 font-display text-xl font-bold">
+          <h2 id="attendance-h" className="mb-1 font-display text-xl font-bold flex items-center gap-2.5">
+            <span
+              className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary-fg-strong"
+              aria-hidden="true"
+            >
+              <Icon name="calendar" size={17} />
+            </span>
             {t("attendance")}
           </h2>
           <p className="mb-3 text-sm text-muted">{t("attendanceHelp")}</p>
@@ -273,7 +291,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="assignments-h" className="font-display text-xl font-bold">
+            <h2 id="assignments-h" className="font-display text-xl font-bold flex items-center gap-2.5">
+              <span
+                className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary-fg-strong"
+                aria-hidden="true"
+              >
+                <Icon name="file" size={17} />
+              </span>
               {t("assignments")}
             </h2>
             {course.canManage && (
@@ -303,7 +327,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   <li key={a.id}>
                     <Link
                       href={`/assignments/${a.id}`}
-                      className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
+                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas"
                     >
                       <Icon name="file" size={20} className="shrink-0 text-primary-fg" />
                       <span className="flex min-w-0 flex-1 flex-col">
@@ -312,7 +336,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                           {t("due", { date: when(a.dueAt), status })}
                         </span>
                       </span>
-                      <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
+                      <Icon
+                        name="chevronRight"
+                        size={18}
+                        className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5"
+                      />
                     </Link>
                   </li>
                 );
@@ -329,7 +357,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
           className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="quizzes-h" className="font-display text-xl font-bold">
+            <h2 id="quizzes-h" className="font-display text-xl font-bold flex items-center gap-2.5">
+              <span
+                className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary-fg-strong"
+                aria-hidden="true"
+              >
+                <Icon name="check" size={17} />
+              </span>
               {t("quizzes")}
             </h2>
             {course.canManage && (
@@ -362,14 +396,18 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
                   <li key={q.id}>
                     <Link
                       href={`/quizzes/${q.id}`}
-                      className="-mx-2 flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-canvas"
+                      className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas"
                     >
                       <Icon name="check" size={20} className="shrink-0 text-primary-fg" />
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="font-semibold">{q.title}</span>
                         <span className="text-sm text-muted">{meta}</span>
                       </span>
-                      <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
+                      <Icon
+                        name="chevronRight"
+                        size={18}
+                        className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5"
+                      />
                     </Link>
                   </li>
                 );
@@ -384,7 +422,13 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         aria-labelledby="lessons-h"
         className="scroll-mt-32 rounded-[var(--radius-card)] border border-line bg-surface p-5"
       >
-        <h2 id="lessons-h" className="mb-2 font-display text-xl font-bold">
+        <h2 id="lessons-h" className="mb-2 font-display text-xl font-bold flex items-center gap-2.5">
+          <span
+            className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary-fg-strong"
+            aria-hidden="true"
+          >
+            <Icon name="video" size={17} />
+          </span>
           {t("lessons")}
         </h2>
         {course.modules.length === 0 ? (

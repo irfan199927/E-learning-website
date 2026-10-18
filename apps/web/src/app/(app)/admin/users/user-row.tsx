@@ -83,11 +83,12 @@ export function UserRow({ user }: { user: UserRowData }) {
     );
 
   return (
-    <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
+    <div className="-mx-2 flex flex-col gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas md:flex-row md:items-center md:justify-between">
+      {/* Switched-off people: grey avatar plus the "Switched off" badge (no fading: the text stays readable). */}
       <div className="flex min-w-0 gap-3">
         <span
           className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold ${
-            active ? "bg-primary-soft text-primary-fg-strong" : "bg-canvas text-muted"
+            active ? ROLE_TONE[role] : "bg-canvas text-muted"
           }`}
           aria-hidden="true"
         >
@@ -174,6 +175,14 @@ export function UserRow({ user }: { user: UserRowData }) {
 }
 
 /** "Asha Admin" → "AA"; one letter for a single name. */
+/** Avatar colour by role, so a long list scans by role at a glance (soft chips stay light in both themes). */
+const ROLE_TONE: Record<Role, string> = {
+  ADMIN: "bg-live-soft text-live-fg",
+  TEACHER: "bg-success-soft text-success",
+  STUDENT: "bg-primary-soft text-primary-fg-strong",
+  PARENT: "bg-warning-soft text-warning",
+};
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "")).toUpperCase();
