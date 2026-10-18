@@ -3,6 +3,7 @@ import { AppError, RECORDING_NOTICE_VERSION } from "@elearner/core";
 import { describe, expect, it } from "vitest";
 import { fakeGoogle, fakeJobs, makeDeps, world } from "@/test/fakes";
 import { cancelClass, getJoinUrl, listClasses, rescheduleClass, scheduleClass } from "./classes";
+import { isGoogleConnected } from "./courses";
 import { agreeToRecording } from "./recording-consent";
 
 const inHours = (h: number) => new Date(Date.now() + h * 3600_000);
@@ -26,8 +27,9 @@ describe("classes service (integration)", () => {
     });
 
     expect(cls?.meetLink).toBe("https://meet.google.com/abc-defg-hij");
-    const call = google.calls.createClassEvent?.[0]?.[0] as { attendeeEmails: string[] };
+    const call = google.calls.createClassEvent?.[0]?.[0] as { attendeeEmails: string[]; joinNote?: string };
     expect(call.attendeeEmails).toEqual([w.student.email]); // only enrolled, active students
+    expect(call.joinNote).toMatch(/\/calendar$/); // invites point to the app, not to Meet
     expect(jobs.log.some((l) => l.startsWith(`remind:${cls!.id}`))).toBe(true);
     const audit = await deps.db.auditLog.findFirst({
       where: { action: "class.schedule", targetId: w.course.id },
@@ -188,5 +190,31 @@ describe("classes service (integration)", () => {
     await cancelClass(deps, w.teacher, cls!.id);
     expect((await deps.db.classSession.findUnique({ where: { id: cls!.id } }))?.status).toBe("CANCELLED");
     await expect(cancelClass(deps, w.teacher, cls!.id)).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+});
+
+describe("isGoogleConnected (integration)", () => {
+  it("treats a grant missing a newer scope as not connected, so the teacher reconnects", async () => {
+    const w = await world();
+    const deps = makeDeps();
+    const base = {
+      userId: w.teacher.id,
+      googleSub: `sub-${randomUUID()}`,
+      email: w.teacher.email,
+      refreshTokenEnc: "x",
+    };
+    const old = [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/meetings.space.readonly",
+      "https://www.googleapis.com/auth/drive.meet.readonly",
+    ];
+    await deps.db.googleCredential.create({ data: { ...base, scopes: old } });
+    expect(await isGoogleConnected(deps, w.teacher.id)).toBe(false);
+
+    await deps.db.googleCredential.update({
+      where: { userId: w.teacher.id },
+      data: { scopes: [...old, "https://www.googleapis.com/auth/meetings.space.created"] },
+    });
+    expect(await isGoogleConnected(deps, w.teacher.id)).toBe(true);
   });
 });

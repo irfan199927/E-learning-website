@@ -131,7 +131,7 @@ list.
 ### Calendar: scheduling without Google
 
 - **Schedule class** is always there for teachers. With Google connected, the form asks **Where**: Google Meet
-  (Calendar invite, Meet link, recording afterwards) or **A room or another link**. Without Google (or on a
+  (Calendar invite without the link, Meet room, recording afterwards) or **A room or another link**. Without Google (or on a
   school with Google switched off) only the second applies: **Room or place** and/or a **Meeting link** (any
   https link; students open it from 10 minutes before, like Meet).
 - Classes without Google repeat weekly too (expanded by the app), can be dragged to reschedule and cancelled.

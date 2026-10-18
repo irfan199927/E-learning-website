@@ -33,7 +33,7 @@
 
 **Teacher**
 
-- T1. Schedule a single or recurring class. The app creates the Calendar event and Meet link and invites enrolled students.
+- T1. Schedule a single or recurring class. The app creates a Meet room and the Calendar event and invites enrolled students. The invite has no Meet link: students join from the app, which checks recording consent.
 - T2. Drag a class to reschedule. Students' invites update.
 - T3. Have Meet recordings attach to the right lesson automatically, or upload my own video (up to 4 GB, resumable).
 - T4. See attendance per class, auto-filled from Meet, and override it manually.
@@ -63,7 +63,7 @@ The architecture diagram is on the canvas (**System architecture** artboard).
 **Request paths**
 
 - **Pages and API:** Browser → Cloudflare → Next.js (Vercel). Each route handler runs `requireRole()` and `assertCanAccess(resource)` before touching Prisma.
-- **Scheduling (synchronous):** `POST /api/classes` → Calendar `events.insert` with `conferenceDataVersion=1` → Meet link is stored → `reminder` jobs are enqueued with delays (−24 h, −15 min).
+- **Scheduling (synchronous):** `POST /api/classes` → Meet `spaces.create` (access `TRUSTED`) → Calendar `events.insert` without conference data → the Meet link and meeting code are stored → `reminder` jobs are enqueued with delays (−24 h, −15 min).
 - **Recording sync (asynchronous):** a repeatable job runs every 10 min and picks classes that ended more than 15 min ago and have no recording yet. It calls Meet REST `conferenceRecords.list` (filtered by meeting code), then `recordings.list` and reads `driveDestination.file`. It then streams the Drive file into R2 and enqueues a `transcode` job. Retries back off up to 24 h, then the teacher is flagged "upload manually".
 - **Upload:** the browser gets presigned R2 multipart part URLs (16 MB parts) → `complete` → `transcode` job → ffmpeg produces HLS (360p and 720p, 6 s segments) and a thumbnail → status `READY`.
 - **Playback:** `GET /api/videos/:id/master.m3u8` checks enrollment, then rewrites the playlists with short-lived presigned segment URLs. Video is never public.
@@ -103,7 +103,8 @@ erDiagram
 | Scope                                                     | Who      | Used for                                                                    |
 | --------------------------------------------------------- | -------- | --------------------------------------------------------------------------- |
 | `openid email profile`                                    | everyone | Sign-in                                                                     |
-| `https://www.googleapis.com/auth/calendar.events`         | teacher  | Create, update and delete class events with a Meet link                     |
+| `https://www.googleapis.com/auth/calendar.events`         | teacher  | Create, update and delete class events (no Meet link)                       |
+| `https://www.googleapis.com/auth/meetings.space.created`  | teacher  | Create the Meet room for each class                                         |
 | `https://www.googleapis.com/auth/meetings.space.readonly` | teacher  | `conferenceRecords`, participants (attendance), recordings                  |
 | `https://www.googleapis.com/auth/drive.meet.readonly`     | teacher  | Download only the Drive files Meet created (narrower than `drive.readonly`) |
 

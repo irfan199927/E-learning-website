@@ -123,7 +123,7 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
     timeZone: input.timezone,
     rrule,
     attendeeEmails: students.map((s) => s.user.email),
-    requestId: randomUUID(),
+    joinNote: `Join from E-learner: ${deps.config.appUrl}/calendar`,
     appRef: `course_${course.id}`,
   });
 

@@ -20,8 +20,8 @@ export interface ClassEventInput {
   /** Full RRULE line, e.g. "RRULE:FREQ=WEEKLY;BYDAY=WE;UNTIL=20261218T182959Z" */
   rrule?: string;
   attendeeEmails: string[];
-  /** Idempotency key for Meet creation — reuse on retry to avoid duplicate meetings. */
-  requestId: string;
+  /** Shown in the invite instead of a join link, e.g. where to join from. */
+  joinNote?: string;
   /** Our identifier, stored on the event so Calendar push sync can find the class. */
   appRef: string;
 }
@@ -36,6 +36,7 @@ export interface CreatedEvent {
   eventId: string;
   etag: string | null;
   meetLink: string | null;
+  /** The Meet meeting code (abc-defg-hij): recordings and attendance are looked up by it. */
   conferenceId: string | null;
   /** One entry for a single class; every occurrence for a recurring series. */
   instances: EventInstance[];
@@ -132,22 +133,20 @@ export async function createTeacherGoogle(
   const call = <T>(fn: () => Promise<T>) =>
     withRetry(fn, { sleep, onRevoked: () => store.markRevoked(userId) });
 
-  function toCreated(ev: calendar_v3.Schema$Event, instances: EventInstance[]): CreatedEvent {
-    const video = ev.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video");
-    return {
-      eventId: ev.id!,
-      etag: ev.etag ?? null,
-      meetLink: video?.uri ?? ev.hangoutLink ?? null,
-      conferenceId: ev.conferenceData?.conferenceId ?? null,
-      instances,
-    };
-  }
-
   return {
     async createClassEvent(input) {
+      // The Meet room is its own space, NOT the event's conference: Calendar invites then carry no join link,
+      // so students join through E-learner, which checks recording consent first. TRUSTED = people in the
+      // school's Workspace join directly, anyone else knocks.
+      const space = (
+        await call(() => meet.spaces.create({ requestBody: { config: { accessType: "TRUSTED" } } }))
+      ).data;
+      if (!space.meetingUri || !space.meetingCode)
+        throw Errors.upstream("Google Meet", "Could not create a Meet room for this class.");
+
       const requestBody: calendar_v3.Schema$Event = {
         summary: input.title,
-        description: input.description,
+        description: [input.description, input.joinNote].filter(Boolean).join("\n\n"),
         start: { dateTime: input.startsAt.toISOString(), timeZone: input.timeZone },
         end: { dateTime: input.endsAt.toISOString(), timeZone: input.timeZone },
         recurrence: input.rrule ? [input.rrule] : undefined,
@@ -157,29 +156,10 @@ export async function createTeacherGoogle(
         guestsCanSeeOtherGuests: false, // students must not see each other's emails
         reminders: { useDefault: false, overrides: [] }, // we send our own reminders
         extendedProperties: { private: { elearnerRef: input.appRef } },
-        conferenceData: {
-          createRequest: { requestId: input.requestId, conferenceSolutionKey: { type: "hangoutsMeet" } },
-        },
       };
-      let ev = (
-        await call(() =>
-          calendar.events.insert({
-            calendarId: CALENDAR_ID,
-            conferenceDataVersion: 1,
-            sendUpdates: "all",
-            requestBody,
-          }),
-        )
+      const ev = (
+        await call(() => calendar.events.insert({ calendarId: CALENDAR_ID, sendUpdates: "all", requestBody }))
       ).data;
-
-      // Meet creation is usually synchronous but may come back "pending".
-      for (let i = 0; i < 5 && ev.conferenceData?.createRequest?.status?.statusCode === "pending"; i++) {
-        await sleep(1000 * (i + 1));
-        ev = (await call(() => calendar.events.get({ calendarId: CALENDAR_ID, eventId: ev.id! }))).data;
-      }
-      if (ev.conferenceData?.createRequest?.status?.statusCode === "failure") {
-        throw Errors.upstream("Google Meet", "Could not create a Meet link for this class.");
-      }
 
       let instances: EventInstance[] = [{ eventId: ev.id!, startsAt: input.startsAt, endsAt: input.endsAt }];
       if (input.rrule) {
@@ -194,7 +174,13 @@ export async function createTeacherGoogle(
             endsAt: new Date(i.end!.dateTime!),
           }));
       }
-      return toCreated(ev, instances);
+      return {
+        eventId: ev.id!,
+        etag: ev.etag ?? null,
+        meetLink: space.meetingUri,
+        conferenceId: space.meetingCode,
+        instances,
+      };
     },
 
     async rescheduleEvent(eventId, startsAt, endsAt, timeZone) {

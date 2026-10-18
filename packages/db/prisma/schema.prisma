@@ -718,10 +718,15 @@ model PaymentSettings {
 
 /// A student says they paid for a course by UPI; an admin checks their bank statement and approves (enrols) or
 /// rejects. A UPI reference (UTR) can only be used once.
+/// Payment records are kept for the school's accounts: deleting the student (erasure) or the course leaves the row,
+/// unlinked, with the names copied at submission. Only the screenshot (proofKey) goes with the account.
 model ManualPayment {
   id            String              @id @default(cuid())
-  userId        String
-  courseId      String
+  userId        String?
+  courseId      String?
+  payerName     String
+  payerEmail    String
+  courseTitle   String
   amountInPaise Int // the course price when submitted
   method        String              @default("UPI")
   reference     String // UTR / transaction id from the payer's UPI app
@@ -732,8 +737,8 @@ model ManualPayment {
   decidedAt     DateTime?
   decidedById   String?
   decisionNote  String?             @db.Text
-  user          User                @relation("ManualPayer", fields: [userId], references: [id], onDelete: Cascade)
-  course        Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user          User?               @relation("ManualPayer", fields: [userId], references: [id], onDelete: SetNull)
+  course        Course?             @relation(fields: [courseId], references: [id], onDelete: SetNull)
   decidedBy     User?               @relation("ManualPaymentDecider", fields: [decidedById], references: [id], onDelete: SetNull)
 
   @@unique([method, reference])
