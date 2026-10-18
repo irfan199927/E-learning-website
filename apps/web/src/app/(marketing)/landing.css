@@ -64,103 +64,110 @@
   overflow-x: clip;
 }
 
-/* Dark: the terminal look. Explicit choice (<html data-theme>) wins, else the OS. Keep both blocks equal. */
+/* Dark: the same design as light (sans display, indigo→pink gradient) on dark surfaces; buttons invert.
+ * Explicit choice (<html data-theme>) wins, else the OS. Keep both blocks equal. */
 :root[data-theme="dark"] .lp {
-  --lp-bg: #020617;
-  --lp-band: #050b1f;
-  --lp-card: #0b1022;
-  --lp-card-2: #10172e;
-  --lp-line: #1e293b;
-  --lp-line-strong: #334155;
-  --lp-fg: #f8fafc;
-  --lp-muted: #94a3b8;
-  --lp-accent: #22c55e;
-  --lp-accent-rgb: 34 197 94;
-  --lp-blue: #7c93ff;
-  --lp-gradient: linear-gradient(90deg, #22c55e, #7c93ff);
-  --lp-btn: #22c55e;
-  --lp-btn-fg: #0f172a;
-  --lp-btn-hover: #4ade80;
-  --lp-ghost-hover: rgb(248 250 252 / 0.06);
-  --lp-header-bg: rgb(2 6 23 / 0.82);
-  --lp-radius: 18px;
-  --lp-display: var(--font-mono);
-  --lp-display-tracking: -0.03em;
-  --lp-card-shadow: none;
-  --lp-card-hover-border: rgb(34 197 94 / 0.45);
-  --lp-card-hover-shadow: 0 20px 50px -20px rgb(34 197 94 / 0.35);
-  --lp-tag-bg: transparent;
-  --lp-tag-fg: #cbd5e1;
-  --lp-tag-border: #334155;
-  --lp-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  --lp-bg: #0a0a0f;
+  --lp-band: #111118;
+  --lp-card: #15151d;
+  --lp-card-2: #1a1a24;
+  --lp-line: #26262f;
+  --lp-line-strong: #3a3a46;
+  --lp-fg: #f5f5f7;
+  --lp-muted: #a1a1ad;
+  --lp-accent: #8b9bff;
+  --lp-accent-rgb: 139 155 255;
+  --lp-blue: #b197fc;
+  --lp-gradient: linear-gradient(90deg, #5b8cff 0%, #a78bfa 38%, #f472b6 70%, #fb923c 100%);
+  --lp-btn: #f5f5f7;
+  --lp-btn-fg: #0b0b0f;
+  --lp-btn-hover: #d9d9e0;
+  --lp-ghost-hover: rgb(245 245 247 / 0.07);
+  --lp-header-bg: rgb(10 10 15 / 0.72);
+  --lp-radius: 28px;
+  --lp-display: var(--font-sans);
+  --lp-display-tracking: -0.045em;
+  --lp-card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 40px -16px rgb(0 0 0 / 0.6);
+  --lp-card-hover-border: rgb(139 155 255 / 0.4);
+  --lp-card-hover-shadow: 0 2px 4px rgb(0 0 0 / 0.3), 0 30px 60px -24px rgb(139 92 246 / 0.5);
+  --lp-tag-bg: #1d1d27;
+  --lp-tag-fg: #d4d4dc;
+  --lp-tag-border: transparent;
+  --lp-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b9bff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
   --lp-field-bg:
-    radial-gradient(circle at 20% 20%, rgb(74 222 128 / 0.75), transparent 42%),
-    radial-gradient(circle at 85% 30%, rgb(124 147 255 / 0.7), transparent 40%),
-    radial-gradient(circle at 50% 90%, rgb(16 185 129 / 0.5), transparent 48%),
-    linear-gradient(135deg, #0b5a3a 0%, #0f6b4a 45%, #1d3a8a 100%);
-  --lp-field: #0b5a3a;
-  --lp-field-code: rgb(248 250 252 / 0.1);
-  --lp-inside-tint: rgb(2 6 23 / 0.62);
-  --lp-inside-fg: #f8fafc;
-  --lp-inside-muted: rgb(248 250 252 / 0.82);
-  --lp-inside-line: rgb(248 250 252 / 0.25);
-  --lp-inside-label: #bbf7d0;
-  --lp-inside-shadow: 0 1px 18px rgb(2 6 23 / 0.55);
-  --lp-final-glow: radial-gradient(ellipse at 50% 60%, rgb(34 197 94 / 0.16), transparent 60%);
+    radial-gradient(circle at 12% 30%, #2f6bff 0%, transparent 42%),
+    radial-gradient(circle at 48% 8%, #8b5cf6 0%, transparent 44%),
+    radial-gradient(circle at 88% 38%, #ec4899 0%, transparent 44%),
+    radial-gradient(circle at 62% 96%, #f97316 0%, transparent 48%),
+    linear-gradient(120deg, #3b5bfd 0%, #a855f7 50%, #f43f5e 100%);
+  --lp-field: #5b4cf5;
+  --lp-field-code: rgb(255 255 255 / 0.22);
+  --lp-inside-tint: rgb(10 10 15 / 0.7);
+  --lp-inside-fg: #f5f5f7;
+  --lp-inside-muted: rgb(245 245 247 / 0.82);
+  --lp-inside-line: rgb(245 245 247 / 0.2);
+  --lp-inside-label: #a5b4fc;
+  --lp-inside-shadow: none;
+  --lp-final-glow:
+    radial-gradient(ellipse at 30% 70%, rgb(91 140 255 / 0.22), transparent 55%),
+    radial-gradient(ellipse at 70% 60%, rgb(244 114 182 / 0.18), transparent 55%);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .lp {
-    --lp-bg: #020617;
-    --lp-band: #050b1f;
-    --lp-card: #0b1022;
-    --lp-card-2: #10172e;
-    --lp-line: #1e293b;
-    --lp-line-strong: #334155;
-    --lp-fg: #f8fafc;
-    --lp-muted: #94a3b8;
-    --lp-accent: #22c55e;
-    --lp-accent-rgb: 34 197 94;
-    --lp-blue: #7c93ff;
-    --lp-gradient: linear-gradient(90deg, #22c55e, #7c93ff);
-    --lp-btn: #22c55e;
-    --lp-btn-fg: #0f172a;
-    --lp-btn-hover: #4ade80;
-    --lp-ghost-hover: rgb(248 250 252 / 0.06);
-    --lp-header-bg: rgb(2 6 23 / 0.82);
-    --lp-radius: 18px;
-    --lp-display: var(--font-mono);
-    --lp-display-tracking: -0.03em;
-    --lp-card-shadow: none;
-    --lp-card-hover-border: rgb(34 197 94 / 0.45);
-    --lp-card-hover-shadow: 0 20px 50px -20px rgb(34 197 94 / 0.35);
-    --lp-tag-bg: transparent;
-    --lp-tag-fg: #cbd5e1;
-    --lp-tag-border: #334155;
-    --lp-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+    --lp-bg: #0a0a0f;
+    --lp-band: #111118;
+    --lp-card: #15151d;
+    --lp-card-2: #1a1a24;
+    --lp-line: #26262f;
+    --lp-line-strong: #3a3a46;
+    --lp-fg: #f5f5f7;
+    --lp-muted: #a1a1ad;
+    --lp-accent: #8b9bff;
+    --lp-accent-rgb: 139 155 255;
+    --lp-blue: #b197fc;
+    --lp-gradient: linear-gradient(90deg, #5b8cff 0%, #a78bfa 38%, #f472b6 70%, #fb923c 100%);
+    --lp-btn: #f5f5f7;
+    --lp-btn-fg: #0b0b0f;
+    --lp-btn-hover: #d9d9e0;
+    --lp-ghost-hover: rgb(245 245 247 / 0.07);
+    --lp-header-bg: rgb(10 10 15 / 0.72);
+    --lp-radius: 28px;
+    --lp-display: var(--font-sans);
+    --lp-display-tracking: -0.045em;
+    --lp-card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 40px -16px rgb(0 0 0 / 0.6);
+    --lp-card-hover-border: rgb(139 155 255 / 0.4);
+    --lp-card-hover-shadow: 0 2px 4px rgb(0 0 0 / 0.3), 0 30px 60px -24px rgb(139 92 246 / 0.5);
+    --lp-tag-bg: #1d1d27;
+    --lp-tag-fg: #d4d4dc;
+    --lp-tag-border: transparent;
+    --lp-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b9bff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
     --lp-field-bg:
-      radial-gradient(circle at 20% 20%, rgb(74 222 128 / 0.75), transparent 42%),
-      radial-gradient(circle at 85% 30%, rgb(124 147 255 / 0.7), transparent 40%),
-      radial-gradient(circle at 50% 90%, rgb(16 185 129 / 0.5), transparent 48%),
-      linear-gradient(135deg, #0b5a3a 0%, #0f6b4a 45%, #1d3a8a 100%);
-    --lp-field: #0b5a3a;
-    --lp-field-code: rgb(248 250 252 / 0.1);
-    --lp-inside-tint: rgb(2 6 23 / 0.62);
-    --lp-inside-fg: #f8fafc;
-    --lp-inside-muted: rgb(248 250 252 / 0.82);
-    --lp-inside-line: rgb(248 250 252 / 0.25);
-    --lp-inside-label: #bbf7d0;
-    --lp-inside-shadow: 0 1px 18px rgb(2 6 23 / 0.55);
-    --lp-final-glow: radial-gradient(ellipse at 50% 60%, rgb(34 197 94 / 0.16), transparent 60%);
+      radial-gradient(circle at 12% 30%, #2f6bff 0%, transparent 42%),
+      radial-gradient(circle at 48% 8%, #8b5cf6 0%, transparent 44%),
+      radial-gradient(circle at 88% 38%, #ec4899 0%, transparent 44%),
+      radial-gradient(circle at 62% 96%, #f97316 0%, transparent 48%),
+      linear-gradient(120deg, #3b5bfd 0%, #a855f7 50%, #f43f5e 100%);
+    --lp-field: #5b4cf5;
+    --lp-field-code: rgb(255 255 255 / 0.22);
+    --lp-inside-tint: rgb(10 10 15 / 0.7);
+    --lp-inside-fg: #f5f5f7;
+    --lp-inside-muted: rgb(245 245 247 / 0.82);
+    --lp-inside-line: rgb(245 245 247 / 0.2);
+    --lp-inside-label: #a5b4fc;
+    --lp-inside-shadow: none;
+    --lp-final-glow:
+      radial-gradient(ellipse at 30% 70%, rgb(91 140 255 / 0.22), transparent 55%),
+      radial-gradient(ellipse at 70% 60%, rgb(244 114 182 / 0.18), transparent 55%);
     color-scheme: dark;
   }
 }
 html[data-theme="dark"]:has(.lp) {
-  background: #020617;
+  background: #0a0a0f;
 }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]):has(.lp) {
-    background: #020617;
+    background: #0a0a0f;
   }
 }
 html:has(.lp) {

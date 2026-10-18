@@ -4,7 +4,7 @@ const VARIANTS = {
   primary: "bg-primary text-white hover:bg-primary-strong",
   /** Disabled outline buttons keep a faint outline: a grey fill read as "pressed" on reorder arrows. */
   secondary:
-    "border border-line-strong bg-surface text-ink hover:bg-canvas disabled:border-line disabled:bg-transparent disabled:text-muted/60",
+    "border border-line-strong bg-surface text-ink hover:bg-hover disabled:border-line disabled:bg-transparent disabled:text-muted/60",
   ghost: "bg-transparent text-primary-fg hover:bg-primary-soft",
   live: "bg-live text-white hover:brightness-95",
   /** Destructive but reversible actions (switch off, remove): red text, kept apart from the primary action. */

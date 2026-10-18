@@ -83,7 +83,7 @@ export function UserRow({ user }: { user: UserRowData }) {
     );
 
   return (
-    <div className="-mx-2 flex flex-col gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-canvas md:flex-row md:items-center md:justify-between">
+    <div className="-mx-2 flex flex-col gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-hover md:flex-row md:items-center md:justify-between">
       {/* Switched-off people: grey avatar plus the "Switched off" badge (no fading: the text stays readable). */}
       <div className="flex min-w-0 gap-3">
         <span

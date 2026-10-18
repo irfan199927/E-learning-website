@@ -321,12 +321,9 @@ dashboard** instead. The signed-in app keeps its own design system; the landing 
 | Hero: scroll-driven camera through the word CODE                                      | `src/components/landing/hero-portal.tsx` wraps `src/components/ui/glyph-portal.tsx` |
 | Scroll reveal, typing editor, sticky header                                           | `src/components/landing/{reveal,typing-terminal,site-header}.tsx`                   |
 
-**Design direction.** The dark theme comes from the ui-ux-pro-max skill's design-system search for "coding bootcamp developer
-course teens":
-
-- a dark "terminal" style;
-- JetBrains Mono for headings and Figtree for body text, both already self-hosted;
-- one green accent (`#22C55E`, with dark text on it) reserved for actions.
+**Design direction.** Both themes share one design (light was first; dark used to be a separate green "terminal"
+look and was brought in line on 2026-10-18 because the two read like different sites). JetBrains Mono stays for
+small labels and the code editor.
 
 We skipped the skill's testimonial carousel: we have no real testimonials, and invented ones would be fake reviews.
 The projects students build serve as the proof instead.
@@ -404,7 +401,8 @@ dark) { :root:not([data-theme="light"]) }`. Change both together. This applies t
 - **Light** (product-launch style): white space, near-black heavy sans headlines (Figtree 900, tight tracking), one
   vivid blue → violet → pink → orange gradient (CODE letters, numbers, logo), soft-shadow 28 px cards, a frosted
   header, black pill buttons, and alternating `#f5f5f7` bands.
-- **Dark:** the terminal look: JetBrains Mono headlines and a green action color.
+- **Dark:** the same layout, fonts and gradient on near-black (`#0a0a0f`) with `#15151d` cards; buttons invert
+  (white pill, black text) and the accent lightens to `#8b9bff` for contrast.
 - **Both:** the code editor stays dark. The hero re-mounts the portal with the matching font when the theme changes,
   because it measures the letters once at mount.
 

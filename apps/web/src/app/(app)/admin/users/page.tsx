@@ -77,7 +77,7 @@ export default async function AdminUsersPage({
           {query.role && <input type="hidden" name="role" value={query.role} />}
           <button
             type="submit"
-            className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 font-semibold hover:bg-canvas"
+            className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 font-semibold hover:bg-hover"
           >
             {t("search")}
           </button>

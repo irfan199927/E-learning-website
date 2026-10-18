@@ -113,7 +113,7 @@ export function ScheduleClassForm({
           type="button"
           aria-label={t("close")}
           onClick={onClose}
-          className="grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-canvas"
+          className="grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-hover"
         >
           ×
         </button>

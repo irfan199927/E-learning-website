@@ -11,7 +11,7 @@ export function SignOutButton() {
     <button
       type="button"
       aria-label={t("signOut")}
-      className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-canvas"
+      className="grid size-11 place-items-center rounded-[var(--radius-control)] text-muted hover:bg-hover"
       onClick={async () => {
         await authClient.signOut();
         router.replace("/sign-in");

@@ -140,7 +140,7 @@ export function WeightingForm({
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex h-11 items-center rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 text-[15px] font-semibold hover:bg-canvas disabled:opacity-60"
+          className="inline-flex h-11 items-center rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 text-[15px] font-semibold hover:bg-hover disabled:opacity-60"
         >
           {busy ? t("saving") : t("saveWeighting")}
         </button>

@@ -5,6 +5,15 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — dark theme matches light (2026-10-18)
+
+- Landing page: dark mode is now the same design as light (heavy sans headline, blue → violet → pink → orange
+  gradient, 28 px cards) on near-black, with white pill buttons. It used to switch to a green monospace
+  "terminal" look that read like a different site.
+- App: cards stand out more from the page; status chips (green, amber, red) use deep tints with light text
+  instead of pale light-mode chips; hover fills lighten the row instead of darkening it (new `hover` token);
+  white text on solid green uses `on-success`.
+
 ### Added — collapsible sidebar (2026-10-18)
 
 - On desktop the sidebar collapses to an icon rail with the button at its foot, and expands again. The choice is

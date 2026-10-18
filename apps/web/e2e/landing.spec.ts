@@ -56,7 +56,7 @@ test("the theme switch flips light/dark and the choice survives a reload", async
   expect(await res.text()).toContain('data-theme="dark"');
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "dark");
-  await expect(page.locator(".lp")).toHaveCSS("background-color", "rgb(2, 6, 23)");
+  await expect(page.locator(".lp")).toHaveCSS("background-color", "rgb(10, 10, 15)");
 
   await page.locator(".lp-header").getByRole("button", { name: "Dark mode" }).click();
   await expect(html).toHaveAttribute("data-theme", "light");
