@@ -5,11 +5,19 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Changed — staff screens, second pass (2026-10-18)
+
+- Calendar dates read day-first in English too (`Mon 12/10`, `12 – 18 Oct 2026`), like the rest of the app.
+- Disabled outline buttons (the first lesson's "move up", the last one's "move down") fade out instead of turning
+  grey, which looked pressed.
+- An assignment lists the students waiting for a grade first, then graded work, then those who haven't handed in.
+- A quiz that students have taken shows its locked questions greyed out, under a visible notice.
+
 ### Fixed — video playback (2026-10-18)
 
 - The player now uses hls.js wherever the browser supports it and falls back to native HLS only without Media
-  Source Extensions. Before, browsers that claim native HLS (newer Chrome) skipped hls.js: the likely reason
-  lessons listed but didn't play on UAT, where the server side checked out. Playback errors now show the "stopped" message and log the hls.js error to the console.
+  Source Extensions. Before, browsers that claim native HLS (newer Chrome) skipped hls.js, and lessons listed
+  but didn't play on UAT. Confirmed playing on UAT after the change. Playback errors now show the "stopped" message and log the hls.js error to the console.
 
 ### Changed — staff and admin UI/UX pass (2026-10-18)
 

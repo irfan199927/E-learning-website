@@ -13,6 +13,7 @@ const PATHS = {
   play: "M8 5v14l11-7z",
   check: "M5 12.5l4.5 4.5L19 7.5",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8v.01",
   chevronLeft: "M15 6l-6 6 6 6",
   chevronRight: "M9 6l6 6-6 6",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
