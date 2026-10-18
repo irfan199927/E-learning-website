@@ -142,6 +142,8 @@ docker build -f apps/worker/Dockerfile -t elearner-worker .
 - Notifications: write them with `notifyUsers` (services/notifications.ts; pass a `dedupeKey` for "once per item")
   or `notification.create` in a transaction; links must be same-site paths (`safeLink` drops anything else).
   `sentAt` = already emailed: the daily digest (worker `send-notification-digest`) skips those and sets it.
+- A constant a server component needs must not live in a `"use client"` module: importing it gives a client
+  reference, not the value (that's why `SIDEBAR_COOKIE` is in `lib/sidebar.ts`).
 - Icon-only buttons: `w-11 px-0!` (Tailwind 4 important suffix); plain `px-0` loses to the base `px-4`.
 - Hosting: only the static landing page is on Vercel. The full app runs as Docker images: UAT on a home-lab VM
   (`deploy/uat/`, docs/uat.md; the VM pulls green `main` commits, no self-hosted runner because the repo is

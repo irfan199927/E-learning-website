@@ -12,5 +12,7 @@
   "users": "Users",
   "payments": "Payments",
   "settings": "Settings",
-  "adminSection": "Administration"
+  "adminSection": "Administration",
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar"
 }

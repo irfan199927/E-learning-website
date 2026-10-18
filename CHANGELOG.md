@@ -5,6 +5,12 @@ Dates are in IST.
 
 ## [Unreleased]
 
+### Added — collapsible sidebar (2026-10-18)
+
+- On desktop the sidebar collapses to an icon rail with the button at its foot, and expands again. The choice is
+  remembered (`sidebar` cookie, read on the server so the page never jumps). Collapsed links keep their names
+  for screen readers and show them as a tooltip. Phones keep the slide-in drawer.
+
 ### Changed — staff screens restyled (2026-10-18)
 
 - Main screens (Courses, Calendar, Upload, Users, Payments, Settings) open with a shared header: an icon chip,
