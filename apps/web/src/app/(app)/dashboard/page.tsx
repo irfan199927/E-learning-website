@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { CourseTile } from "@/components/course-tile";
-import { Icon } from "@/components/icons";
+import { Icon, type IconName } from "@/components/icons";
 import { ChildCard, NoChildren } from "@/components/child-card";
 import { JoinButton } from "@/components/join-button";
 import { MonthlyProgress, TodayProgress } from "@/components/learner-progress";
@@ -15,6 +15,7 @@ import { requirePageActor } from "@/lib/session";
 import { deps } from "@/server/container";
 import type { Actor } from "@/server/deps";
 import { listClasses } from "@/server/services/classes";
+import { getAttention, type Attention, type AttentionKey } from "@/server/services/attention";
 import { isGoogleConnected } from "@/server/services/courses";
 import { listChildren } from "@/server/services/parents";
 import { mayJoinRecordedClasses } from "@/server/services/recording-consent";
@@ -35,7 +36,8 @@ export default async function DashboardPage({
   const { month } = await searchParams;
   const d = deps();
   const now = d.now();
-  const [classes, googleOk, overview, courses, children, mayJoin, t] = await Promise.all([
+  const staff = actor.role === "TEACHER" || actor.role === "ADMIN";
+  const [classes, googleOk, overview, courses, children, mayJoin, attention, t] = await Promise.all([
     listClasses(d, actor, {
       from: new Date(now.getTime() - 3 * 3600_000),
       to: new Date(now.getTime() + 7 * 86_400_000),
@@ -47,6 +49,7 @@ export default async function DashboardPage({
     actor.role === "TEACHER" || actor.role === "ADMIN" ? listMyCourses(d, actor) : Promise.resolve([]),
     actor.role === "PARENT" ? listChildren(d, actor) : Promise.resolve(null),
     mayJoinRecordedClasses(d.db, actor),
+    staff ? getAttention(d, actor) : Promise.resolve(null),
     getTranslations("Dashboard"),
   ]);
   const upcoming = classes.filter((c) => new Date(c.endsAt) > now).slice(0, 8);
@@ -116,6 +119,7 @@ export default async function DashboardPage({
               )}
             </section>
           )}
+          {attention && <NeedsAttention attention={attention} />}
           {upcomingSection}
           {courses.length > 0 && <TeachingCourses courses={courses} />}
         </>
@@ -266,6 +270,75 @@ function UpcomingClasses({
   );
 }
 
+const ATTENTION_ICON: Record<AttentionKey, IconName> = {
+  grade: "check",
+  joinRequests: "users",
+  attendance: "calendar",
+  payments: "rupee",
+  deletions: "trash",
+};
+
+/** Staff: what's waiting on them, each a link to the first place to act; admins also get school totals. */
+function NeedsAttention({ attention }: { attention: Attention }) {
+  const t = useTranslations("Dashboard");
+  const { items, stats } = attention;
+  return (
+    <section aria-labelledby="attention-h" className="flex flex-col gap-4">
+      <h2 id="attention-h" className="font-display text-xl font-bold">
+        {t("attentionTitle")}
+      </h2>
+      {items.length === 0 ? (
+        <p className={`flex items-center gap-3 p-5 text-muted ${card}`}>
+          <span
+            className="grid size-9 place-items-center rounded-full bg-success-soft text-success"
+            aria-hidden="true"
+          >
+            <Icon name="check" size={18} />
+          </span>
+          {t("allCaughtUp")}
+        </p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((item) => (
+            <li key={item.key}>
+              <Link
+                href={item.href}
+                className={`flex min-h-20 items-center gap-4 p-4 transition-colors hover:border-primary hover:bg-primary-soft/40 ${card}`}
+              >
+                <span
+                  className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary-fg-strong"
+                  aria-hidden="true"
+                >
+                  <Icon name={ATTENTION_ICON[item.key]} size={20} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-display text-2xl font-bold tabular-nums leading-tight">
+                    {item.count}
+                  </span>
+                  <span className="text-sm text-muted">
+                    {t(`attention.${item.key}`, { count: item.count })}
+                  </span>
+                </span>
+                <Icon name="chevronRight" size={18} className="text-muted" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {stats && (
+        <dl className={`grid grid-cols-3 divide-x divide-line ${card}`}>
+          {(["students", "teachers", "courses"] as const).map((k) => (
+            <div key={k} className="flex flex-col gap-0.5 px-5 py-4">
+              <dt className="text-sm text-muted">{t(`stats.${k}`)}</dt>
+              <dd className="font-display text-2xl font-bold tabular-nums">{stats[k]}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  );
+}
+
 function TeachingCourses({ courses }: { courses: CourseCard[] }) {
   const t = useTranslations("Dashboard");
   return (
@@ -286,10 +359,12 @@ function TeachingCourses({ courses }: { courses: CourseCard[] }) {
               className="flex items-center gap-3 rounded-xl border border-line p-3 hover:bg-canvas"
             >
               <span
-                className="size-10 shrink-0 rounded-lg"
+                className="grid size-10 shrink-0 place-items-center rounded-lg font-display text-lg font-bold text-white"
                 style={{ background: c.color }}
                 aria-hidden="true"
-              />
+              >
+                {c.title.trim().charAt(0).toUpperCase()}
+              </span>
               <span className="flex min-w-0 flex-col">
                 <b className="truncate text-[15px]">{c.title}</b>
                 <span className="text-sm text-muted">

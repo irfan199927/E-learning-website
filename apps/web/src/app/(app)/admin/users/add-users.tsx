@@ -186,7 +186,7 @@ export function AddUsers() {
                   : t("ready", { count: csv.users.length })}
               </p>
               {csv.problems.length > 0 && (
-                <ul className="list-disc pl-5 text-sm text-[#A11C14]">
+                <ul className="list-disc pl-5 text-sm text-live-fg">
                   {csv.problems.slice(0, 20).map((p) => (
                     <li key={`${p.line}-${p.message}`}>
                       {t("problem", { line: p.line, message: p.message })}

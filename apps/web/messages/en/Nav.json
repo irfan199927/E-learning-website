@@ -11,5 +11,6 @@
   "upload": "Upload video",
   "users": "Users",
   "payments": "Payments",
-  "settings": "Settings"
+  "settings": "Settings",
+  "adminSection": "Administration"
 }

@@ -44,6 +44,12 @@ list.
 | My children  | `/children`       | parent                                            |
 | Calendar     | `/calendar`       | all                                               |
 | Upload video | `/library/upload` | teacher, admin                                    |
+| Users        | `/admin/users`    | admin, under an **Administration** heading        |
+| Payments     | `/admin/payments` | admin, under **Administration**                   |
+| Settings     | `/admin/settings` | admin, under **Administration**                   |
+
+Admin-only items are a separate list with its own heading (`NavItem.admin`), so school administration doesn't
+mix with teaching.
 
 ## Screens
 
@@ -55,8 +61,12 @@ list.
   - Today's progress.
   - Monthly progress.
   - Upcoming classes in the right column (below the other cards on narrow screens).
-- **Teacher and admin:** the Connect Google prompt (when there is no grant), upcoming classes with Join
-  buttons, and "Your courses" (student and lesson counts).
+- **Teacher and admin:** the Connect Google prompt (when there is no grant), then **Needs your attention**
+  (`services/attention.ts`): one card per kind of waiting work, each a count and a link to the oldest item.
+  Teachers see their own courses: work to grade, join requests, and classes without Google from the last 14 days
+  that have no attendance marks. Admins see the whole school, plus payments to check, accounts being deleted and
+  totals (students, teachers, courses). With nothing waiting it says so. Then upcoming classes with Join buttons
+  and "Your courses" (student and lesson counts).
 - **Parent:** **Your children** (one card per linked child: streak, today's minutes, lessons done, courses, and
   **See progress**), then upcoming classes for their children, read-only, with no Join button.
 
@@ -194,6 +204,9 @@ published at once. A badge on each course, such as "2 students waiting to join",
   can't see yet. They get **Edit course** and **Upload video** in the header.
 - Access follows the same rule as video playback (`assertCourseAccess(..., "watch")`). Anyone else gets a
   plain 404.
+- Staff get a row of section shortcuts under the header (Join requests, Students, Attendance, Assignments,
+  Quizzes, Lessons, each with its count; sticky on desktop, wrapping on phones). Join requests is highlighted
+  while any are waiting.
 - The course teacher and admins see **Join requests** (`#join-requests`): who asked, when, and their note, with
   **Approve** and **Decline**. Approving enrols the student and sends them an in-app notification.
 
@@ -415,5 +428,8 @@ These are pure functions in `packages/core/src/learning.ts`, unit-tested in `lea
    Progress rings get a text label ("3 of 9 lessons completed").
 5. **Counts use `plural()`** (`lib/format.ts`) until i18n lands.
 6. **Times are shown in the user's timezone**: pass `actor.timezone` to `formatInZone` / `JoinButton`.
-7. Add a Playwright check to `e2e/smoke.spec.ts` for every new page. It runs as desktop and mobile
+7. **Destructive actions use `variant="danger"`** (red text, red on hover): switch off, remove, delete. They
+   always ask to confirm, and never sit as the primary (filled) button. Red chip text is `text-live-fg`.
+8. **Waiting work shows a count** on the tab or shortcut that leads to it (Payments "To check", course shortcuts).
+9. Add a Playwright check to `e2e/smoke.spec.ts` for every new page. It runs as desktop and mobile
    (Pixel 7).

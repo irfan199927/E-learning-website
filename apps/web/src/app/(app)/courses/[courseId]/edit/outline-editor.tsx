@@ -245,7 +245,7 @@ function ModuleCard({
                 </>
               ) : (
                 <Button
-                  variant="secondary"
+                  variant="danger"
                   className={iconBtn}
                   onClick={() => setConfirmDelete(true)}
                   aria-label={t("deleteModuleNamed", { title: m.title })}
@@ -452,7 +452,7 @@ function LessonRow({
           </>
         ) : (
           <Button
-            variant="secondary"
+            variant="danger"
             className={iconBtn}
             onClick={() => setConfirmDelete(true)}
             aria-label={t("deleteNamed", { title: l.title })}

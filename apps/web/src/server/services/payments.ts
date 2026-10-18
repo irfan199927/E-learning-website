@@ -374,6 +374,12 @@ export async function listPayments(
   }));
 }
 
+/** Admin: how many reported payments are waiting to be checked (the badge on the "To check" tab). */
+export async function countPendingPayments(deps: Deps, actor: Actor): Promise<number> {
+  assertCan(actor.role, "user:manage");
+  return deps.db.manualPayment.count({ where: { status: ManualPaymentStatus.PENDING } });
+}
+
 /** Admin: signed URL of a payment screenshot. */
 export async function proofUrl(deps: Deps, actor: Actor, paymentId: string): Promise<string> {
   assertCan(actor.role, "user:manage");

@@ -18,6 +18,8 @@ interface NavItem {
   roles: Role[];
   /** Extra paths that highlight this item (e.g. a lesson page belongs to "My courses"). */
   match?: RegExp;
+  /** School administration: listed under its own heading. */
+  admin?: true;
 }
 
 const NAV: NavItem[] = [
@@ -42,9 +44,9 @@ const NAV: NavItem[] = [
     roles: ["ADMIN", "TEACHER", "STUDENT", "PARENT"],
   },
   { href: "/library/upload", label: "upload", icon: "upload", roles: ["ADMIN", "TEACHER"] },
-  { href: "/admin/users", label: "users", icon: "users", roles: ["ADMIN"] },
-  { href: "/admin/payments", label: "payments", icon: "rupee", roles: ["ADMIN"] },
-  { href: "/admin/settings", label: "settings", icon: "edit", roles: ["ADMIN"] },
+  { href: "/admin/users", label: "users", icon: "users", roles: ["ADMIN"], admin: true },
+  { href: "/admin/payments", label: "payments", icon: "rupee", roles: ["ADMIN"], admin: true },
+  { href: "/admin/settings", label: "settings", icon: "settings", roles: ["ADMIN"], admin: true },
 ];
 
 function labelFor(item: NavItem, role: Role): NavLabel {
@@ -141,28 +143,27 @@ export function ShellFrame({
             <Icon name="close" />
           </button>
         </div>
-        <ul className="flex flex-col gap-1.5">
-          {items.map((n, i) => {
-            const active = pathname.startsWith(n.href) || !!n.match?.test(pathname);
-            return (
-              <li key={n.href}>
-                <Link
-                  ref={i === 0 ? firstLink : undefined}
-                  href={n.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] transition-colors ${
-                    active
-                      ? "bg-primary-soft font-semibold text-primary-fg-strong"
-                      : "font-medium text-muted hover:bg-canvas hover:text-ink"
-                  }`}
-                >
-                  <Icon name={n.icon} size={22} />
-                  {t(labelFor(n, role))}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col gap-6 overflow-y-auto">
+          <NavList
+            items={items.filter((n) => !n.admin)}
+            role={role}
+            pathname={pathname}
+            firstLink={firstLink}
+          />
+          {items.some((n) => n.admin) && (
+            <div className="flex flex-col gap-2">
+              <h2 id="nav-admin" className="px-3.5 text-xs font-bold uppercase tracking-wider text-muted">
+                {t("adminSection")}
+              </h2>
+              <NavList
+                items={items.filter((n) => n.admin)}
+                role={role}
+                pathname={pathname}
+                labelledBy="nav-admin"
+              />
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="flex min-w-0 flex-col">
@@ -185,5 +186,45 @@ export function ShellFrame({
         </main>
       </div>
     </div>
+  );
+}
+
+function NavList({
+  items,
+  role,
+  pathname,
+  firstLink,
+  labelledBy,
+}: {
+  items: NavItem[];
+  role: Role;
+  pathname: string;
+  firstLink?: React.RefObject<HTMLAnchorElement | null>;
+  labelledBy?: string;
+}) {
+  const t = useTranslations("Nav");
+  return (
+    <ul className="flex flex-col gap-1.5" aria-labelledby={labelledBy}>
+      {items.map((n, i) => {
+        const active = pathname.startsWith(n.href) || !!n.match?.test(pathname);
+        return (
+          <li key={n.href}>
+            <Link
+              ref={i === 0 ? firstLink : undefined}
+              href={n.href}
+              aria-current={active ? "page" : undefined}
+              className={`flex h-12 items-center gap-3 rounded-xl px-3.5 text-[15px] transition-colors ${
+                active
+                  ? "bg-primary-soft font-semibold text-primary-fg-strong"
+                  : "font-medium text-muted hover:bg-canvas hover:text-ink"
+              }`}
+            >
+              <Icon name={n.icon} size={22} />
+              {t(labelFor(n, role))}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

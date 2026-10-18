@@ -46,5 +46,19 @@
   },
   "dayToday": " (today)",
   "dayWatched": ": {minutes} min watched",
-  "activeDays": "{count, plural, one {# day} other {# days}} of learning this month"
+  "activeDays": "{count, plural, one {# day} other {# days}} of learning this month",
+  "attentionTitle": "Needs your attention",
+  "allCaughtUp": "You're all caught up: nothing is waiting on you.",
+  "attention": {
+    "grade": "{count, plural, one {piece of work to grade} other {pieces of work to grade}}",
+    "joinRequests": "{count, plural, one {student asking to join} other {students asking to join}}",
+    "attendance": "{count, plural, one {class without attendance} other {classes without attendance}}",
+    "payments": "{count, plural, one {payment to check} other {payments to check}}",
+    "deletions": "{count, plural, one {account being deleted} other {accounts being deleted}}"
+  },
+  "stats": {
+    "students": "Students",
+    "teachers": "Teachers",
+    "courses": "Courses"
+  }
 }

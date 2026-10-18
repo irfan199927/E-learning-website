@@ -5,6 +5,9 @@ const VARIANTS = {
   secondary: "border border-line-strong bg-surface text-ink hover:bg-canvas",
   ghost: "bg-transparent text-primary-fg hover:bg-primary-soft",
   live: "bg-live text-white hover:brightness-95",
+  /** Destructive but reversible actions (switch off, remove): red text, kept apart from the primary action. */
+  danger:
+    "border border-line-strong bg-surface text-danger-fg hover:border-live hover:bg-live-soft hover:text-live-fg",
 } as const;
 
 export type ButtonVariant = keyof typeof VARIANTS;

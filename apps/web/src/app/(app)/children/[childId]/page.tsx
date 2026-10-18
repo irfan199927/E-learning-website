@@ -221,7 +221,7 @@ export default async function ChildProgressPage({
                           {r.minutes > 0 && t("attendedMinutes", { minutes: r.minutes })}
                         </span>
                       ) : (
-                        <span className={`${pill} bg-live-soft text-[#A11C14]`}>{t("missed")}</span>
+                        <span className={`${pill} bg-live-soft text-live-fg`}>{t("missed")}</span>
                       )}
                     </td>
                   </tr>

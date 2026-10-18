@@ -76,24 +76,7 @@ export default async function AdminUsersPage({
               className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="role" className="text-sm font-semibold">
-              {t("role")}
-            </label>
-            <select
-              id="role"
-              name="role"
-              defaultValue={query.role ?? ""}
-              className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px]"
-            >
-              <option value="">{t("everyone")}</option>
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {t("roleFilter", { role: r })}
-                </option>
-              ))}
-            </select>
-          </div>
+          {query.role && <input type="hidden" name="role" value={query.role} />}
           <button
             type="submit"
             className="h-11 rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 font-semibold hover:bg-canvas"
@@ -101,6 +84,32 @@ export default async function AdminUsersPage({
             {t("search")}
           </button>
         </form>
+
+        <nav aria-label={t("role")} className="mt-4">
+          <ul className="flex flex-wrap gap-2">
+            {([undefined, ...ROLES] as const).map((r) => {
+              const sp = new URLSearchParams();
+              if (query.q) sp.set("q", query.q);
+              if (r) sp.set("role", r);
+              const current = (query.role ?? undefined) === r;
+              return (
+                <li key={r ?? "all"}>
+                  <Link
+                    href={sp.size ? `/admin/users?${sp}` : "/admin/users"}
+                    aria-current={current ? "page" : undefined}
+                    className={`flex h-9 items-center rounded-full border px-3.5 text-sm font-semibold transition-colors ${
+                      current
+                        ? "border-ink bg-ink text-surface"
+                        : "border-line-strong bg-surface hover:border-primary hover:text-primary-fg"
+                    }`}
+                  >
+                    {r ? t("roleFilter", { role: r }) : t("everyone")}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
         <p className="mt-4 text-sm text-muted" role="status">
           {result.total === 0

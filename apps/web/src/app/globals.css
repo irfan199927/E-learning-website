@@ -24,6 +24,10 @@
   --color-marigold: #f2a93b;
   --color-live: #c4231a;
   --color-live-soft: #fde7e5;
+  /* Text on live-soft chips (they stay light in both themes). */
+  --color-live-fg: #a11c14;
+  /* Destructive text on the page surface: changes with the theme. */
+  --color-danger-fg: #a11c14;
   --color-success: #12805c;
   --color-success-soft: #dff3ea;
   --color-warning: #a15c00;
@@ -48,6 +52,7 @@
   --color-primary-soft: #1c2550;
   --color-primary-fg: #8fa2ff;
   --color-primary-fg-strong: #c3ceff;
+  --color-danger-fg: #ff8a80;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -61,6 +66,7 @@
     --color-primary-soft: #1c2550;
     --color-primary-fg: #8fa2ff;
     --color-primary-fg-strong: #c3ceff;
+    --color-danger-fg: #ff8a80;
     color-scheme: dark;
   }
 }
