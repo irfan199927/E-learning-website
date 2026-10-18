@@ -30,12 +30,19 @@ export interface StorageConfig {
 }
 
 /** Canonical object keys. Keep all key building here so layouts never drift between apps. */
+/** A file name made safe for an object key: word characters, dashes and single dots only (no `..`). */
+const safeName = (fileName: string) =>
+  fileName
+    .replace(/[^\w.-]+/g, "_")
+    .replace(/\.{2,}/g, ".")
+    .slice(0, 120);
+
 export const keys = {
   videoRaw: (videoId: string, ext: string) => `videos/${videoId}/raw.${ext.replace(/^\./, "")}`,
   videoHlsPrefix: (videoId: string) => `videos/${videoId}/hls/`,
   videoThumb: (videoId: string) => `videos/${videoId}/thumb.jpg`,
   attachment: (lessonId: string, id: string, fileName: string) =>
-    `attachments/${lessonId}/${id}/${fileName.replace(/[^\w.-]+/g, "_").slice(0, 120)}`,
+    `attachments/${lessonId}/${id}/${safeName(fileName)}`,
   /** A course's cover image; the id changes with every upload, so cached copies never go stale. */
   courseCoverPrefix: (courseId: string) => `courses/${courseId}/cover/`,
   courseCover: (courseId: string, id: string, ext: string) => `courses/${courseId}/cover/${id}.${ext}`,
@@ -47,7 +54,7 @@ export const keys = {
   /** A student's files for an assignment. The prefix (assignment + student) is what access checks rely on. */
   submissionPrefix: (assignmentId: string, userId: string) => `submissions/${assignmentId}/${userId}/`,
   submission: (assignmentId: string, userId: string, id: string, fileName: string) =>
-    `submissions/${assignmentId}/${userId}/${id}/${fileName.replace(/[^\w.-]+/g, "_").slice(0, 120)}`,
+    `submissions/${assignmentId}/${userId}/${id}/${safeName(fileName)}`,
 };
 
 export function extensionFor(mimeType: string): string {

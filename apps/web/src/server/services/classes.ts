@@ -103,10 +103,9 @@ export async function scheduleClass(deps: Deps, actor: Actor, input: CreateClass
     where: { id: input.courseId },
     select: { id: true, title: true, teacherId: true },
   });
-  if (!course) throw Errors.notFound("Course");
   // The Meet/Calendar event is owned by the host's Google account, so only the course teacher can host.
-  if (course.teacherId !== actor.id)
-    throw Errors.forbidden("Only the course teacher can schedule its classes.");
+  // Someone else's course reads as missing, like everywhere else (no id leaks).
+  if (!course || course.teacherId !== actor.id) throw Errors.notFound("Course");
 
   const students = await deps.db.enrollment.findMany({
     where: { courseId: course.id, revokedAt: null, user: { isActive: true, deletedAt: null } },

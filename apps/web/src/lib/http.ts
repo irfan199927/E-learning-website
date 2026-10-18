@@ -46,6 +46,9 @@ function assertSameOrigin(req: NextRequest) {
   const origin = req.headers.get("origin");
   if (origin && origin !== new URL(env().APP_URL).origin)
     throw Errors.forbidden("Cross-site request blocked.");
+  // No Origin header (older or unusual clients): the browser's own Fetch Metadata still says where it came from.
+  if (req.headers.get("sec-fetch-site") === "cross-site")
+    throw Errors.forbidden("Cross-site request blocked.");
 }
 
 function wrap<P>(handler: PublicHandler<P>, opts: RouteOptions) {
@@ -74,6 +77,8 @@ function wrap<P>(handler: PublicHandler<P>, opts: RouteOptions) {
       res = toErrorResponse(err, requestId, log);
     }
     res.headers.set("x-request-id", requestId);
+    // API answers are per user: never let a browser or proxy cache them (files and playlists set their own).
+    if (!res.headers.has("cache-control")) res.headers.set("cache-control", "private, no-store");
     log.info({ status: res.status, ms: Math.round(performance.now() - started) }, "request");
     return res;
   };
@@ -97,9 +102,17 @@ export function publicRoute<P = Record<string, never>>(
 export async function body<T>(req: NextRequest, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > MAX_BODY_BYTES) throw Errors.validation("Request body is too large.");
+  // JSON only: a form or text/plain body is what a cross-site form would send.
+  if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json"))
+    throw Errors.validation("Send the request body as JSON (Content-Type: application/json).");
   let json: unknown;
   try {
-    json = JSON.parse(await readCapped(req));
+    json = JSON.parse(await readCapped(req), (_key, value: unknown) => {
+      // Postgres can't store NUL characters in text: refuse them here instead of failing with a 500 later.
+      if (typeof value === "string" && value.includes("\u0000"))
+        throw Errors.validation("Text can't contain NUL characters.");
+      return value;
+    });
   } catch (err) {
     if (err instanceof AppError) throw err;
     throw Errors.validation("Request body must be valid JSON.");
@@ -129,7 +142,10 @@ async function readCapped(req: NextRequest): Promise<string> {
 }
 
 export function query<T>(req: NextRequest, schema: ZodType<T, ZodTypeDef, unknown>): T {
-  return schema.parse(Object.fromEntries(req.nextUrl.searchParams));
+  const params = Object.fromEntries(req.nextUrl.searchParams);
+  if (Object.values(params).some((v) => v.includes("\u0000")))
+    throw Errors.validation("Text can't contain NUL characters.");
+  return schema.parse(params);
 }
 
 export { AppError };

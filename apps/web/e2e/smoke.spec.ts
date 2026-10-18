@@ -104,3 +104,27 @@ test("parents don't get a courses page", async ({ page }) => {
   await page.goto("/courses");
   await expect(page).toHaveURL(/\/dashboard$/);
 });
+
+test("hostile input gets a clear 4xx, never a 500", async ({ page }) => {
+  await signIn(page, "admin@school.edu");
+  const origin = new URL(page.url()).origin;
+  // NUL characters can't be stored by Postgres: refused up front.
+  expect((await page.request.get("/api/v1/admin/users?q=%00")).status()).toBe(400);
+  const nul = await page.request.put("/api/v1/me/locale", {
+    headers: { origin },
+    data: { locale: "en\u0000" },
+  });
+  expect(nul.status()).toBe(400);
+  // A cross-site request with no Origin header is still caught by Fetch Metadata.
+  const noOrigin = await page.request.put("/api/v1/me/locale", {
+    headers: { "sec-fetch-site": "cross-site" },
+    data: { locale: "en" },
+  });
+  expect(noOrigin.status()).toBe(403);
+  // Bodies must be JSON.
+  const form = await page.request.put("/api/v1/me/locale", {
+    headers: { origin, "content-type": "text/plain" },
+    data: JSON.stringify({ locale: "en" }),
+  });
+  expect(form.status()).toBe(400);
+});
