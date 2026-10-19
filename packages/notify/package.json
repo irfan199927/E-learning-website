@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@elearner/core": "workspace:*",
-    "nodemailer": "10.0.12"
+    "nodemailer": "10.1.1"
   },
   "devDependencies": {
     "@types/nodemailer": "7.0.2",
